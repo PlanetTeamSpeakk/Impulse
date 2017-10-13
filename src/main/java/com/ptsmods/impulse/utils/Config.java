@@ -35,7 +35,7 @@ public class Config {
 	}
 
 	@Nullable
-	public static String getKey(String key) {
+	public static String getValue(String key) {
 		return keys.get(key);
 	}
 
