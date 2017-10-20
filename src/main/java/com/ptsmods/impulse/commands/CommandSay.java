@@ -1,7 +1,7 @@
 package com.ptsmods.impulse.commands;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.Command;
 
 public class CommandSay extends Command {
 

@@ -7,8 +7,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.Command;
 
 import net.dv8tion.jda.core.entities.ChannelType;
 
@@ -54,11 +54,17 @@ public class CommandDebug extends Command {
 			engine.put("args", event.getArgs());
 			engine.put("jda", event.getJDA());
 			engine.put("client", event.getClient());
+			engine.put("author", event.getAuthor());
 			if (event.isFromType(ChannelType.TEXT)) {
 				engine.put("guild", event.getGuild());
-				engine.put("author", event.getAuthor());
+				engine.put("member", event.getMember());
 			}
-			Object out = engine.eval(String.format("(function() {with (imports) {return %s;}})();", event.getArgs()));
+			Object out;
+			try {
+				out = engine.eval(String.format("(function() {with (imports) {return %s;}})();", event.getArgs()));
+			} catch (Throwable e) {
+				out = engine.eval(String.format("(function() {with (imports) {%s;}})();", event.getArgs()));
+			}
 			out = out == null ? "null" : out.toString();
 			List<String> messages = new ArrayList<>();
 			while (out.toString().length() > 1990) {
@@ -66,10 +72,10 @@ public class CommandDebug extends Command {
 				out = out.toString().substring(1990, out.toString().length());
 			}
 			messages.add(out.toString());
-			event.reply("Input:```javascript\n" + event.getArgs() + "```\nOutput:```java\n" + messages.get(0) + "```");
+			event.reply("Input:```javascript\n" + event.getArgs() + "```\nOutput:```javascript\n" + messages.get(0) + "```");
 			messages.remove(0);
-			for (String message : messages) event.reply("```java\n" + message + "```");
-		} catch (ScriptException e1) {
+			for (String message : messages) event.reply("```javascript\n" + message + "```");
+		} catch (Throwable e1) {
 			event.reply("```javascript\n" + e1.getMessage() + "```");
 		}
 	}

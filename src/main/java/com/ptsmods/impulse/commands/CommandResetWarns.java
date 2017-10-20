@@ -3,9 +3,9 @@ package com.ptsmods.impulse.commands;
 import java.io.IOException;
 import java.util.Map;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
 import com.ptsmods.impulse.Main;
+import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.utils.DataIO;
 
 import net.dv8tion.jda.core.Permission;
@@ -50,7 +50,7 @@ public class CommandResetWarns extends Command {
 				((Map) settings.get(guildId)).remove(userId);
 				if (((Map) settings.get(guildId)).isEmpty()) settings.remove(guildId);
 				try {
-					Main.saveSettings(settings, "data/warner/settings.json");
+					DataIO.saveJson(settings, "data/warner/settings.json");
 				} catch (IOException e) {
 					event.reply("There was an error while saving the data file.");
 					return;

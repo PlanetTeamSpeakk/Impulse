@@ -2,8 +2,8 @@ package com.ptsmods.impulse.commands;
 
 import java.util.Date;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.Command;
 
 public class CommandPing extends Command {
 

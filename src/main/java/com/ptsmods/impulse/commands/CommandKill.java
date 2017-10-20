@@ -1,8 +1,8 @@
 package com.ptsmods.impulse.commands;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
 import com.ptsmods.impulse.Main.LogType;
+import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.utils.Random;
 
 public class CommandKill extends Command {

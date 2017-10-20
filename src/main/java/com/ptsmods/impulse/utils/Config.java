@@ -40,8 +40,10 @@ public class Config {
 	}
 
 	public static void addValuePair(String key, String value) {
-		if (!keys.containsKey(key))
+		if (!keys.containsKey(key)) {
 			addLine(key + "=" + value);
+			keys.put(key, value);
+		}
 	}
 
 	public static void addComment(String comment) {
@@ -49,6 +51,7 @@ public class Config {
 	}
 
 	private static void addLine(String line) {
+		if (new File("config.cfg").isDirectory()) new File("config.cfg").delete();
 		PrintWriter writer = null;
 		try {
 			writer = new PrintWriter(new FileWriter("config.cfg", true));

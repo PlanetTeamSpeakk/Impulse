@@ -1,6 +1,5 @@
 package com.ptsmods.impulse.miscellaneous;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
 
 public class DummyCommand extends Command {

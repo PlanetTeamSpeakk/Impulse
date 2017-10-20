@@ -1,7 +1,7 @@
 package com.ptsmods.impulse.commands;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.Command;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
@@ -14,8 +14,8 @@ public class CommandBan extends Command {
 		help = "Bans someone.";
 		guildOnly = true;
 		arguments = "<member>";
-		botPermissions = new Permission[] {Permission.KICK_MEMBERS};
-		userPermissions = new Permission[] {Permission.KICK_MEMBERS};
+		botPermissions = new Permission[] {Permission.BAN_MEMBERS};
+		userPermissions = new Permission[] {Permission.BAN_MEMBERS};
 		category = Main.getCategory("Moderation");
 	}
 

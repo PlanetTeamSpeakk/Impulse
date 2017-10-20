@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
 import com.ptsmods.impulse.Main;
+import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.utils.DataIO;
 
 import net.dv8tion.jda.core.Permission;
@@ -63,7 +63,7 @@ public class CommandWarn extends Command {
 				((Map) settings.get(guildId)).put(userId, 1);
 				event.reply(member.getAsMention() + " has 1 warning, but nothing happens yet. Next up: 5 minute mute.");
 				try {
-					Main.saveSettings(settings, "data/warner/settings.json");
+					DataIO.saveJson(settings, "data/warner/settings.json");
 				} catch (IOException e) {
 					event.reply("There was an error while saving the file.");
 					e.printStackTrace();
@@ -88,7 +88,7 @@ public class CommandWarn extends Command {
 				default: {output = "%s has **an unknown** amount of warnings. :thinking:"; break;}
 				}
 				try {
-					Main.saveSettings(settings, "data/warner/settings.json");
+					DataIO.saveJson(settings, "data/warner/settings.json");
 				} catch (IOException e) {
 					event.reply("There was an error while saving the file.");
 					e.printStackTrace();

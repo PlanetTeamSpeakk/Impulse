@@ -1,7 +1,7 @@
 package com.ptsmods.impulse.commands;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.Command;
 
 public class CommandFlip extends Command {
 
@@ -16,7 +16,8 @@ public class CommandFlip extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-		event.reply(Main.flipString(event.getArgs()));
+		if (event.getArgs().length() == 0) Main.sendCommandHelp(event, this);
+		else event.reply(Main.flipString(event.getArgs()));
 	}
 
 }

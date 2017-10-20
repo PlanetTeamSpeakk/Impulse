@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.entities.Message;
@@ -122,7 +122,7 @@ public class CommandBattleship extends Command {
 							Thread.sleep(1500);
 						} catch (InterruptedException e) {}
 					} else {
-						status.editMessage("You've hit my last ship! You win!");
+						status.editMessage("You've hit my last ship! You win!").queue();
 						return;
 					}
 				} else {

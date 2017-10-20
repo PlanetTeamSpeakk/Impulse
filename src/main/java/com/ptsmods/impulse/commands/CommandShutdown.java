@@ -1,9 +1,9 @@
 package com.ptsmods.impulse.commands;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
 import com.ptsmods.impulse.Main;
 import com.ptsmods.impulse.Main.LogType;
+import com.ptsmods.impulse.miscellaneous.Command;
 
 public class CommandShutdown extends Command {
 

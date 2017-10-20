@@ -1,7 +1,7 @@
 package com.ptsmods.impulse.commands;
 
-import com.jagrosh.jdautilities.commandclient.Command;
 import com.jagrosh.jdautilities.commandclient.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.utils.Random;
 
 public class CommandEightBall extends Command {
@@ -25,7 +25,7 @@ public class CommandEightBall extends Command {
 	protected void execute(CommandEvent event) {
 		if (!event.getArgs().endsWith("?") || event.getArgs().length() == 0)
 			event.reply("That does not look like a question.");
-		else event.reply(answers[Random.randInt(answers.length+1)] + ".");
+		else event.reply(answers[Random.randInt(answers.length)] + ".");
 	}
 
 }
