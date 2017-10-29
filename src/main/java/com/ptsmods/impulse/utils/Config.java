@@ -50,7 +50,7 @@ public class Config {
 		addLine("// " + comment);
 	}
 
-	private static void addLine(String line) {
+	private static final void addLine(String line) {
 		if (new File("config.cfg").isDirectory()) new File("config.cfg").delete();
 		PrintWriter writer = null;
 		try {

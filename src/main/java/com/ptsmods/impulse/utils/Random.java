@@ -2,6 +2,7 @@ package com.ptsmods.impulse.utils;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -104,6 +105,14 @@ public class Random {
 
 	public static float randFloat(float min, float max) {
 		return (float) randDouble(min, max);
+	}
+
+	public static <T> T choice(T... choices) {
+		return choices[randInt(choices.length)];
+	}
+
+	public static <T> T choice(List<T> choices) {
+		return choices.get(randInt(choices.size()));
 	}
 
 	/**

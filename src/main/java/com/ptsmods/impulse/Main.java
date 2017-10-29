@@ -29,63 +29,78 @@ import javax.security.auth.login.LoginException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 
 import com.google.common.collect.Lists;
-import com.jagrosh.jdautilities.commandclient.Command.Category;
-import com.jagrosh.jdautilities.commandclient.CommandClient;
-import com.jagrosh.jdautilities.commandclient.CommandEvent;
-import com.jagrosh.jdautilities.waiter.EventWaiter;
 import com.ptsmods.impulse.miscellaneous.Command;
-import com.ptsmods.impulse.miscellaneous.CommandClientBuilder;
+import com.ptsmods.impulse.miscellaneous.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.CommandExecutionHook;
 import com.ptsmods.impulse.miscellaneous.EventHandler;
-import com.ptsmods.impulse.miscellaneous.IsSubcommandException;
+import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.ConsoleColors;
+import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.Downloader;
 
 import net.dv8tion.jda.client.entities.Group;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.ShardedRateLimiter;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Icon;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.PrivateChannel;
 import net.dv8tion.jda.core.entities.Role;
+import net.dv8tion.jda.core.entities.SelfUser;
 import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.events.Event;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
-import net.dv8tion.jda.core.utils.PermissionUtil;
 
 public class Main {
 
 	public static final Date started = new Date();
-	public static final EventWaiter waiter = new EventWaiter();
 	public static final Map<String, String> apiKeys = new HashMap<>();
-	public static final ThreadPoolExecutor commandsExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+	private static final ThreadPoolExecutor commandsExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+	private static final ThreadPoolExecutor miscellaneousExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+	private static Map<String, Integer> commandIndex = new HashMap();
+	private static final Set<Class<? extends Event>> events = new Reflections("net.dv8tion.jda.core.events").getSubTypesOf(Event.class);
+	private static List<CommandExecutionHook> commandHooks = new ArrayList<>();
 	private static List<JDA> shards = new ArrayList<>();
 	private static boolean devMode = false;
 	private static User owner = null;
-	private static Map<String, Category> categories = new HashMap<>();
-	private static CommandClient client;
-	private static List<Command> commands = new ArrayList<>();
+	private static List<String> categories = new ArrayList<>();
+	private static List<Method> commands = new ArrayList<>();
+	private static List<Method> subcommands = new ArrayList<>();
 	private static List<Message> messages = new ArrayList<>();
 	private static List<List<Message>> allMessages = new ArrayList<>();
 
 	public static void main(String[] args) {
+		try {
+			main0(args);
+		} catch (Throwable e) {
+			e.printStackTrace(); // so exceptions and errors are printed.
+			System.exit(1);
+		}
+	}
+
+	private static void main0(String[] args) {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			print(LogType.INFO, "Bot shutting down, deleting all temporary files.");
 			int counter = 0;
-			if (new File("data/tmp").exists() && new File("data/tmp").isDirectory())
+			if (new File("data/tmp").exists() && new File("data/tmp").isDirectory()) {
 				for (File file : new File("data/tmp").listFiles())
-					try {
-						file.delete();
-						counter += 1;
-					} catch (Throwable e) {}
-			else new File("data/tmp/").mkdirs();
+					if (!file.getName().equals("info.txt"))
+						try {
+							file.delete();
+							counter += 1;
+						} catch (Throwable e) {}
+			} else new File("data/tmp/").mkdirs();
 			print(LogType.INFO, String.format("Temporary files deleted, deleted %s file%s.", counter, counter == 1 ? "" : "s"));
 			try {
 				new File("data/tmp/info.txt").createNewFile();
@@ -118,19 +133,17 @@ public class Main {
 				Config.addComment("The amount of shards you want, for every shard the startup time takes 5 more seconds.");
 				Config.addComment("If you don't know what shards are, maybe you should learn some stuff about bots before making your own.");
 				Config.addValuePair("shards", "1");
-				print(LogType.WARN, "The config hasn't been changed yet, please open config.cfg and change the variables.");
-				System.exit(0);
-			} else if (Config.getValue("token").isEmpty() || Config.getValue("ownerId").isEmpty() || Config.getValue("prefix").isEmpty() || Config.getValue("shards").isEmpty()) {
-				print(LogType.WARN, "The config hasn't been changed yet, please open config.cfg and change the variables.");
-				System.exit(0);
-			}
-			if (Config.getValue("carbonitexKey") == null) {
 				Config.addComment("The key used to send bot stats to https://carbinotex.net");
 				Config.addValuePair("carbonitexKey", "");
 				Config.addComment("The key used to send bot stats to https://discordbots.org");
 				Config.addValuePair("discordBotListKey", "");
 				Config.addComment("The key used to send bot stats to https://bots.discord.pw");
 				Config.addValuePair("discordBotsKey", "");
+				print(LogType.WARN, "The config hasn't been changed yet, please open config.cfg and change the variables.");
+				System.exit(0);
+			} else if (Config.getValue("token").isEmpty() || Config.getValue("ownerId").isEmpty() || Config.getValue("prefix").isEmpty() || Config.getValue("shards").isEmpty()) {
+				print(LogType.WARN, "The config hasn't been changed yet, please open config.cfg and change the variables.");
+				System.exit(0);
 			}
 			apiKeys.put("w3hills", "5D58B696-7AF3-4DD0-1251-B5D24E16668C");
 			apiKeys.put("geocoding", "AIzaSyCXkFcW0v8XJWGK2Im2_fApsbh3I8OGCDI"); // they're all free, anyway.
@@ -141,29 +154,20 @@ public class Main {
 			else shardAmount = Integer.parseInt(Config.getValue("shards"));
 			if (shardAmount < 1) shardAmount = 1;
 			print(LogType.INFO, "Loading commands...");
-			CommandClientBuilder builder = new CommandClientBuilder();
-			builder.setPrefix(Config.getValue("prefix"))
-			.setEmojis("\uD83D\uDC4D", "\u26A0", "\u274C")
-			.setGame(Game.of(devMode ? "DEVELOPER MODE" : "try " + Config.getValue("prefix") + "help!"))
-			.setOwnerId(Config.getValue("ownerId"))
-			.useHelpBuilder(false);
-			if (!Config.getValue("carbonitexKey").isEmpty()) builder.setCarbonitexKey(Config.getValue("carbonitexKey"));
-			if (!Config.getValue("discordBotListKey").isEmpty()) builder.setDiscordBotListKey(Config.getValue("discordBotListKey"));
-			if (!Config.getValue("discordBotsKey").isEmpty()) builder.setDiscordBotsKey(Config.getValue("discordBotsKey"));
-			client = builder.build();
-			for (Class<? extends Command> command : new Reflections("com.ptsmods.impulse.commands").getSubTypesOf(Command.class))
-				try {
-					client.addCommand(addCommand(command.newInstance()));
-				} catch (IsSubcommandException e) {
-				} catch (RuntimeException e) {e.printStackTrace();}
-			for (Command command : commands)
-				command.setHelp(command.getHelp().replaceAll("\\[p\\]", client.getPrefix()));
-			print(LogType.INFO, commands.size() + " commands loaded, logging in...");
+			for (Class<? extends Object> clazz : new Reflections("com.ptsmods.impulse.commands", new SubTypesScanner(false)).getSubTypesOf(Object.class))
+				for (Method method : clazz.getMethods())
+					if (method.isAnnotationPresent(Command.class)) {
+						commands.add(method);
+						getCategory(method.getAnnotation(Command.class).category());
+						commandIndex.put(method.getAnnotation(Command.class).name(), commands.size()-1);
+					} else if (method.isAnnotationPresent(Subcommand.class))
+						subcommands.add(method);
+			print(LogType.INFO, commands.size() + " commands and " + subcommands.size() + " subcommands loaded, logging in...");
 			ShardedRateLimiter rateLimiter = new ShardedRateLimiter();
 			for (int i : range(shardAmount)) {
 				JDA shard = new JDABuilder(AccountType.BOT)
 						.setToken(Config.getValue("token"))
-						.addEventListener(new EventHandler(), client, waiter)
+						.addEventListener(new EventHandler())
 						.useSharding(shards.size(), shardAmount)
 						.setReconnectQueue(new SessionReconnectQueue())
 						.setShardedRateLimiter(rateLimiter)
@@ -191,15 +195,11 @@ public class Main {
 				shards.get(0).getSelfUser().getName(),
 				shards.get(0).getSelfUser().getDiscriminator(),
 				System.currentTimeMillis() - started.getTime(),
-				Main.getUserById(Config.getValue("ownerId")).getName(),
-				Main.getUserById(Config.getValue("ownerId")).getDiscriminator(),
-				client.getPrefix()));
-	}
-
-	private static Command addCommand(Command cmd) throws IsSubcommandException {
-		if (cmd.isSubcommand()) throw new IsSubcommandException("The given command is a subcommand and should NOT be registered.");
-		commands.add(cmd);
-		return cmd;
+				owner.getName(),
+				owner.getDiscriminator(),
+				Config.getValue("prefix")));
+		for (JDA shard : shards)
+			shard.getPresence().setGame(Game.of("try " + Config.getValue("prefix") + "help!"));
 	}
 
 	public static <T> void print(String threadName, LogType logType, T... message) {
@@ -222,8 +222,16 @@ public class Main {
 		print(shards.size() > 0 ? shards.get(0).getSelfUser().getName() : "Discord Bot", logType, message);
 	}
 
+	public static String join(List<String> list) {
+		return joinCustomChar(" ", list.toArray(new String[0]));
+	}
+
 	public static String join(String... stringArray) {
 		return joinCustomChar(" ", stringArray);
+	}
+
+	public static String joinCustomChar(String character, List<String> list) {
+		return joinCustomChar(character, list.toArray(new String[0]));
 	}
 
 	public static String joinCustomChar(String character, String... stringArray) {
@@ -274,7 +282,7 @@ public class Main {
 
 	public static User getUserFromInput(Message input) {
 		try {
-			return !input.getMentionedUsers().isEmpty() ? input.getMentionedUsers().get(0) : input.getContent().startsWith(client.getPrefix()) ? input.getGuild().getMembersByName(getUsernameFirstArg(input), true).get(0).getUser() : null;
+			return !input.getMentionedUsers().isEmpty() ? input.getMentionedUsers().get(0) : input.getContent().startsWith(Config.getValue("prefix")) ? input.getGuild().getMembersByName(getUsernameFirstArg(input), true).get(0).getUser() : null;
 		} catch (Throwable e) {return null;}
 	}
 
@@ -283,63 +291,103 @@ public class Main {
 	}
 
 	public static String getUsernameFirstArg(Message input) {
+		return getUsernameFromArgs(removeArg(input.getContent().split(" "), 0), input);
+	}
+
+	public static String getUsernameSecondArg(Message input) {
+		return getUsernameFromArgs(removeArgs(input.getContent().split(" "), 0, 1), input);
+	}
+
+	private static String getUsernameFromArgs(String[] args, Message input) {
 		String username = "";
-		String[] parts = removeArg(input.getContent().split(" "), 0);
-		for (String part : parts) {
-			username += part + " ";
+		for (String arg : args) {
+			username += arg + " ";
 			if (!input.getGuild().getMembersByName(username.trim(), true).isEmpty()) return username.trim();
 		}
 		return null;
 	}
 
-	public static void sendCommandHelp(MessageChannel channel, Command command) {
-		String cmdName = command.getName() + (command.getArguments() == null || command.getArguments().isEmpty() ? "" : " " + command.getArguments());
-		String cmdHelp = command.getHelp() == null ? "" : command.getHelp();
-		String cmdSubcommands = "";
-		if (command.getChildren().length != 0) {
-			cmdSubcommands = "**Subcommands**:\n\t";
-			for (com.jagrosh.jdautilities.commandclient.Command scmd : command.getChildren())
-				cmdSubcommands += String.format("**%s**", scmd.getName()) + (scmd.getHelp() == null || scmd.getHelp().isEmpty() ? "" : ": " + scmd.getHelp()) + "\n\t";
-			cmdSubcommands = cmdSubcommands.trim();
-		}
-		while (getParentCommand(command) != null) {
-			command = getParentCommand(command);
-			cmdName = command.getName() + " " + cmdName;
-		}
-		channel.sendMessage(String.format("**%s**%s%s",
-				client.getPrefix() + cmdName,
-				cmdHelp.isEmpty() ? "" : ":\n\n" + cmdHelp,
-						cmdSubcommands.isEmpty() ? "" : "\n\n" + cmdSubcommands)).complete();
-	}
-
-	public static void sendCommandHelp(CommandEvent event, Command command) {
-		sendCommandHelp(event.getChannel(), command);
-	}
-
-	@Nullable
-	public static Command getParentCommand(Command child) {
-		for (Command cmd : commands) {
-			if (isSubcommandOf(cmd, child)) return cmd;
-			for (com.jagrosh.jdautilities.commandclient.Command child1 : cmd.getChildren()) {
-				if (isSubcommandOf(child1, child)) return cmd;
-				for (com.jagrosh.jdautilities.commandclient.Command child2 : child1.getChildren()) {
-					if (isSubcommandOf(child2, child)) return cmd;
-					for (com.jagrosh.jdautilities.commandclient.Command child3 : child2.getChildren()) {
-						if (isSubcommandOf(child3, child)) return cmd;
-						for (com.jagrosh.jdautilities.commandclient.Command child4 : child3.getChildren())
-							if (isSubcommandOf(child4, child)) return cmd;
-					} // This should be enough.
-				}	  // If you know a more efficient way, pls do a pull request.
-			}		  // It'd be highly appreciated.
+	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event, Method cmd) {
+		if (cmd.isAnnotationPresent(Command.class)) {
+			Command command = cmd.getAnnotation(Command.class);
+			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
+			String cmdHelp = command.help() == null ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()));
+			String cmdSubcommands = "";
+			if (getSubcommands(cmd).size() != 0) {
+				cmdSubcommands = "**Subcommands**\n\t";
+				for (Method scommand : getSubcommands(cmd)) {
+					Subcommand scmd = scommand.getAnnotation(Subcommand.class);
+					if (!event.isOwner() && !event.isCoOwner())
+						if (scmd.hidden() ||
+								scmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) ||
+								event.getMember() != null && !event.getMember().hasPermission(scmd.userPermissions()))
+							continue;
+					cmdSubcommands += String.format("**%s**", scmd.name()) + (scmd.help() == null || scmd.help().isEmpty() ? "" : ": " + scmd.help().split("\n")[0]) + "\n\t";
+				}
+				cmdSubcommands = cmdSubcommands.trim();
+			}
+			return channel.sendMessage(String.format("**%s**%s%s",
+					Config.getValue("prefix") + cmdName,
+					cmdHelp.isEmpty() ? "" : ":\n\n" + cmdHelp,
+							cmdSubcommands.isEmpty() ? "" : "\n\n" + cmdSubcommands)).complete();
+		} else if (cmd.isAnnotationPresent(Subcommand.class)) {
+			Subcommand command = cmd.getAnnotation(Subcommand.class);
+			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
+			String cmdHelp = command.help() == null ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()));
+			String cmdSubcommands = "";
+			if (getSubcommands(cmd).size() != 0) {
+				cmdSubcommands = "**Subcommands**\n\t";
+				for (Method scmdMethod : getSubcommands(cmd)) {
+					Subcommand scmd = scmdMethod.getAnnotation(Subcommand.class);
+					if (!event.isOwner() && !event.isCoOwner())
+						if (scmd.hidden() ||
+								scmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) ||
+								event.getMember() != null && !event.getMember().hasPermission(scmd.userPermissions()))
+							continue;
+					cmdSubcommands += String.format("**%s**", scmd.name()) + (scmd.help() == null || scmd.help().isEmpty() ? "" : ": " + scmd.help().split("\n")[0]) + "\n\t";
+				}
+				cmdSubcommands = cmdSubcommands.trim();
+			}
+			try {
+				while (getParentCommand(command) != null)
+					if (getParentCommand(command).isAnnotationPresent(Command.class)) {
+						cmdName = getParentCommand(command).getAnnotation(Command.class).name() + " " + cmdName;
+						break;
+					} else {
+						command = getParentCommand(command).getAnnotation(Subcommand.class);
+						cmdName = command.name() + " " + cmdName;
+					}
+			} catch (ClassNotFoundException | NoSuchMethodException e) {
+				return null;
+			}
+			return channel.sendMessage(String.format("**%s**%s%s",
+					Config.getValue("prefix") + cmdName,
+					cmdHelp.isEmpty() ? "" : ":\n\n" + cmdHelp,
+							cmdSubcommands.isEmpty() ? "" : "\n\n" + cmdSubcommands)).complete();
 		}
 		return null;
 	}
 
-	private static boolean isSubcommandOf(com.jagrosh.jdautilities.commandclient.Command cmd, Command subcommand) {
-		if (cmd.getChildren().length != 0)
-			for (com.jagrosh.jdautilities.commandclient.Command cmd1 : cmd.getChildren())
-				if (cmd1.equals(subcommand)) return true;
-		return false;
+	public static Message sendCommandHelp(CommandEvent event, Method cmd) {
+		return sendCommandHelp(event.getChannel(), event, cmd);
+	}
+
+	public static Message sendCommandHelp(CommandEvent event) {
+		return sendCommandHelp(event.getChannel(), event, event.getCommand());
+	}
+
+	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event) {
+		return sendCommandHelp(channel, event, event.getCommand());
+	}
+
+	@Nullable
+	public static Method getParentCommand(Subcommand child) throws ClassNotFoundException, NoSuchMethodException {
+		// format should be : package.class.method
+		String parent = child.parent();
+		String methodName = parent.split("\\.")[parent.split("\\.").length-1];
+		// this should make com.ptsmods.impulse.commands.Economy from com.ptsmods.impulse.commands.Economy.bank
+		Class clazz = Class.forName(joinCustomChar(".", removeArg(parent.split("\\."), parent.split("\\.").length-1)));
+		return clazz.getMethod(methodName, CommandEvent.class);
 	}
 
 	public static Role getRoleByName(Guild guild, String name, boolean ignoreCase) {
@@ -352,20 +400,17 @@ public class Main {
 	}
 
 	public static void runAsynchronously(Runnable runnable) {
-		new Thread(runnable).start();
+		miscellaneousExecutor.execute(runnable);
 	}
 
 	public static void runAsynchronously(Object obj, Method method, Object... args) {
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					method.invoke(obj, args);
-				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-					e.printStackTrace();
-				}
+		runAsynchronously(() -> {
+			try {
+				method.invoke(obj, args);
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
 			}
-		}).start();
+		});
 	}
 
 	public static boolean isInteger(String s) {
@@ -399,12 +444,12 @@ public class Main {
 	}
 
 	public static void sendPrivateMessage(User user, String msg) {
-		user.openPrivateChannel().complete().sendMessage(msg).complete();
+		user.openPrivateChannel().complete().sendMessage(msg).queue();
 	}
 
-	public static Category getCategory(String category) {
-		if (!categories.containsKey(category)) categories.put(category, new Category(category));
-		return categories.get(category);
+	public static String getCategory(String category) {
+		if (!categories.contains(category)) categories.add(category);
+		return category;
 	}
 
 	public static Object[] removeArg(Object[] args, int arg) {
@@ -530,47 +575,40 @@ public class Main {
 		return Arrays.copyOf(array, array.length, Double[].class);
 	}
 
-	public static CommandClient getClient() {
-		return client;
+	public static List<String> getCategories() {
+		return categories;
 	}
 
-	public static Set<String> getCategories() {
-		return categories.keySet();
-	}
-
-	public static List<Command> getCommands() {
+	public static List<Method> getCommands() {
 		return commands;
 	}
 
 	public static List<String> getCommandNames() {
 		List<String> names = new ArrayList<>();
-		for (Command cmd : commands)
-			names.add(cmd.getName());
+		for (Method cmd : commands)
+			names.add(cmd.getAnnotation(Command.class).name());
 		return names;
 	}
 
-	public static Command getCommandByName(String name) {
-		for (Command cmd : commands)
-			if (cmd.getName().equals(name)) return cmd;
+	public static List<Method> getSubcommands() {
+		return subcommands;
+	}
+
+	public static List<String> getSubcommandNames() {
+		List<String> names = new ArrayList<>();
+		for (Method cmd : subcommands)
+			names.add(cmd.getAnnotation(Command.class).name());
+		return names;
+	}
+
+	public static Method getCommandByName(String name) {
+		for (Method cmd : commands)
+			if (cmd.getAnnotation(Command.class).name().equals(name)) return cmd;
 		return null;
 	}
 
 	public static void mute(Member member) {
-		Role role = Main.getRoleByName(member.getGuild(), "Impulse Muted", true);
-		if (role == null)
-			role = member.getGuild().getController().createRole().setName("Impulse Muted").setPermissions().complete();
-		List<Role> roles = member.getRoles();
-		List<Role> rolesToAdd = new ArrayList<>();
-		rolesToAdd.add(role);
-		List<Role> rolesToRemove = new ArrayList<>();
-		for (Role r : roles) {
-			if (r.isManaged() || !PermissionUtil.canInteract(member.getGuild().getSelfMember(), r))
-				continue;
-			if (r.equals(role))
-				continue;
-			rolesToRemove.add(r);
-		}
-		member.getGuild().getController().modifyMemberRoles(member, rolesToAdd, rolesToRemove).complete();
+
 	}
 
 	@Nullable
@@ -875,6 +913,158 @@ public class Main {
 		for (int i : range(times))
 			string += original;
 		return string;
+	}
+
+	@Nullable
+	public static Method getMethod(Class clazz, String method, @Nullable Class... parameters) {
+		if (parameters == null) parameters = new Class[0];
+		Class[] params = parameters;
+		return new Object() {
+			Method getMethod() {
+				if (getMethod(clazz.getMethods()) != null) return getMethod(clazz.getMethods());
+				else return getMethod(clazz.getDeclaredMethods());
+			}
+			Method getMethod(Method[] methods) {
+				for (Method method1 : methods)
+					if (method1.getParameterCount() == params.length && method1.getName().equals(method)) {
+						for (int x = 0; x < params.length && x < method1.getParameterCount(); x++)
+							if (!method1.getParameterTypes()[x].getName().equals(params[x].getName())) return null;
+						return method1;
+					}
+				return null;
+			}
+		}.getMethod();
+	}
+
+	public static Set<Class<? extends Event>> getAllEvents() {
+		return events;
+	}
+
+	public static void setOnlineStatus(OnlineStatus status) {
+		for (JDA shard : shards)
+			shard.getPresence().setStatus(status);
+	}
+
+	public static void setGame(Game game) {
+		for (JDA shard : shards)
+			shard.getPresence().setGame(game);
+	}
+
+	public static void setGame(String game) {
+		setGame(Game.of(game));
+	}
+
+	public static OnlineStatus getStatusFromString(String string) {
+		switch (string.toUpperCase()) {
+		case "OFFLINE": {return OnlineStatus.OFFLINE;}
+		case "INVISIBLE": {return OnlineStatus.INVISIBLE;}
+		case "DND": {return OnlineStatus.DO_NOT_DISTURB;}
+		case "DO_NOT_DISTURB": {return OnlineStatus.DO_NOT_DISTURB;}
+		case "IDLE": {return OnlineStatus.IDLE;}
+		case "ONLINE": {return OnlineStatus.ONLINE;}
+		default: {return OnlineStatus.UNKNOWN;}
+		}
+	}
+
+	public static void setAvatar(Icon avatar) {
+		shards.get(0).getSelfUser().getManager().setAvatar(avatar).queue();
+	}
+
+	public static String getPrefix(Guild guild) {
+		try {
+			Map prefixes = DataIO.loadJson("data/mod/serverprefixes.json", Map.class);
+			prefixes = prefixes == null ? new HashMap<>() : prefixes;
+			String serverPrefix = Config.getValue("prefix");
+			try {
+				if (prefixes.containsKey(guild.getId())) serverPrefix = (String) ((Map) prefixes.get(guild.getId())).get("serverPrefix");
+			} catch (NullPointerException e) { }
+			return serverPrefix;
+		} catch (IOException e) {
+			throw new RuntimeException("An unknown error occured while loading the server prefix file.", e);
+		}
+	}
+
+	public static SelfUser getSelfUser() {
+		return shards.get(0).getSelfUser();
+	}
+
+	/**
+	 * Basically the same as what gets printed when you do cause.printStackTrace()
+	 */
+	public static String generateStackTrace(Throwable cause) {
+		String stackTrace = String.format("%s: %s\n\t", cause.getClass().toString(), cause.getMessage());
+		for (StackTraceElement element : cause.getStackTrace())
+			stackTrace += String.format("at %s.%s(%s)\n\t", element.getClassName(), element.getMethodName(), element.getFileName() != null ? element.getFileName() + ":" + element.getLineNumber() : "Unknown Source");
+		while (cause.getCause() != null) {
+			cause = cause.getCause();
+			stackTrace = stackTrace.trim();
+			stackTrace += String.format("\nCaused by %s: %s\n\t", cause.getClass().getName(), cause.getMessage());
+			for (StackTraceElement element : cause.getStackTrace())
+				stackTrace += String.format("at %s.%s(%s)\n\t", element.getClassName(), element.getMethodName(), element.getFileName() != null ? element.getFileName() + ":" + element.getLineNumber() : "Unknown Source");
+		}
+		return stackTrace.trim();
+	}
+
+	public static String encase(String string) {
+		return Character.toUpperCase(string.charAt(0)) + string.substring(1);
+	}
+
+	public static String pascalCase(String string) {
+		String output = "";
+		for (String part : string.split(" "))
+			output += encase(part);
+		return output;
+	}
+
+	public static String camelCase(String string) {
+		return string.split(" ")[0].toLowerCase() + pascalCase(join(removeArg(string.split(" "), 0)));
+	}
+
+	public static List<Method> getMethods(Class clazz) {
+		List<Method> methods = new ArrayList();
+		for (Method method : clazz.getMethods())
+			methods.add(method);
+		for (Method method : clazz.getDeclaredMethods())
+			if (!new Object() {
+				boolean methodInList() {
+					for (Method method1 : methods)
+						if (method1.toString().equals(method.toString())) return true;
+					return false;
+				}
+			}.methodInList()) methods.add(method);
+		return methods;
+	}
+
+	public static Map<String, Integer> getCommandIndex() {
+		return commandIndex;
+	}
+
+	/**
+	 * Adds a hook that should be ran everytime a command is ran.
+	 * If this throws a {@link java.lang.SecurityException SecurityException} then the command isn't executed and instead the message given with the exception is sent.
+	 * @param hook The hook to add.
+	 */
+	public static void addCommandHook(CommandExecutionHook hook) {
+		commandHooks.add(hook);
+	}
+
+	public static List<CommandExecutionHook> getCommandHooks() {
+		return commandHooks;
+	}
+
+	public static List<Method> getSubcommands(Method parent) {
+		List<Method> children = new ArrayList();
+		for (Method subcommand : subcommands) {
+			Method parentCommand;
+			try {
+				parentCommand = getParentCommand(subcommand.getAnnotation(Subcommand.class));
+			} catch (ClassNotFoundException | NoSuchMethodException e) {
+				print(LogType.WARN, "The parent command of", subcommand, "could not be found.", subcommand.getAnnotation(Subcommand.class).parent());
+				continue;
+			}
+			if (parentCommand.equals(parent)) children.add(subcommand);
+		}
+		return children;
 	}
 
 	public enum LogType {
