@@ -1,6 +1,8 @@
 package com.ptsmods.impulse.commands;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import com.ptsmods.impulse.Main;
 import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
 
@@ -49,7 +52,7 @@ public class Owner {
 					"Packages.com.jagrosh.jdautilities);" +
 					"var Main = com.ptsmods.impulse.Main;");
 		} catch (ScriptException e) {
-			throw new RuntimeException("An error occured while setting up the imports for the evaluator.", e);
+			throw new RuntimeException("An error occurred while setting up the imports for the evaluator.", e);
 		}
 	}
 
@@ -116,15 +119,6 @@ public class Owner {
 		}
 	}
 
-	@Command(category = "Owner", help = "Restart the bot.", name = "restart", ownerCommand = true)
-	public static void restart(CommandEvent event) {
-		if (Main.devMode()) event.reply("This command does not work in a development environment.");
-		else {
-			event.reply("I'll be right back!");
-			Main.restart();
-		}
-	}
-
 	@Command(category = "Owner", help = "Shows you all the servers the bot is in.", name = "servers", ownerCommand = true, hidden = true)
 	public static void servers(CommandEvent event) {
 		Map<Integer, String> pages = new HashMap();
@@ -146,7 +140,7 @@ public class Owner {
 		int pageN = 1;
 		if (event.getArgs().length() != 0 && Main.isInteger(event.getArgs().split(" ")[0])) pageN = Integer.parseInt(event.getArgs().split(" ")[0]);
 		if (pageN >= pages.size()+1) event.reply("The maximum page is " + (pages.size()-1) + ".");
-		else event.replyFormatted(pages.get(pageN), pages.size());
+		else event.reply(pages.get(pageN), pages.size());
 	}
 
 	@Command(category = "Owner", help = "Manage settings.", name = "set", ownerCommand = true)
@@ -210,20 +204,65 @@ public class Owner {
 
 	@Command(category = "Owner", help = "Shuts the bot down.", name = "shutdown", ownerCommand = true)
 	public static void shutdown(CommandEvent event) {
-		event.reply("Kk, shutting down...");
+		event.getChannel().sendMessage("Kk, shutting down.").complete();
 		Main.print(LogType.WARN, event.getAuthor().getName() + " requested the bot to be shut down.");
-		try {
-			Thread.sleep(50);
-		} catch (InterruptedException e) {}
 		Main.shutdown(0);
 	}
 
-	@Command(category = "Owner", help = "Toggles developer mode.", name = "toggledevmode", ownerCommand = true)
+	@Command(category = "Owner", help = "Toggles developer mode.", name = "toggledevmode", ownerCommand = true, hidden = true)
 	public static void toggleDevMode(CommandEvent event) {
 		Main.devMode(!Main.devMode());
-		Main.setGame(Game.of(Main.devMode() ? "DEVELOPER MODE" : "try " + Config.getValue("prefix") + "help!"));
+		Main.setGame(Game.of(Main.devMode() ? "DEVELOPER MODE" : "try " + Config.get("prefix") + "help!"));
 		event.reply("Developer mode has been " + (Main.devMode() ? "enabled" : "disabled") + ", " + (Main.devMode() ? "errors will no longer be sent privately and only you will now be able to use commands." :
 				"errors will once again be sent privately and everyone will be able to use commands again."));
+	}
+
+	@Command(category = "Owner", help = "Shows you all the permissions this bot has in this channel.", name = "permissionshere", ownerCommand = true, guildOnly = true, hidden = true)
+	public static void permissionsHere(CommandEvent event) {
+		List<String> permissions = new ArrayList();
+		for (Permission perm : event.getSelfMember().getPermissions(event.getTextChannel()))
+			permissions.add(perm.getName());
+		event.reply("I have the following permissions in this channel: **" + Main.joinCustomChar("**, **", permissions) + "**.");
+	}
+
+	@Command(category = "Owner", help = "Execute a command on the command line.", name = "terminal", ownerCommand = true, hidden = true)
+	public static void terminal(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			Message msg = event.getTextChannel().sendMessage("Executing the given command on the command line...").complete();
+			if (Main.isWindows()) event.setArgs("cmd /c " + event.getArgs());
+			Process process;
+			try {
+				process = Runtime.getRuntime().exec(event.getArgs());
+			} catch (IOException e) {
+				throw new CommandException("An error occurred while parsing the given command.", e);
+			}
+			StringBuilder output = new StringBuilder();
+			BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line = null;
+			try {
+				while ((line = input.readLine()) != null)
+					output.append(line);
+			} catch (IOException e) {
+				throw new CommandException("An error occurred while parsing the given command.", e);
+			}
+			msg.editMessage("Input:\n```\n" + event.getOriginalArgs() + "```\nOutput:\n```\n" + output + "```").queue();
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Owner", help = "Calculates the average amount of messages the bot receives per second.", name = "averagemessages", ownerCommand = true, hidden = true, arguments = "<seconds>")
+	public static void averageMessages(CommandEvent event) {
+		if (!event.argsEmpty() && Main.isFloat(event.getArgs())) {
+			Message status = event.getTextChannel().sendMessage("Retrieving messages, please wait...").complete();
+			long msgs = Main.getReceivedMessages().size();
+			long millis = System.currentTimeMillis();
+			try {
+				Thread.sleep((long) Float.parseFloat(event.getArgs()) * 1000L);
+			} catch (InterruptedException e) {}
+			status.editMessageFormat("Done! Received **%s** messages in **%s** seconds with an average of **%s** messages per second.",
+					Main.getReceivedMessages().size()-msgs,
+					(System.currentTimeMillis()-millis)/1000,
+					(float) (Main.getReceivedMessages().size()-msgs)/(float) ((System.currentTimeMillis()-millis)/1000)).queue();
+		} else Main.sendCommandHelp(event);
 	}
 
 }

@@ -6,8 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDateTime;
@@ -17,6 +19,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
@@ -36,6 +39,7 @@ import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandExecutionHook;
 import com.ptsmods.impulse.miscellaneous.EventHandler;
+import com.ptsmods.impulse.miscellaneous.ImpulseSM;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.ConsoleColors;
@@ -58,7 +62,7 @@ import net.dv8tion.jda.core.entities.PrivateChannel;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.SelfUser;
 import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.Event;
+import net.dv8tion.jda.core.entities.impl.UserImpl;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
 
@@ -66,32 +70,58 @@ public class Main {
 
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
+	public static final Thread mainThread = Thread.currentThread();
+	private static final String osName = System.getProperty("os.name");
+	private static boolean done = false;
 	private static final ThreadPoolExecutor commandsExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 	private static final ThreadPoolExecutor miscellaneousExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+	private static final boolean isWindows;
+	private static final boolean isMac;
+	private static final boolean isUnix;
+	private static final boolean isSolaris;
 	private static Map<String, Integer> commandIndex = new HashMap();
-	private static final Set<Class<? extends Event>> events = new Reflections("net.dv8tion.jda.core.events").getSubTypesOf(Event.class);
 	private static List<CommandExecutionHook> commandHooks = new ArrayList<>();
 	private static List<JDA> shards = new ArrayList<>();
 	private static boolean devMode = false;
+	private static boolean eclipse = false;
 	private static User owner = null;
 	private static List<String> categories = new ArrayList<>();
 	private static List<Method> commands = new ArrayList<>();
 	private static List<Method> subcommands = new ArrayList<>();
 	private static List<Message> messages = new ArrayList<>();
-	private static List<List<Message>> allMessages = new ArrayList<>();
+	private static Map<String, List<Method>> linkedSubcommands = new HashMap();
+
+	static {
+		isWindows = osName.toLowerCase().contains("windows");
+		isMac = osName.toLowerCase().contains("mac");
+		isUnix = osName.toLowerCase().contains("nix") || osName.toLowerCase().contains("nux") || osName.toLowerCase().contains("aix");
+		isSolaris = osName.toLowerCase().contains("sunos");
+	}
 
 	public static void main(String[] args) {
 		try {
 			main0(args);
 		} catch (Throwable e) {
-			e.printStackTrace(); // so exceptions and errors are printed.
+			try {
+				print(LogType.ERROR, "An unknown error occured, please contact PlanetTeamSpeak#4157.");
+			} catch (Throwable e1) {
+				System.err.println("An unknown error occurred, please contact PlanetTeamSpeak#4157");
+			}
+			e.printStackTrace();
 			System.exit(1);
 		}
 	}
 
 	private static void main0(String[] args) {
+		for (ConsoleColors color : ConsoleColors.values())
+			System.out.println(color.getAnsiColorCode() + color.getName() + " " + color.name() + " " + ConsoleColors.RESET);
+		devMode = Lists.newArrayList(args).contains("-devMode");
+		eclipse = Lists.newArrayList(args).contains("-eclipse");
+		Locale.setDefault(Locale.US);
+		System.setSecurityManager(new ImpulseSM());
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			print(LogType.INFO, "Bot shutting down, deleting all temporary files.");
+			if (devMode()) print(LogType.DEBUG, "Bot shutting down, deleting all temporary files.");
+			else print(LogType.DEBUG, "Shutting down...");
 			int counter = 0;
 			if (new File("data/tmp").exists() && new File("data/tmp").isDirectory()) {
 				for (File file : new File("data/tmp").listFiles())
@@ -101,7 +131,7 @@ public class Main {
 							counter += 1;
 						} catch (Throwable e) {}
 			} else new File("data/tmp/").mkdirs();
-			print(LogType.INFO, String.format("Temporary files deleted, deleted %s file%s.", counter, counter == 1 ? "" : "s"));
+			print(LogType.DEBUG, String.format("Temporary files deleted, deleted %s file%s.", counter, counter == 1 ? "" : "s"));
 			try {
 				new File("data/tmp/info.txt").createNewFile();
 			} catch (Throwable e) {}
@@ -116,57 +146,80 @@ public class Main {
 				writer.println("DO NOT STORE FILES IN THIS DIRECTORY!");
 				IOUtils.closeQuietly(writer);
 			}
+			for (Thread thread : Thread.getAllStackTraces().keySet())
+				if (!thread.equals(mainThread)) thread.interrupt();
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {}
 		}));
-		devMode = Arrays.asList(args).contains("-devMode");
-		if (devMode) print(LogType.WARN, "Developer mode is turned on, this means that errors will NOT be sent privately to the owner of the bot and only the owner can use commands.");
+		if (devMode) print(LogType.DEBUG, "Developer mode is turned on, this means that errors will NOT be sent privately to the owner of the bot and only the owner can use commands.");
 		try {
 			if (!new File("data/").isDirectory())
 				new File("data/").mkdirs();
-			if (Config.getValue("token") == null || Config.getValue("prefix") == null || Config.getValue("ownerId") == null || Config.getValue("shards") == null) {
+			if (Config.get("token") == null || Config.get("prefix") == null || Config.get("ownerId") == null || Config.get("shards") == null) {
 				Config.addComment("Config file created by Impulse Discord Bot written by PlanetTeamSpeak.");
 				Config.addComment("The bot token used to log in, example: MzIzMTc2ODk2NTAwMzM0NTk0.DLfRfw.zZ7V1ljky12M5sKEVUZBAzwYUbo.");
-				Config.addValuePair("token", "");
+				Config.put("token", "");
 				Config.addComment("The prefix used to execute commands, this CANNOT be 2 or more slashes!");
-				Config.addValuePair("prefix", "\\");
+				Config.put("prefix", "\\");
 				Config.addComment("The ID of the owner, this should be your id as anyone who has this can do anything with your bot in any server.");
-				Config.addValuePair("ownerId", "");
-				Config.addComment("The amount of shards you want, for every shard the startup time takes 5 more seconds.");
-				Config.addComment("If you don't know what shards are, maybe you should learn some stuff about bots before making your own.");
-				Config.addValuePair("shards", "1");
+				Config.put("ownerId", "");
+				Config.addComment("The amount of shards you want, for every shard the startup time takes 5 more seconds, this is due to rate limiting.");
+				Config.addComment("If you don't know what shards are, maybe you should learn some stuff about computers before making your own Discord bot.");
+				Config.put("shards", "1");
 				Config.addComment("The key used to send bot stats to https://carbinotex.net");
-				Config.addValuePair("carbonitexKey", "");
+				Config.put("carbonitexKey", "");
 				Config.addComment("The key used to send bot stats to https://discordbots.org");
-				Config.addValuePair("discordBotListKey", "");
+				Config.put("discordBotListKey", "");
 				Config.addComment("The key used to send bot stats to https://bots.discord.pw");
-				Config.addValuePair("discordBotsKey", "");
+				Config.put("discordBotsKey", "");
 				print(LogType.WARN, "The config hasn't been changed yet, please open config.cfg and change the variables.");
 				System.exit(0);
-			} else if (Config.getValue("token").isEmpty() || Config.getValue("ownerId").isEmpty() || Config.getValue("prefix").isEmpty() || Config.getValue("shards").isEmpty()) {
+			} else if (Config.get("token").isEmpty() || Config.get("ownerId").isEmpty() || Config.get("prefix").isEmpty() || Config.get("shards").isEmpty()) {
 				print(LogType.WARN, "The config hasn't been changed yet, please open config.cfg and change the variables.");
 				System.exit(0);
 			}
-			apiKeys.put("w3hills", "5D58B696-7AF3-4DD0-1251-B5D24E16668C");
-			apiKeys.put("geocoding", "AIzaSyCXkFcW0v8XJWGK2Im2_fApsbh3I8OGCDI"); // they're all free, anyway.
-			apiKeys.put("timezone", "AIzaSyCXkFcW0v8XJWGK2Im2_fApsbh3I8OGCDI");
 			int shardAmount = 1;
-			if (!isInteger(Config.getValue("shards")))
+			if (!isInteger(Config.get("shards")))
 				print(LogType.WARN, "The value of key 'shards' isn't an integer, expecting 1.");
-			else shardAmount = Integer.parseInt(Config.getValue("shards"));
+			else shardAmount = Integer.parseInt(Config.get("shards"));
 			if (shardAmount < 1) shardAmount = 1;
 			print(LogType.INFO, "Loading commands...");
-			for (Class<? extends Object> clazz : new Reflections("com.ptsmods.impulse.commands", new SubTypesScanner(false)).getSubTypesOf(Object.class))
-				for (Method method : clazz.getMethods())
+			for (Class clazz : new Reflections("com.ptsmods.impulse.commands", new SubTypesScanner(false)).getSubTypesOf(Object.class))
+				for (Method method : getMethods(clazz))
 					if (method.isAnnotationPresent(Command.class)) {
-						commands.add(method);
-						getCategory(method.getAnnotation(Command.class).category());
-						commandIndex.put(method.getAnnotation(Command.class).name(), commands.size()-1);
+						if (Lists.newArrayList(method.getParameterTypes()).equals(Lists.newArrayList(CommandEvent.class))) {
+							commands.add(method);
+							getCategory(method.getAnnotation(Command.class).category());
+							commandIndex.put(method.getAnnotation(Command.class).name(), commands.size()-1);
+						} else print(LogType.DEBUG, "Found a command that requires more than only a CommandEvent.", method.toString());
 					} else if (method.isAnnotationPresent(Subcommand.class))
-						subcommands.add(method);
+						if (Lists.newArrayList(method.getParameterTypes()).equals(Lists.newArrayList(CommandEvent.class)))
+							try {
+								Class.forName(joinCustomChar(".", removeArg(method.getAnnotation(Subcommand.class).parent().split("\\."), method.getAnnotation(Subcommand.class).parent().split("\\.").length-1)), false, ClassLoader.getSystemClassLoader());
+								subcommands.add(method);
+							} catch (ClassNotFoundException e) {
+								print(LogType.DEBUG, "Found a subcommand that has an invalid parent.", method.toString());
+							}
+						else print(LogType.DEBUG, "Found a command that requires more than only a CommandEvent.", method.toString());
+			for (Method subcommand : subcommands) {
+				Method parentCommand;
+				try {
+					parentCommand = getParentCommand(subcommand.getAnnotation(Subcommand.class));
+				} catch (ClassNotFoundException | NoSuchMethodException e) {
+					print(LogType.DEBUG, "The parent command of", subcommand, "could not be found.", subcommand.getAnnotation(Subcommand.class).parent());
+					continue;
+				}
+				if (!linkedSubcommands.containsKey(parentCommand.toString())) linkedSubcommands.put(parentCommand.toString(), Lists.newArrayList(subcommand));
+				else ((List) linkedSubcommands.get(parentCommand.toString())).add(subcommand);
+			}
+			for (Method command : commands)
+				if (!linkedSubcommands.containsKey(command.toString())) linkedSubcommands.put(command.toString(), new ArrayList());
 			print(LogType.INFO, commands.size() + " commands and " + subcommands.size() + " subcommands loaded, logging in...");
 			ShardedRateLimiter rateLimiter = new ShardedRateLimiter();
 			for (int i : range(shardAmount)) {
 				JDA shard = new JDABuilder(AccountType.BOT)
-						.setToken(Config.getValue("token"))
+						.setToken(Config.get("token"))
 						.addEventListener(new EventHandler())
 						.useSharding(shards.size(), shardAmount)
 						.setReconnectQueue(new SessionReconnectQueue())
@@ -179,16 +232,22 @@ public class Main {
 					Thread.sleep(5000);
 				}
 			}
-			owner = shards.get(0).getUserById(Config.getValue("ownerId"));
+			owner = shards.get(0).getUserById(Config.get("ownerId"));
+			if (owner == null) {
+				print(LogType.WARN, "Could not find a user with the given owner ID.");
+				shutdown(0);
+			}
 		} catch (LoginException e) {
 			print(LogType.ERROR, "The bot could not log in with the given token, please change the token in config.cfg.");
 			System.exit(0);
 		} catch (RateLimitedException e) {
 			print(LogType.ERROR, "The bot has been rate limited, please try restarting.");
 			System.exit(0);
-		} catch (Throwable e) {
-			print(LogType.ERROR, "An unknown error occured, please contact PlanetTeamSpeak#4157.");
-			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			print(LogType.ERROR, "Timeout, please restart when you have a solid internet connection.");
+			System.exit(0);
+		} catch (InterruptedException e) {
+			print(LogType.WARN, "The main thread was interrupted, the bot is now being shutdown.");
 			System.exit(1);
 		}
 		print(LogType.INFO, String.format("Succesfully logged in as %s#%s, took %s milliseconds. Owner = %s#%s, prefix = %s.",
@@ -197,19 +256,22 @@ public class Main {
 				System.currentTimeMillis() - started.getTime(),
 				owner.getName(),
 				owner.getDiscriminator(),
-				Config.getValue("prefix")));
+				Config.get("prefix")));
 		for (JDA shard : shards)
-			shard.getPresence().setGame(Game.of("try " + Config.getValue("prefix") + "help!"));
+			shard.getPresence().setGame(Game.of(devMode() ? "DEVELOPER MODE" : "try " + Config.get("prefix") + "help!"));
+		done = true;
 	}
 
-	public static <T> void print(String threadName, LogType logType, T... message) {
+	public static <T> boolean print(String threadName, LogType logType, T... message) {
+		if (logType == LogType.DEBUG && !devMode()) return true;
 		String[] args = new String[message.length];
 		for (int x = 0; x < message.length; x++)
 			if (message[x] == null) args[x] = "null";
 			else args[x] = message[x].toString();
-		if (logType == LogType.INFO) ConsoleColors.print("[" + getFormattedTime() + "] [" + threadName + "/INFO]: " + join(args) + "\n");
-		else if (logType == LogType.WARN) ConsoleColors.print(ConsoleColors.YELLOW + "[" + getFormattedTime() + "] [" + threadName + "/WARN]: " + join(args) + "\u001B[0m\n");
-		else if (logType == LogType.ERROR) ConsoleColors.print(ConsoleColors.RED + "[" + getFormattedTime() + "] [" + threadName + "/ERROR]: " + join(args) + "\n");
+		String output = String.format(ConsoleColors.RESET + "%s[%s] [%s/%s]: %s\n" + ConsoleColors.RESET, logType.color, getFormattedTime(), threadName, logType.name, join(args));
+		if (!eclipse) ConsoleColors.print(output);
+		else System.out.print(output); // I use a plugin so Eclipse can support ANSI colors, when using ConsoleColors in Eclipse there are no colors.
+		return true;
 	}
 
 	public static String getFormattedTime() {
@@ -218,8 +280,8 @@ public class Main {
 				"" + (LocalDateTime.now().getSecond() < 10 ? "0" : "") + LocalDateTime.now().getSecond());
 	}
 
-	public static <T> void print(LogType logType, T... message) {
-		print(shards.size() > 0 ? shards.get(0).getSelfUser().getName() : "Discord Bot", logType, message);
+	public static <T> boolean print(LogType logType, T... message) {
+		return print(shards.size() > 0 ? shards.get(0).getSelfUser().getName() : "Discord Bot", logType, message);
 	}
 
 	public static String join(List<String> list) {
@@ -265,10 +327,10 @@ public class Main {
 		return array;
 	}
 
-	public static Double[] range(Double range) {
-		Double[] array = new Double[range.intValue()];
-		for (Double x = 0D; x < array.length; x++)
-			array[x.intValue()] = x;
+	public static Double[] range(double range) {
+		Double[] array = new Double[(int) range];
+		for (double x = 0; x < array.length; x++)
+			array[(int) x] = x;
 		return array;
 	}
 
@@ -282,7 +344,7 @@ public class Main {
 
 	public static User getUserFromInput(Message input) {
 		try {
-			return !input.getMentionedUsers().isEmpty() ? input.getMentionedUsers().get(0) : input.getContent().startsWith(Config.getValue("prefix")) ? input.getGuild().getMembersByName(getUsernameFirstArg(input), true).get(0).getUser() : null;
+			return !input.getMentionedUsers().isEmpty() ? input.getMentionedUsers().get(0) : input.getContent().startsWith(Config.get("prefix")) ? input.getGuild().getMembersByName(getUsernameFirstArg(input), true).get(0).getUser() : null;
 		} catch (Throwable e) {return null;}
 	}
 
@@ -307,13 +369,13 @@ public class Main {
 		return null;
 	}
 
-	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event, Method cmd) {
+	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event, Method cmd, String extraMsg) {
 		if (cmd.isAnnotationPresent(Command.class)) {
 			Command command = cmd.getAnnotation(Command.class);
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
 			String cmdHelp = command.help() == null ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()));
 			String cmdSubcommands = "";
-			if (getSubcommands(cmd).size() != 0) {
+			if (!getSubcommands(cmd).isEmpty()) {
 				cmdSubcommands = "**Subcommands**\n\t";
 				for (Method scommand : getSubcommands(cmd)) {
 					Subcommand scmd = scommand.getAnnotation(Subcommand.class);
@@ -326,10 +388,11 @@ public class Main {
 				}
 				cmdSubcommands = cmdSubcommands.trim();
 			}
-			return channel.sendMessage(String.format("**%s**%s%s",
-					Config.getValue("prefix") + cmdName,
+			return channel.sendMessage(String.format("**%s**%s%s%s",
+					Config.get("prefix") + cmdName,
 					cmdHelp.isEmpty() ? "" : ":\n\n" + cmdHelp,
-							cmdSubcommands.isEmpty() ? "" : "\n\n" + cmdSubcommands)).complete();
+							extraMsg == null || extraMsg.isEmpty() ? "" : (cmdHelp.isEmpty() ? ":" : "") + "\n\n" + extraMsg,
+									cmdSubcommands.isEmpty() ? "" : "\n\n" + cmdSubcommands)).complete();
 		} else if (cmd.isAnnotationPresent(Subcommand.class)) {
 			Subcommand command = cmd.getAnnotation(Subcommand.class);
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
@@ -360,24 +423,55 @@ public class Main {
 			} catch (ClassNotFoundException | NoSuchMethodException e) {
 				return null;
 			}
-			return channel.sendMessage(String.format("**%s**%s%s",
-					Config.getValue("prefix") + cmdName,
+			return channel.sendMessage(String.format("**%s**%s%s%s",
+					Config.get("prefix") + cmdName,
 					cmdHelp.isEmpty() ? "" : ":\n\n" + cmdHelp,
-							cmdSubcommands.isEmpty() ? "" : "\n\n" + cmdSubcommands)).complete();
+							extraMsg == null || extraMsg.isEmpty() ? "" : (cmdHelp.isEmpty() ? ":" : "") + "\n\n" + extraMsg,
+									cmdSubcommands.isEmpty() ? "" : "\n\n" + cmdSubcommands)).complete();
 		}
 		return null;
 	}
 
+	/**
+	 * Equivalent to calling {@link com.ptsmods.impulse.Main#sendCommandHelp(MessageChannel, CommandEvent, Method, String) Main#sendCommandHelp(event.getChannel(), event, cmd, null)}
+	 */
 	public static Message sendCommandHelp(CommandEvent event, Method cmd) {
-		return sendCommandHelp(event.getChannel(), event, cmd);
+		return sendCommandHelp(event.getChannel(), event, cmd, null);
 	}
 
+	/**
+	 * Equivalent to calling {@link com.ptsmods.impulse.Main#sendCommandHelp(MessageChannel, CommandEvent, Method, String) Main#sendCommandHelp(event.getChannel(), event, event.getCommand(), null)}
+	 */
 	public static Message sendCommandHelp(CommandEvent event) {
-		return sendCommandHelp(event.getChannel(), event, event.getCommand());
+		return sendCommandHelp(event.getChannel(), event, event.getCommand(), null);
 	}
 
+	/**
+	 * Equivalent to calling {@link com.ptsmods.impulse.Main#sendCommandHelp(MessageChannel, CommandEvent, Method, String) Main#sendCommandHelp(channel, event, event.getCommand(), null)}
+	 */
 	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event) {
-		return sendCommandHelp(channel, event, event.getCommand());
+		return sendCommandHelp(channel, event, event.getCommand(), null);
+	}
+
+	/**
+	 * Equivalent to calling {@link com.ptsmods.impulse.Main#sendCommandHelp(MessageChannel, CommandEvent, Method, String) Main#sendCommandHelp(event.getChannel(), event, cmd, null)}
+	 */
+	public static Message sendCommandHelp(CommandEvent event, Method cmd, String extraMsg) {
+		return sendCommandHelp(event.getChannel(), event, cmd, extraMsg);
+	}
+
+	/**
+	 * Equivalent to calling {@link com.ptsmods.impulse.Main#sendCommandHelp(MessageChannel, CommandEvent, Method, String) Main#sendCommandHelp(event.getChannel(), event, event.getCommand(), extraMsg)}
+	 */
+	public static Message sendCommandHelp(CommandEvent event, String extraMsg) {
+		return sendCommandHelp(event.getChannel(), event, event.getCommand(), extraMsg);
+	}
+
+	/**
+	 * Equivalent to calling {@link com.ptsmods.impulse.Main#sendCommandHelp(MessageChannel, CommandEvent, Method, String) Main#sendCommandHelp(event.getChannel(), event, cmd, null)}
+	 */
+	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event, String extraMsg) {
+		return sendCommandHelp(channel, event, event.getCommand(), extraMsg);
 	}
 
 	@Nullable
@@ -413,6 +507,15 @@ public class Main {
 		});
 	}
 
+	public static boolean isShort(String s) {
+		try {
+			Short.parseShort(s);
+		} catch (Throwable e) {
+			return false;
+		}
+		return true;
+	}
+
 	public static boolean isInteger(String s) {
 		try {
 			Integer.parseInt(s);
@@ -431,7 +534,26 @@ public class Main {
 		return true;
 	}
 
+	public static boolean isFloat(String s) {
+		try {
+			Float.parseFloat(s);
+		} catch (Throwable e) {
+			return false;
+		}
+		return true;
+	}
+
+	public static boolean isDouble(String s) {
+		try {
+			Double.parseDouble(s);
+		} catch (Throwable e) {
+			return false;
+		}
+		return true;
+	}
+
 	public static boolean devMode() {
+		if (devMode && shards.size() > 0 && !shards.get(0).getPresence().getGame().equals(Game.of("DEVELOPER MODE"))) setGame("DEVELOPER MODE");
 		return devMode;
 	}
 
@@ -439,8 +561,8 @@ public class Main {
 		devMode = bool;
 	}
 
-	public static User getOwner() {
-		return owner;
+	public static UserImpl getOwner() {
+		return (UserImpl) owner;
 	}
 
 	public static void sendPrivateMessage(User user, String msg) {
@@ -473,9 +595,9 @@ public class Main {
 		return castStringArray(removeArgs((Object[]) args, arg));
 	}
 
-	public static double factorial(Double d) {
+	public static double factorial(double d) {
 		Double[] doubles = range(d);
-		doubles = castDoubleArray(removeArg(doubles, 0));
+		doubles = castDoubleArray(removeArgs(doubles, 0, 1));
 		ArrayUtils.reverse(doubles);
 		for (double x : doubles)
 			d *= x;
@@ -545,14 +667,14 @@ public class Main {
 					while (ch >= 'a' && ch <= 'z' || ch == '!') nextChar();
 					String func = str.substring(startPos, pos);
 					x = parseFactor();
-					if (func.equals("sqrt"))      x = Math.sqrt(x);
-					else if (func.equals("cbrt")) x = Math.cbrt(x);
-					else if (func.equals("sin"))  x = Math.sin(Math.toRadians(x));
-					else if (func.equals("cos"))  x = Math.cos(Math.toRadians(x));
-					else if (func.equals("tan"))  x = Math.tan(Math.toRadians(x));
-					else if (func.equals("pi"))   x = Math.PI * (x == 0D ? 1D : x);
-					else if (func.equals("!"))    x = factorial(x);
-					else throw new RuntimeException("Unknown function: " + func);
+					if (func.equals("sqrt"))    					x = Math.sqrt(x);
+					else if (func.equals("cbrt")) 					x = Math.cbrt(x);
+					else if (func.equals("sin"))					x = Math.sin(Math.toRadians(x));
+					else if (func.equals("cos"))					x = Math.cos(Math.toRadians(x));
+					else if (func.equals("tan"))				 	x = Math.tan(Math.toRadians(x));
+					else if (func.equals("pi"))   					x = Math.PI * (x == 0D ? 1D : x);
+					else if (func.equals("!") && x > 0 && x <= 170) x = factorial(x);
+					else if (func.equals("!"))						throw new RuntimeException("Cannot factorialize numbers higher than 170 or lower than 1.");
 				} else
 					if (ch != -1) throw new RuntimeException("Unexpected character: " + (char)ch);
 					else x = 0D;
@@ -564,15 +686,19 @@ public class Main {
 	}
 
 	public static String[] castStringArray(Object[] array) {
-		return Arrays.copyOf(array, array.length, String[].class);
+		return castArray(array, new String[0]);
 	}
 
 	public static Integer[] castIntArray(Object[] array) {
-		return Arrays.copyOf(array, array.length, Integer[].class);
+		return castArray(array, new Integer[0]);
 	}
 
 	public static Double[] castDoubleArray(Object[] array) {
-		return Arrays.copyOf(array, array.length, Double[].class);
+		return castArray(array, new Double[0]);
+	}
+
+	public static <T, U> T[] castArray(U[] original, T[] newType) {
+		return (T[]) Arrays.copyOf(original, original.length, newType.getClass());
 	}
 
 	public static List<String> getCategories() {
@@ -625,23 +751,33 @@ public class Main {
 		}
 	}
 
-	public static String formatMillis(long millis) {
+	public static String formatMillis(long millis, boolean includeDays, boolean includeHours, boolean includeMinutes, boolean includeSeconds, boolean includeMillis, boolean sortLogical) {
 		String[] output = new String[4];
-		String outputString = "";
-		long days = TimeUnit.MILLISECONDS.toDays(millis);
-		long hours = TimeUnit.MILLISECONDS.toHours(millis) % 24;
-		long minutes = TimeUnit.MILLISECONDS.toMinutes(millis) % 60;
-		long seconds = TimeUnit.MILLISECONDS.toSeconds(millis) % 60;
+		long days = includeDays ? TimeUnit.MILLISECONDS.toDays(millis) : 0;
+		long hours = includeHours ? TimeUnit.MILLISECONDS.toHours(millis) % 24 : 0;
+		long minutes = includeMinutes ? TimeUnit.MILLISECONDS.toMinutes(millis) % 60 : 0;
+		long seconds = includeSeconds ? TimeUnit.MILLISECONDS.toSeconds(millis) % 60 : 0;
+		millis = includeMillis ? millis % 1000 : 0;
 		if (days != 0) output[0] = "**" + days + "** day" + (days != 1 ? "s" : "");
 		if (hours != 0) output[1] = "**" + hours + "** hour" + (hours != 1 ? "s" : "");
 		if (minutes != 0) output[2] = "**" + minutes + "** minute" + (minutes != 1 ? "s" : "");
-		if (seconds != 0) output[3] = "**" + seconds + "** second" + (seconds != 1 ? "s" : "");
+		if (seconds != 0 && millis != 0 && sortLogical) output[3] = "**" + seconds + "." + millis + "** seconds";
+		else if (seconds != 0) output[3] = "**" + seconds + "** second" + (seconds != 1 ? "s" : "");
+		else if (millis != 0) {
+			output = Arrays.copyOf(output, 5);
+			output[4] = "**" + millis + "** millisecond" + (millis != 1 ? "s" : "");
+		}
 		while (Lists.newArrayList(output).contains(null))
 			for (int x = 0; x < output.length; x++)
 				if (output[x] == null) output = removeArg(output, x);
-		outputString = joinNiceString(output);
-		if (outputString.trim().endsWith(",")) outputString = outputString.trim().substring(0, outputString.trim().length()-1);
-		return outputString;
+		return joinNiceString(output).trim();
+	}
+
+	/**
+	 * This is equivalent to {@link com.ptsmods.impulse.Main#formatMillis(long, boolean, boolean, boolean, boolean, boolean, boolean) formatMillis(millis, true, true, true, true, false, false)}.
+	 */
+	public static String formatMillis(long millis) {
+		return formatMillis(millis, true, true, true, true, false, false);
 	}
 
 	public static List<Guild> getGuilds() {
@@ -755,15 +891,11 @@ public class Main {
 	}
 
 	public static boolean addReceivedMessage(Message message) {
-		if (messages.size() == Integer.MAX_VALUE) {
-			allMessages.add(messages);
-			messages.clear();
-		}
 		return messages.add(message);
 	}
 
-	public static List<List<Message>> getReceivedMessages() {
-		return allMessages;
+	public static List<Message> getReceivedMessages() {
+		return new ArrayList<>(messages);
 	}
 
 	/**
@@ -816,12 +948,17 @@ public class Main {
 		return dirtyString.replaceAll("(\\r)+", "").replaceAll("\\\\\"", "").trim();
 	}
 
-	public static <T> String joinNiceString(T... array) {
+	public static <T> String joinNiceString(List<T> list) {
 		String output = "";
-		for (int x = 0; x < array.length; x++)
-			if (x+2 != array.length) output += array[x].toString() + ", ";
-			else output += array[x].toString() + " and ";
+		for (int x = 0; x < list.size(); x++)
+			if (x+1 == list.size()) output += list.get(x).toString();
+			else if (x+2 != list.size()) output += list.get(x).toString() + ", ";
+			else output += list.get(x).toString() + ", and ";
 		return output;
+	}
+
+	public static <T> String joinNiceString(T... array) {
+		return joinNiceString(Lists.newArrayList(array));
 	}
 
 	public static List<JDA> getShards() {
@@ -849,7 +986,18 @@ public class Main {
 			try {
 				return (int) d;
 			} catch (Throwable e) {
-				return 0;
+				return -1;
+			}
+	}
+
+	public static Long getLongFromPossibleDouble(Object d) {
+		if (d instanceof Double) return ((Double) d).longValue();
+		else if (d instanceof Long) return (Long) d;
+		else
+			try {
+				return (long) d;
+			} catch (Throwable e) {
+				return -1L;
 			}
 	}
 
@@ -862,41 +1010,33 @@ public class Main {
 		}
 	}
 
-	public static void restart() {
-		File currentJar = null;
-		try {
-			currentJar = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-		} catch (Throwable e) {
-			throw new RuntimeException(e);
-		}
-
-		if(!currentJar.getName().endsWith(".jar"))
-			return;
-
-		try {
-			Runtime.getRuntime().exec("java -cp " + currentJar.getPath() + " com.ptsmods.impulse.Main");
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		System.exit(0);
+	public static String percentEncode(String text) {
+		return percentEncode(text, false);
 	}
 
 	/**
 	 * Replace characters to their URL encoded counter-part.
 	 * E.g. ' becomes %27
-	 * @param url The url which contains characters that need encoding.
+	 * @param text The text that needs encoding.
+	 * @param encodeAlphanumeric A boolean which when true will also encode characters like a, b, c, 1, 2, and 3.
 	 * @return A never-null String encoded for use with URLs (which is probably 3 times as long as the input text).
 	 */
-	public static String percentEncode(String text) {
+	public static String percentEncode(String text, boolean encodeAlphanumeric) {
 		String[] parts = text.split("\n");
 		String[] outputParts = new String[parts.length];
 		for (int x = 0; x < parts.length; x++) {
 			String output = "";
 			for (Character ch : parts[x].toCharArray())
-				output += "%" + Integer.toHexString(ch);
+				if (encodeAlphanumeric || !isAlphanumeric(ch)) output += "%" + Integer.toHexString(ch);
+				else output += ch;
 			outputParts[x] = output;
 		}
 		return joinCustomChar("%0A", outputParts);
+	}
+
+	public static boolean isAlphanumeric(char ch) {
+		ch = Character.toLowerCase(ch);
+		return ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9';
 	}
 
 	public static <T extends Comparable<? super T>> List<T> sort(List<T> list) {
@@ -928,16 +1068,12 @@ public class Main {
 				for (Method method1 : methods)
 					if (method1.getParameterCount() == params.length && method1.getName().equals(method)) {
 						for (int x = 0; x < params.length && x < method1.getParameterCount(); x++)
-							if (!method1.getParameterTypes()[x].getName().equals(params[x].getName())) return null;
+							if (!method1.getParameterTypes()[x].equals(params[x])) return null;
 						return method1;
 					}
 				return null;
 			}
 		}.getMethod();
-	}
-
-	public static Set<Class<? extends Event>> getAllEvents() {
-		return events;
 	}
 
 	public static void setOnlineStatus(OnlineStatus status) {
@@ -971,16 +1107,16 @@ public class Main {
 	}
 
 	public static String getPrefix(Guild guild) {
+		if (guild == null) return Config.get("prefix");
 		try {
-			Map prefixes = DataIO.loadJson("data/mod/serverprefixes.json", Map.class);
-			prefixes = prefixes == null ? new HashMap<>() : prefixes;
-			String serverPrefix = Config.getValue("prefix");
+			Map settings = DataIO.loadJsonOrDefault("data/mod/settings.json", Map.class, new HashMap());
+			String serverPrefix = Config.get("prefix");
 			try {
-				if (prefixes.containsKey(guild.getId())) serverPrefix = (String) ((Map) prefixes.get(guild.getId())).get("serverPrefix");
+				if (settings.containsKey(guild.getId())) serverPrefix = (String) ((Map) settings.get(guild.getId())).get("serverPrefix");
 			} catch (NullPointerException e) { }
-			return serverPrefix;
+			return serverPrefix == null || serverPrefix.isEmpty() ? Config.get("prefix") : serverPrefix;
 		} catch (IOException e) {
-			throw new RuntimeException("An unknown error occured while loading the server prefix file.", e);
+			return Config.get("prefix");
 		}
 	}
 
@@ -994,7 +1130,7 @@ public class Main {
 	public static String generateStackTrace(Throwable cause) {
 		String stackTrace = String.format("%s: %s\n\t", cause.getClass().toString(), cause.getMessage());
 		for (StackTraceElement element : cause.getStackTrace())
-			stackTrace += String.format("at %s.%s(%s)\n\t", element.getClassName(), element.getMethodName(), element.getFileName() != null ? element.getFileName() + ":" + element.getLineNumber() : "Unknown Source");
+			stackTrace += "at" + element.toString() + "\n\t";
 		while (cause.getCause() != null) {
 			cause = cause.getCause();
 			stackTrace = stackTrace.trim();
@@ -1053,22 +1189,102 @@ public class Main {
 	}
 
 	public static List<Method> getSubcommands(Method parent) {
-		List<Method> children = new ArrayList();
-		for (Method subcommand : subcommands) {
-			Method parentCommand;
-			try {
-				parentCommand = getParentCommand(subcommand.getAnnotation(Subcommand.class));
-			} catch (ClassNotFoundException | NoSuchMethodException e) {
-				print(LogType.WARN, "The parent command of", subcommand, "could not be found.", subcommand.getAnnotation(Subcommand.class).parent());
-				continue;
+		return linkedSubcommands.get(parent.toString()) == null ? new ArrayList() : linkedSubcommands.get(parent.toString());
+	}
+
+	/**
+	 * @param obj The object to clone
+	 * @return A cloned version of the given object.
+	 * @author WillingLearner&nbsp;(https://stackoverflow.com/a/25338780)
+	 */
+	public static <T> T clone(T obj) {
+		try {
+			Object clone = obj.getClass().newInstance();
+			for (Field field : obj.getClass().getDeclaredFields()) {
+				field.setAccessible(true);
+				if (field.get(obj) == null || Modifier.isFinal(field.getModifiers()))
+					continue;
+				if (field.getType().isPrimitive() || field.getType().equals(String.class)
+						|| field.getType().getSuperclass() != null && field.getType().getSuperclass().equals(Number.class)
+						|| field.getType().equals(Boolean.class))
+					field.set(clone, field.get(obj));
+				else {
+					Object childObj = field.get(obj);
+					if (childObj == obj)
+						field.set(clone, clone);
+					else
+						field.set(clone, clone(field.get(obj)));
+				}
 			}
-			if (parentCommand.equals(parent)) children.add(subcommand);
+			return (T) clone;
+		} catch (Exception e) {
+			return null;
 		}
-		return children;
+	}
+
+	public static <T> T[] createArray(T... args) {
+		return args;
+	}
+
+	public static <T> List<T> add(List<T> list, T object) {
+		list.add(object);
+		return list;
+	}
+
+	public static float percentage(double max, double amount) {
+		return (float) (amount/max * 100D);
+	}
+
+	public static float average(float... floats) {
+		float average = 0F;
+		for (float f : floats)
+			average += f;
+		return average/floats.length;
+	}
+
+	public static String getOSName() {
+		return osName;
+	}
+
+	public static boolean isWindows() {
+		return isWindows;
+	}
+
+	public static boolean isMac() {
+		return isMac;
+	}
+
+	public static boolean isUnix() {
+		return isUnix;
+	}
+
+	public static boolean isSolaris() {
+		return isSolaris;
+	}
+
+	public static <T> T getOrDefault(List<T> list, int index, T fallback) {
+		if (list == null || index >= list.size() || index < 0) return fallback;
+		else return list.get(index);
+	}
+
+	public static final boolean done() {
+		return Boolean.valueOf(done);
 	}
 
 	public enum LogType {
-		INFO(), ERROR(), WARN();
+		DEBUG("DEBUG", ConsoleColors.HIGHINTENSITY_BLUE),
+		INFO("INFO", ConsoleColors.UNKNOWN),
+		WARN("WARN", ConsoleColors.YELLOW),
+		ERROR("ERROR", ConsoleColors.RED);
+
+		public final String name;
+		public final ConsoleColors color;
+
+		LogType(String name, ConsoleColors color) {
+			this.name = name;
+			this.color = color;
+		}
+
 	}
 
 }

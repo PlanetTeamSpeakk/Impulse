@@ -16,7 +16,9 @@ public class Config {
 	public static final File configFile = new File("config.cfg");
 	private static Map<String, String> keys = new HashMap<>();
 
-	private Config() { }
+	private Config() throws Exception {
+		throw new Exception("No.");
+	}
 
 	static {
 		try {
@@ -35,22 +37,23 @@ public class Config {
 	}
 
 	@Nullable
-	public static String getValue(String key) {
+	public static String get(String key) {
 		return keys.get(key);
 	}
 
-	public static void addValuePair(String key, String value) {
+	public static void put(String key, String value) {
 		if (!keys.containsKey(key)) {
-			addLine(key + "=" + value);
+			addLines(key + "=" + value);
 			keys.put(key, value);
 		}
 	}
 
 	public static void addComment(String comment) {
-		addLine("// " + comment);
+		addLines("// " + comment.replace("\n", "\n//"));
 	}
 
-	private static final void addLine(String line) {
+	private static final void addLines(String... lines) {
+		if (lines == null) throw new NullPointerException("The given argument 'lines' cannot be null.");
 		if (new File("config.cfg").isDirectory()) new File("config.cfg").delete();
 		PrintWriter writer = null;
 		try {
@@ -59,7 +62,9 @@ public class Config {
 			throw new RuntimeException("Could not open config file.");
 		}
 		try {
-			writer.println(line);
+			writer.close();
+			for (String line : lines)
+				writer.println(line);
 		} finally {
 			IOUtils.closeQuietly(writer);
 		}

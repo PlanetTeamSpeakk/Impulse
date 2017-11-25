@@ -29,7 +29,7 @@ public class DataIO {
 		directories = Main.removeArg(directories, directories.length-1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();
 		if (!new File(path).exists()) new File(path).createNewFile();
-		String tmpPath = "data/tmp/" + Random.randDouble(1000, 10000, false) + ".tmp";
+		String tmpPath = "data/tmp/" + Random.randDouble(1000, 9999, false) + ".tmp";
 		directories = tmpPath.split("/");
 		directories = Main.removeArg(directories, directories.length-1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();
@@ -58,13 +58,6 @@ public class DataIO {
 
 
 	/**
-	 * Usage:
-	 * try {<br>
-	 * &emsp;settings = DataIO.loadJson("data/economy/settings.json", Map.class);<br>
-	 * &emsp;settings = settings == null ? new HashMap() : settings;<br>
-	 * } catch (IOException e) {<br>
-	 * &emsp;throw new RuntimeException("An unknown error occurred while loading the data file.", e);<br>
-	 * }
 	 * @param path The path to the JSON file.
 	 * @param clazz The class which should be returned.
 	 * @return Null if the file is empty, an instance of the given class otherwise.
@@ -78,15 +71,11 @@ public class DataIO {
 		if (!new File(path).exists()) new File(path).createNewFile();
 		if (Files.readAllLines(new File(path).toPath()).isEmpty())
 			return null;
-		return new Gson().fromJson(Main.join(Files.readAllLines(new File(path).toPath()).toArray(new String[0])), clazz);
+		return new Gson().fromJson(Main.join(Files.readAllLines(new File(path).toPath())), clazz);
 	}
 
-	public static <T> T loadJsonOrDefault(String path, Class<T> clazz, Class<? extends T> fallback) throws IOException {
-		try {
-			return loadJson(path, clazz) == null ? fallback.newInstance() : loadJson(path, clazz);
-		} catch (InstantiationException | IllegalAccessException e) {
-			return null;
-		}
+	public static <T, U extends T> T loadJsonOrDefault(String path, Class<T> clazz, U fallback) throws IOException {
+		return loadJson(path, clazz) == null ? fallback : loadJson(path, clazz);
 	}
 
 	public static <T> T loadJsonQuietly(String path, Class<T> clazz) {
@@ -97,11 +86,11 @@ public class DataIO {
 		}
 	}
 
-	public static <T> T loadJsonOrDefaultQuietly(String path, Class<T> clazz, Class<? extends T> fallback) {
+	public static <T, U extends T> T loadJsonOrDefaultQuietly(String path, Class<T> clazz, U fallback) {
 		try {
 			return loadJsonOrDefault(path, clazz, fallback);
 		} catch (Throwable e) {
-			return null;
+			return fallback;
 		}
 	}
 

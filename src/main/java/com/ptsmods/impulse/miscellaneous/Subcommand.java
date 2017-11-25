@@ -20,11 +20,12 @@ public @interface Subcommand {
 	public String parent();
 	public boolean guildOnly() default false;
 	public boolean hidden() default false;
+	public boolean sendTyping() default true;
 	public String[] aliases() default {};
 	public String arguments() default "";
 	public Permission[] botPermissions() default {};
 	public Permission[] userPermissions() default {};
-	public int cooldown() default 1;
+	public double cooldown() default 1D;
 	public boolean ownerCommand() default false;
 	public String requiredRole() default "";
 }

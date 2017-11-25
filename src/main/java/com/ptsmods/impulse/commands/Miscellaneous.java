@@ -10,7 +10,6 @@ import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.Main;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
-import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.DataIO;
 
 import net.dv8tion.jda.core.Permission;
@@ -43,7 +42,7 @@ public class Miscellaneous {
 			try {
 				DataIO.saveJson(settings, "data/customcommands/settings.json");
 			} catch (IOException e) {
-				throw new RuntimeException("An unknown error occured while loading the data file.", e);
+				throw new RuntimeException("An unknown error occurred while loading the data file.", e);
 			}
 			event.reply("Successfully added the custom command.");
 		} else Main.sendCommandHelp(event);
@@ -59,7 +58,7 @@ public class Miscellaneous {
 				try {
 					DataIO.saveJson(settings, "data/customcommands/settings.json");
 				} catch (IOException e) {
-					throw new RuntimeException("An unknown error occured while loading the data file.", e);
+					throw new RuntimeException("An unknown error occurred while loading the data file.", e);
 				}
 				event.reply("Successfully removed the custom command.");
 			}
@@ -77,7 +76,7 @@ public class Miscellaneous {
 				try {
 					DataIO.saveJson(settings, "data/customcommands/settings.json");
 				} catch (IOException e) {
-					throw new RuntimeException("An unknown error occured while loading the data file.", e);
+					throw new RuntimeException("An unknown error occurred while loading the data file.", e);
 				}
 				event.reply("Successfully added the custom command.");
 			}
@@ -87,17 +86,7 @@ public class Miscellaneous {
 	@SubscribeEvent
 	public void onMessageReceived(MessageReceivedEvent event) {
 		if (event.getGuild() == null) return;
-		String serverPrefix = Config.getValue("prefix");
-		try {
-			Map prefixes = DataIO.loadJson("data/mod/settings.json", Map.class);
-			prefixes = prefixes == null ? new HashMap<>() : prefixes;
-			try {
-				if (prefixes.containsKey(event.getGuild().getId())) serverPrefix = (String) ((Map) prefixes.get(event.getGuild().getId())).get("serverPrefix");
-			} catch (NullPointerException e) { }
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-		if (serverPrefix == null) serverPrefix = Config.getValue("prefix");
+		String serverPrefix = Main.getPrefix(event.getGuild());
 		if (event.getMessage().getContent().startsWith(serverPrefix))
 			if (settings.containsKey(event.getGuild().getId()) && ((Map) settings.get(event.getGuild().getId())).containsKey(event.getMessage().getContent().substring(serverPrefix.length()))) {
 				try {

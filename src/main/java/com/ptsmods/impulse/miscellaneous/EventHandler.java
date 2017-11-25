@@ -9,42 +9,58 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
+
 import com.ptsmods.impulse.Main;
 import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.utils.Config;
-import com.ptsmods.impulse.utils.DataIO;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.ChannelType;
-import net.dv8tion.jda.core.entities.impl.MessageImpl;
+import net.dv8tion.jda.core.entities.impl.JDAImpl;
 import net.dv8tion.jda.core.events.Event;
 import net.dv8tion.jda.core.events.ReadyEvent;
+import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.core.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.requests.Requester;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class EventHandler extends ListenerAdapter {
 
-	private static List<String> prefixedMessages = new ArrayList();
+	private static Map<String, Map<String, Long>> cooldowns = new HashMap();
 
 	@Override
 	public void onGenericEvent(Event event) {
-		for (Class clazz : Main.getAllEvents())
-			if (event.getClass().getName().equals(clazz.getName()))
-				for (Method cmd : Main.getCommands()) {
-					Method method = Main.getMethod(cmd.getDeclaringClass(), "on" + clazz.getSimpleName().replaceAll("Event", ""), clazz);
-					if (method != null && method.isAnnotationPresent(SubscribeEvent.class)) {
-						method.setAccessible(true);
-						Main.runAsynchronously(() -> {
-							try {
-								method.invoke(cmd.getDeclaringClass().newInstance(), event);
-							} catch (InvocationTargetException e) {
-								e.getCause().printStackTrace();
-							} catch (IllegalAccessException | IllegalArgumentException | InstantiationException e) {
-								e.printStackTrace();
-							}
-						});
+		List<Class> passedClasses = new ArrayList();
+		for (Method cmd : Main.getCommands()) {
+			if (passedClasses.contains(cmd.getDeclaringClass())) continue;
+			passedClasses.add(cmd.getDeclaringClass());
+			Method method = Main.getMethod(cmd.getDeclaringClass(), "on" + event.getClass().getSimpleName().replaceAll("Event", ""), event.getClass());
+			if (method != null && method.isAnnotationPresent(SubscribeEvent.class)) {
+				method.setAccessible(true);
+				Main.runAsynchronously(() -> {
+					Object obj = null;
+					try {
+						obj = cmd.getDeclaringClass().newInstance();
+					} catch (InstantiationException | IllegalAccessException e1) {}
+					try {
+						method.invoke(obj, event);
+					} catch (InvocationTargetException e) {
+						e.getCause().printStackTrace();
+					} catch (IllegalAccessException | IllegalArgumentException e) {
+						e.printStackTrace();
 					}
-				}
+				});
+			}
+		}
 	}
 
 	@Override
@@ -55,34 +71,9 @@ public class EventHandler extends ListenerAdapter {
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
 		Main.addReceivedMessage(event.getMessage());
-		Main.runAsynchronously(new Runnable() {@Override public void run() {System.gc();}});
-		String prefix = Config.getValue("prefix");
-		if (Main.devMode() && !event.getAuthor().getId().equals(Config.getValue("ownerId")) && event.getMessage().getContent().startsWith(prefix)) {
-			event.getChannel().sendMessage("Developer mode is turned on, so only my owner can use commands.").complete();
-			return;
-		}
-		try {
-			Map prefixes = DataIO.loadJson("data/mod/serverprefixes.json", Map.class);
-			prefixes = prefixes == null ? new HashMap<>() : prefixes;
-			String serverPrefix = Config.getValue("prefix");
-			try {
-				if (prefixes.containsKey(event.getGuild().getId())) serverPrefix = (String) ((Map) prefixes.get(event.getGuild().getId())).get("serverPrefix");
-			} catch (NullPointerException e) { }
-			if (event.getMessage().getContent().startsWith(Config.getValue("prefix")) && !serverPrefix.equals(Config.getValue("prefix")) && !prefixedMessages.contains(event.getMessage().getId())) return;
-			if (event.getMessage().getContent().startsWith(serverPrefix) && !serverPrefix.equals(Config.getValue("prefix"))) {
-				prefixedMessages.add(event.getMessageId());
-				onMessageReceived(
-						new MessageReceivedEvent(
-								event.getJDA(),
-								event.getResponseNumber(),
-								((MessageImpl) event.getMessage()).setContent(Config.getValue("prefix") + event.getMessage().getRawContent().substring(serverPrefix.length())))
-						);
-				return;
-			}
-		} catch (IOException e2) {
-			e2.printStackTrace();
-		}
-
+		Main.runAsynchronously(new Runnable() {@Override public void run() {System.gc();}}); // it's not necessary, but it is said JDA is very resource demanding.
+		if (event.getAuthor().isBot() || !Main.done()) return;
+		String prefix = Main.getPrefix(event.getGuild());
 		if (event.getMessage().getContent().startsWith(prefix) && Main.getCommandNames().contains(event.getMessage().getContent().split(" ")[0].substring(prefix.length())))
 			Main.print(LogType.INFO, String.format("%s#%s used the '%s' command in %s.",
 					event.getAuthor().getName(),
@@ -91,8 +82,6 @@ public class EventHandler extends ListenerAdapter {
 					event.getGuild() == null ? "private messages" : event.getGuild().getName()));
 		Main.executeCommand(() -> {
 			try {
-				if(event.getAuthor().isBot())
-					return;
 				String[] parts = null;
 				String rawContent = event.getMessage().getRawContent();
 				if (rawContent.toLowerCase().startsWith(prefix.toLowerCase()))
@@ -119,22 +108,32 @@ public class EventHandler extends ListenerAdapter {
 							Permission[] botPermissions = {};
 							boolean guildOnly = false;
 							boolean ownerCommand = false;
+							boolean sendTyping = true;
+							double cooldown = 1D;
 							if (command.isAnnotationPresent(Command.class)) {
 								Command annotation = command.getAnnotation(Command.class);
+								annotation.name();
 								permissions = annotation.userPermissions();
 								botPermissions = annotation.botPermissions();
 								guildOnly = annotation.guildOnly();
 								ownerCommand = annotation.ownerCommand();
+								cooldown = annotation.cooldown();
+								sendTyping = annotation.sendTyping();
 							} else if (command.isAnnotationPresent(Subcommand.class)) {
 								Subcommand annotation = command.getAnnotation(Subcommand.class);
+								annotation.name();
 								permissions = annotation.userPermissions();
 								botPermissions = annotation.botPermissions();
 								guildOnly = annotation.guildOnly();
 								ownerCommand = annotation.ownerCommand();
+								cooldown = annotation.cooldown();
+								sendTyping = annotation.sendTyping();
 							}
-							if (event.getGuild() == null && guildOnly) {
-								event.getChannel().sendMessage("That command cannot be used in direct messages.").queue();;
-							} else if (ownerCommand && !event.getAuthor().getId().equals(Main.getOwner().getId()))
+							if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown*1000)
+								event.getChannel().sendMessage("You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".").queue();
+							else if (event.getGuild() == null && guildOnly)
+								event.getChannel().sendMessage("That command cannot be used in direct messages.").queue();
+							else if (ownerCommand && !event.getAuthor().getId().equals(Main.getOwner().getId()))
 								event.getChannel().sendMessage("That command can only be used by my owner.").queue();
 							else if (event.getMember() != null && !event.getMember().hasPermission(permissions)) {
 								List<String> nonPresentPerms = new ArrayList();
@@ -147,12 +146,13 @@ public class EventHandler extends ListenerAdapter {
 									if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
 								event.getChannel().sendMessage("I need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to do that.").queue();
 							} else {
+								if (sendTyping) event.getChannel().sendTyping().complete();
 								CommandEvent cevent = new CommandEvent(event, args, command);
-								for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, serverprefixes, logging, etc.
+								for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, logging, etc.
 									try {
 										hook.run(cevent);
 									} catch (SecurityException e) {
-										if (e.getMessage() == null || !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage() == null ? "You are forbidden to use that command." : e.getMessage()).queue();
+										if (e.getMessage() != null && !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage()).queue();
 										return;
 									}
 								Object obj = null;
@@ -162,7 +162,12 @@ public class EventHandler extends ListenerAdapter {
 								command.setAccessible(true);
 								try {
 									command.invoke(obj, cevent);
-								} catch (Throwable e) {
+									if (!Main.getOwner().getId().equals(event.getAuthor().getId())) {
+										Map userCooldowns = cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap());
+										userCooldowns.put(command.toString(), System.currentTimeMillis());
+										cooldowns.put(event.getAuthor().getId(), userCooldowns);
+									}
+								} catch (InvocationTargetException e) {
 									sendStackTrace(e.getCause(), event);
 								}
 							}
@@ -174,8 +179,102 @@ public class EventHandler extends ListenerAdapter {
 		});
 	}
 
-	private static void sendStackTrace(Throwable e, MessageReceivedEvent event) {
-		Main.print(LogType.INFO, "Sending stacktrace");
+	@Override
+	public void onGuildJoin(GuildJoinEvent event) {
+		updateStats((JDAImpl) event.getJDA());
+	}
+
+	@Override
+	public void onGuildLeave(GuildLeaveEvent event) {
+		updateStats((JDAImpl) event.getJDA());
+	}
+
+	private static void updateStats(JDAImpl jda) {
+		OkHttpClient client = jda.getHttpClientBuilder().build();
+		if (Config.get("carbonitexKey") != null) {
+			FormBody.Builder bodyBuilder = new FormBody.Builder()
+					.add("key", Config.get("carbonitexKey"))
+					.add("servercount", Integer.toString(jda.getGuilds().size()));
+
+			if (jda.getShardInfo() != null)
+				bodyBuilder.add("shard_id", Integer.toString(jda.getShardInfo().getShardId()))
+				.add("shard_count", Integer.toString(jda.getShardInfo().getShardTotal()));
+
+			Request.Builder builder = new Request.Builder()
+					.post(bodyBuilder.build())
+					.url("https://www.carbonitex.net/discord/data/botdata.php");
+
+			client.newCall(builder.build()).enqueue(new Callback() {
+				@Override
+				public void onResponse(Call call, Response response) throws IOException {
+					Main.print(LogType.INFO, "Joined a server and successfully updated the stats on carbonitex.net");
+					response.close();
+				}
+
+				@Override
+				public void onFailure(Call call, IOException e) {
+					Main.print(LogType.WARN, "Joined a server, but could not update the stats on carbonitex.net");
+					e.printStackTrace();
+				}
+			});
+		}
+
+		if (Config.get("discordBotListKey") != null) {
+			JSONObject body = new JSONObject()
+					.put("server_count", jda.getGuilds().size())
+					.put("shard_id", jda.getShardInfo().getShardId())
+					.put("shard_count", jda.getShardInfo().getShardTotal());
+
+			Request.Builder builder = new Request.Builder()
+					.post(RequestBody.create(Requester.MEDIA_TYPE_JSON, body.toString()))
+					.url("https://discordbots.org/api/bots/" + jda.getSelfUser().getId() + "/stats")
+					.header("Authorization", Config.get("discordBotListKey"))
+					.header("Content-Type", "application/json");
+
+			client.newCall(builder.build()).enqueue(new Callback() {
+				@Override
+				public void onResponse(Call call, Response response) throws IOException {
+					Main.print(LogType.INFO, "Joined a server and successfully updated the stats on discordbots.org");
+					response.close();
+				}
+
+				@Override
+				public void onFailure(Call call, IOException e) {
+					Main.print(LogType.WARN, "Joined a server, but could not update the stats on discordbots.org");
+					e.printStackTrace();
+				}
+			});
+		}
+
+		if (Config.get("discordBotsKey") != null) {
+			JSONObject body = new JSONObject()
+					.put("server_count", jda.getGuilds().size())
+					.put("shard_id", jda.getShardInfo().getShardId())
+					.put("shard_count", jda.getShardInfo().getShardTotal());
+
+			Request.Builder builder = new Request.Builder()
+					.post(RequestBody.create(Requester.MEDIA_TYPE_JSON, body.toString()))
+					.url("https://bots.discord.pw/api/bots/" + jda.getSelfUser().getId() + "/stats")
+					.header("Authorization", Config.get("discordBotsKey"))
+					.header("Content-Type", "application/json");
+
+			client.newCall(builder.build()).enqueue(new Callback() {
+				@Override
+				public void onResponse(Call call, Response response) throws IOException {
+					Main.print(LogType.INFO, "Joined a server and successfully updated the stats on bots.discord.pw");
+					response.close();
+				}
+
+				@Override
+				public void onFailure(Call call, IOException e) {
+					Main.print(LogType.WARN, "Joined a server, but could not update the stats on bots.discord.pw");
+					e.printStackTrace();
+				}
+			});
+		}
+	}
+
+	private void sendStackTrace(Throwable e, MessageReceivedEvent event) {
 		e.printStackTrace();
 		StackTraceElement stElement = null;
 		for (StackTraceElement element : e.getStackTrace())
@@ -185,7 +284,6 @@ public class EventHandler extends ListenerAdapter {
 		if (!Main.devMode())
 			Main.sendPrivateMessage(Main.getOwner(), String.format("A `%s` exception was thrown at line %s in %s while parsing the message `%s`. Stacktrace:\n```java\n%s```",
 					e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), event.getMessage().getContent(), Main.generateStackTrace(e)));
-		Main.print(LogType.INFO, "Stacktrace sent");
 	}
 
 }

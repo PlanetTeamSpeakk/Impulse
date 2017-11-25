@@ -1,6 +1,7 @@
 package com.ptsmods.impulse.utils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,7 @@ import java.util.Map;
  */
 public class Random {
 
-	private static Map seeds;
+	private static Map<String, Map<String, Double>> seeds;
 	private static boolean shouldSeed = false;
 	private static boolean shouldMakeNewSeed = false;
 	private static String seedKey = "";
@@ -69,10 +70,10 @@ public class Random {
 	}
 
 	public static double randDouble(double min, double max, boolean useSeeding) {
-		double rng = (int) (Math.random() * max + min) * (min < 0D ? (int) (Math.random() * 10) >= 5 ? 1 : -1 : 1);
+		double rng = (Math.random() * max + min) * (min < 0D ? (int) (Math.random() * 10) >= 5 ? 1 : -1 : 1);
 		if (shouldSeed && useSeeding && System.currentTimeMillis()-lastCalledMillis <= 100)
 			if (shouldMakeNewSeed) {
-				Map callerClassSeeds = (Map) seeds.get(callerClass.getName());
+				Map callerClassSeeds = seeds.get(callerClass.getName());
 				callerClassSeeds = callerClassSeeds == null ? new HashMap<>() : callerClassSeeds;
 				callerClassSeeds.put(seedKey, rng);
 				seeds.put(callerClass.getName(), callerClassSeeds);
@@ -115,28 +116,32 @@ public class Random {
 		return choices.get(randInt(choices.size()));
 	}
 
+	public static <T> List<T> scramble(List<T> list) {
+		List<T> newList = new ArrayList();
+		List<T> passed = new ArrayList();
+		for (int x = 0; x < list.size(); x++) {
+			T chosenOne = choice(list);
+			while (passed.contains(chosenOne)) chosenOne = choice(list);
+			newList.add(chosenOne);
+			passed.add(chosenOne);
+		}
+		return newList;
+	}
+
 	/**
 	 * Seeds a key so the next time a method is called it returns the same value as previous time.
-	 * A method of this class which returns a random value should be called within 100 milliseconds, otherwise it'll return a random value.
+	 * A method of this class which returns a random value should be called within 100 milliseconds to return a seeded value, otherwise it'll return a random value.
 	 * @param key
 	 */
+	@SuppressWarnings("deprecation")
 	public static void seed(String key) {
-		try {
-			seeds = DataIO.loadJson("data/random/seeds.json", Map.class);
-			seeds = seeds == null ? new HashMap<>() : seeds;
-		} catch (IOException e) {
-			throw new RuntimeException("There was an error while loading the seeding file.", e);
-		}
-		try {
-			callerClass = Class.forName(Thread.currentThread().getStackTrace()[2].getClassName()); // 0 is java.lang.Thread, 1 is this class and 2 is the actual caller class.
-		} catch (ClassNotFoundException e1) {
-			throw new RuntimeException("The caller class could not be found.", e1);
-		}
-		if (!seeds.containsKey(callerClass.getName())) seeds.put(callerClass.getName(), new HashMap<>());
-		if (!((Map) seeds.get(callerClass.getName())).containsKey(key)) {
+		//	callerClass = Class.forName(Thread.currentThread().getStackTrace()[2].getClassName());
+		//  this method is 90 times slower than using the sun.reflect.Reflection#getCallerClass(int) method.
+		callerClass = sun.reflect.Reflection.getCallerClass(2); // 0 is java.lang.Thread, 1 is this class and 2 is the actual caller class.
+		if (!seeds.get(callerClass.getName()).containsKey(key)) {
 			shouldMakeNewSeed = true;
-			Map callerClassSeeds = (Map) seeds.get(callerClass.getName());
-			callerClassSeeds.put(seedKey, 0D);
+			Map callerClassSeeds = seeds.getOrDefault(callerClass.getName(), new HashMap());
+			callerClassSeeds.put(key, 0D);
 			seeds.put(callerClass.getName(), callerClassSeeds);
 			try {
 				DataIO.saveJson(seeds, "data/random/seeds.json");
@@ -146,7 +151,7 @@ public class Random {
 		}
 		shouldSeed = true;
 		seedKey = key;
-		lastCalledMillis = System.currentTimeMillis();
+		lastCalledMillis = new Long(System.currentTimeMillis());
 	}
 
 }

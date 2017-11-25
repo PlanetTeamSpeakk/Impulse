@@ -72,7 +72,7 @@ public class Marriage {
 			for (Role role : event.getGuild().getRoles())
 				if (role.getName().contains(members.get(0).getUser().getName()) && role.getName().contains(heart) && role.getName().contains(members.get(1).getUser().getName())) {
 					role.delete().queue();
-					event.replyFormatted("Successfully deleted the marriage role between %s and %s.", members.get(0).getAsMention(), members.get(1).getAsMention());
+					event.reply("Successfully deleted the marriage role between %s and %s.", members.get(0).getAsMention(), members.get(1).getAsMention());
 					marriageChannel.sendMessageFormat("%s was forced to divorce %s.", members.get(0).getAsMention(), members.get(1).getAsMention()).queue();
 					return;
 				}
@@ -111,7 +111,7 @@ public class Marriage {
 				} catch (Throwable e) {
 					event.reply("I wasn't able to send a direct message to " + mem2.getUser().getName() + ".");
 				}
-				event.replyFormatted("Successfully forced %s to marry %s.", mem2.getUser().getName(), mem1.getUser().getName());
+				event.reply("Successfully forced %s to marry %s.", mem2.getUser().getName(), mem1.getUser().getName());
 			}
 		} else Main.sendCommandHelp(event);
 	}
@@ -123,7 +123,7 @@ public class Marriage {
 				settings = DataIO.loadJson("data/marriage/settings.json", Map.class);
 				settings = settings == null ? new HashMap() : settings;
 			} catch (IOException e) {
-				throw new RuntimeException("An unknown error occured while loading the data file.", e);
+				throw new RuntimeException("An unknown error occurred while loading the data file.", e);
 			}
 			Member member = Main.getMemberFromInput(event.getMessage());
 			if (member == null) event.reply("The given user could not be found.");
@@ -156,10 +156,10 @@ public class Marriage {
 				else if (isMarriedToMember) event.reply("You're already married to that person.");
 				else if (member.equals(event.getSelfMember()) && !event.getMember().getUser().equals(Main.getOwner())) event.reply("I'd only marry my owner.");
 				else {
-					event.replyFormatted("%s, do you take %s as your husband/wife? (yes/no)", member.getAsMention(), event.getAuthor().getAsMention());
+					event.reply("%s, do you take %s as your husband/wife? (yes/no)", member.getAsMention(), event.getAuthor().getAsMention());
 					Message response = Main.waitForInput(member, event.getChannel(), 60000, event.getMessage().getCreationTime().toEpochSecond());
-					if (response == null) event.replyFormatted("%s, the user you tried to marry did not respond, I'm sorry.", event.getAuthor().getAsMention());
-					else if (!response.getContent().startsWith("ye")) event.replyFormatted("%s, the user you tried to marry did not say yes, I'm sorry.", event.getAuthor().getAsMention());
+					if (response == null) event.reply("%s, the user you tried to marry did not respond, I'm sorry.", event.getAuthor().getAsMention());
+					else if (!response.getContent().startsWith("ye")) event.reply("%s, the user you tried to marry did not say yes, I'm sorry.", event.getAuthor().getAsMention());
 					else {
 						Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", event.getAuthor().getName(), member.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions(Permission.ALL_TEXT_PERMISSIONS).complete();
 						event.getGuild().getController().addSingleRoleToMember(event.getMember(), role).queue();
@@ -185,7 +185,7 @@ public class Marriage {
 
 	@Command(category = "Marriage", help = "Tells you this server's marry limit.", name = "marrylimit", guildOnly = true)
 	public static void marryLimit(CommandEvent event) {
-		if (!settings.containsKey(event.getGuild().getId()) || Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("marryLimit")) < 0) event.reply("This server has no marrylimit.");
+		if (!settings.containsKey(event.getGuild().getId()) || Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("marryLimit")) < 1) event.reply("This server has no marrylimit.");
 		else event.reply("This server's marry limit is currently set to " + Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("marryLimit")) + ".");
 	}
 
@@ -207,7 +207,7 @@ public class Marriage {
 			try {
 				DataIO.saveJson(settings, "data/marriage/settings.json");
 			} catch (IOException e) {
-				event.reply("An unknown error occured while saving the data file.");
+				event.reply("An unknown error occurred while saving the data file.");
 				e.printStackTrace();
 				return;
 			}
@@ -223,7 +223,7 @@ public class Marriage {
 		try {
 			DataIO.saveJson(settings, "data/marriage/settings.json");
 		} catch (IOException e) {
-			event.reply("An unknown error occured while saving the data file.");
+			event.reply("An unknown error occurred while saving the data file.");
 			e.printStackTrace();
 			return;
 		}

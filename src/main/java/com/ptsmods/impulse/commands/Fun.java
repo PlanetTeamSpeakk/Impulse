@@ -7,14 +7,17 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.google.common.collect.Lists;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.EmbedBuilder;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
 
@@ -50,7 +53,7 @@ public class Fun {
 
 	static {
 		try {
-			memes = DataIO.loadJsonOrDefault("data/fun/memes.json", Map.class, HashMap.class);
+			memes = DataIO.loadJsonOrDefault("data/fun/memes.json", Map.class, new HashMap());
 		} catch (IOException e) {
 			throw new RuntimeException("An unknown error occurred while loading the data file.", e);
 		}
@@ -151,7 +154,7 @@ public class Fun {
 				+ "J1 J2 J3 J4 J5 J6 J7 J8 J9 J10";
 		status.delete().complete();
 		Message boardMsg = event.getChannel().sendMessage("```fix\n" + board + "```").complete();
-		boolean first = new boolean[] {false, true}[Random.randInt(2)];
+		boolean first = Random.choice(false, true);
 		if (first) {
 			status = event.getChannel().sendMessage("I'll go first.").complete();
 			while (true) {
@@ -294,9 +297,11 @@ public class Fun {
 
 	@Command(category = "Fun", help = "Kill someone in a creative way.", name = "kill", arguments = "<user>")
 	public static void kill(CommandEvent event) {
-		if (!event.getArgs().isEmpty() && event.getGuild().getMembersByName(event.getArgs(), true).get(0) == null) event.reply("That user could not be found.");
-		else if (event.getArgs().length() != 0) event.reply(waysToKill[Random.randInt(waysToKill.length)].replaceAll("\\{KILLER\\}", event.getAuthor().getAsMention()).replaceAll("\\{VICTIM\\}", event.getMessage().getMentionedUsers().size() != 0 ? event.getMessage().getMentionedUsers().get(0).getAsMention() : event.getGuild().getMembersByName(event.getArgs(), true).get(0).getUser().getAsMention()));
-		else Main.sendCommandHelp(event);
+		if (!event.getArgs().isEmpty()) {
+			if (Main.getUserFromInput(event.getMessage()) == null) event.reply("That user could not be found.");
+			else if (Main.getUserFromInput(event.getMessage()).getId().equals(event.getSelfMember().getUser().getId())) event.reply("You think that's funny?");
+			else event.reply(Random.choice(waysToKill).replaceAll("\\{KILLER\\}", event.getAuthor().getAsMention()).replaceAll("\\{VICTIM\\}", Main.getUserFromInput(event.getMessage()).getAsMention()));
+		} else Main.sendCommandHelp(event);
 	}
 
 	@Command(category = "Fun", help = "Memes are the only thing that keep PlanetTeamSpeak alive.", name = "meme")
@@ -307,6 +312,81 @@ public class Fun {
 		embed.setColor(new Color(Random.randInt(256*256*256)));
 		embed.setImage(Random.choice(serverMemes));
 		event.reply(embed.build());
+	}
+
+	@Command(category = "Fun", help = "Adds a meme to the list of global memes.\n\nThe given URL can either be an i.imgur.com link or a cdn.impulsebot.com link.", name = "massaddmeme", arguments = "<Imgur or Impulse CDN link>", ownerCommand = true)
+	public static void massAddMeme(CommandEvent event) throws CommandException {
+		Pattern imgur = Pattern.compile("(?i)(http|https)+(://)+(i\\.imgur\\.com/)+(([a-z]|\\d){7})+(\\.)+(PNG|JPG|GIFV|GIF|MOV|MP4)+");
+		Pattern impulseCDN = Pattern.compile("(?i)(http|https)+(://)+(cdn\\.impulsebot\\.com/)+(([a-z]|\\d){10})+(\\.)+(PNG|JPG|GIF|MOV|MP4)+");
+		if (!event.getArgs().isEmpty() && imgur.matcher(event.getArgs()).matches() || impulseCDN.matcher(event.getArgs()).matches()) {
+			((List) memes.get("global")).add(event.getArgs());
+			try {
+				DataIO.saveJson(memes, "data/fun/memes.json");
+			} catch (IOException e) {
+				throw new CommandException("An unknown error occurred while saving the data file.", e);
+			}
+			event.reply("The meme has been added.");
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Fun", help = "Adds a meme to the list of memes in this server.\n\nThe given URL can either be an i.imgur.com link or a cdn.impulsebot.com link.", name = "addmeme", arguments = "<Imgur or Impulse CDN link>", guildOnly = true, cooldown = 10)
+	public static void addMeme(CommandEvent event) throws CommandException {
+		Pattern imgur = Pattern.compile("(?i)(http|https)+(://)+(i\\.imgur\\.com/)+(([a-z]|\\d){7})+(\\.)+(PNG|JPG|GIFV|GIF|MOV|MP4)+");
+		Pattern impulseCDN = Pattern.compile("(?i)(http|https)+(://)+(cdn\\.impulsebot\\.com/)+(([a-z]|\\d){10})+(\\.)+(PNG|JPG|GIF|MOV|MP4)+");
+		if (!event.getArgs().isEmpty() && imgur.matcher(event.getArgs()).matches() || impulseCDN.matcher(event.getArgs()).matches()) {
+			if (!memes.containsKey(event.getGuild().getId())) memes.put(event.getGuild().getId(), Lists.newArrayList(event.getArgs()));
+			else ((List) memes.get(event.getGuild().getId())).add(event.getArgs());
+			try {
+				DataIO.saveJson(memes, "data/fun/memes.json");
+			} catch (IOException e) {
+				throw new CommandException("An unknown error occurred while saving the data file.", e);
+			}
+			event.reply("The meme has been added.");
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Fun", help = "Deletes a meme from the list of memes in this server.\n\nThe given URL can either be an i.imgur.com link or a cdn.impulsebot.com link.", name = "delmeme", arguments = "<Imgur or Impulse CDN link>", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR})
+	public static void delMeme(CommandEvent event) throws CommandException {
+		Pattern imgur = Pattern.compile("(?i)(http|https)+(://)+(i\\.imgur\\.com/)+(([a-z]|\\d){7})+(\\.)+(PNG|JPG|GIFV|GIF|MOV|MP4)+");
+		Pattern impulseCDN = Pattern.compile("(?i)(http|https)+(://)+(cdn\\.impulsebot\\.com/)+(([a-z]|\\d){10})+(\\.)+(PNG|JPG|GIF|MOV|MP4)+");
+		if (!event.getArgs().isEmpty() && imgur.matcher(event.getArgs()).matches() && impulseCDN.matcher(event.getArgs()).matches()) {
+			if (!memes.containsKey(event.getGuild().getId())) event.reply("This server has no custom memes.");
+			else if (!((List) memes.get(event.getGuild().getId())).contains(event.getArgs())) event.reply("That meme could not be found, to list all memes type %slistmemes");
+			else {
+				try {
+					DataIO.saveJson(memes, "data/fun/memes.json");
+				} catch (IOException e) {
+					throw new CommandException("An unknown error occurred while saving the data file.", e);
+				}
+				event.reply("The meme has been deleted.");
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Fun", help = "Turns all characters into regional indicators.", name = "indicator")
+	public static void indicator(CommandEvent event) {
+		if (!event.getArgs().isEmpty()) {
+			String output = "";
+			for (Character ch : event.getArgs().toLowerCase().toCharArray())
+				if (ch.charValue() >= 'a' && ch.charValue() <='z')
+					output += ":regional_indicator_" + ch + ":";
+				else if (ch.charValue() >= '0' && ch.charValue() <= '9')
+					switch (ch.charValue()) {
+					case '0': {output += ":zero:";  break;}
+					case '1': {output += ":one:";   break;}
+					case '2': {output += ":two:";   break;}
+					case '3': {output += ":three:"; break;}
+					case '4': {output += ":four:";  break;}
+					case '5': {output += ":five:";  break;}
+					case '6': {output += ":six:";   break;}
+					case '7': {output += ":seven:"; break;}
+					case '8': {output += ":eight:"; break;}
+					case '9': {output += ":nine:";  break;}
+					default: break;
+					}
+				else output += ch;
+			event.reply(output);
+		} else Main.sendCommandHelp(event);
 	}
 
 }

@@ -4,23 +4,30 @@ import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
-import com.ptsmods.impulse.Main.LogType;
+import com.google.gson.JsonSyntaxException;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Downloader;
+import com.ptsmods.impulse.utils.Downloader.DownloadResult;
 import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Emote;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
 import net.swisstech.bitly.BitlyClient;
 import net.swisstech.bitly.model.Response;
@@ -28,17 +35,36 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 
 public class General {
 
-	private static String[] answers = new String[] {
+	private static final Map<Integer, String> games = new HashMap();
+	private static final String[] answers = new String[] {
 			"It is certain", "It is decidedly so", "Without a doubt", "Yes definitely", "You may rely on it",						  // positive
 			"As I see it, yes", "Most likely", "Outlook good", "Yes", "Signs point to yes",					  						  // positive
 			"Reply hazy try again", "Ask again later", "Better not tell you now", "Cannot predict now", "Concentrate and ask again",  // neutral
 			"Don't count on it", "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful"};					  // negative
+	private static final Character[] consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'};
+	private static final Character[] vowels = {'a', 'e', 'i', 'o', 'u'};
+
+	static {
+		Main.apiKeys.put("steam", "4097EECAE0C75569D595A25BEB4BCB3C");
+		Main.apiKeys.put("wargaming", "a223cd2a48a13e5b2e484f4a9ec80d33");
+		Main.apiKeys.put("bitly", "dd800abec74d5b12906b754c630cdf1451aea9e0");
+		Main.apiKeys.put("geocoding", "AIzaSyCXkFcW0v8XJWGK2Im2_fApsbh3I8OGCDI");
+		Main.apiKeys.put("timezone", "AIzaSyCXkFcW0v8XJWGK2Im2_fApsbh3I8OGCDI");
+		List<Map> data;
+		try {
+			data = (List<Map>) ((Map) new Gson().fromJson(Main.getHTML("http://api.steampowered.com/ISteamApps/GetAppList/v0002/"), Map.class).get("applist")).get("apps");
+		} catch (JsonSyntaxException | IOException e) {
+			throw new RuntimeException("An unknown error occurred while getting the app list.");
+		}
+		for (Map game : data)
+			games.put(Integer.parseInt(game.get("appid").toString().split("\\.")[0]), game.get("name").toString());
+	}
 
 	@Command(category = "General", help = "Calculates a math equation so you don't have to.", name = "calc", arguments = "<equation>")
 	public static void calc(CommandEvent event) {
 		if (event.getArgs().length() != 0)
 			try {
-				event.reply("`" + event.getArgs() + "` = `" + Main.eval(event.getArgs()) + "`");
+				event.reply("`%s` = `%s`", event.getArgs(), Main.eval(event.getArgs()));
 			} catch (RuntimeException e) {
 				event.reply(e.getMessage());
 			}
@@ -66,7 +92,7 @@ public class General {
 		else event.reply(Main.flipString(event.getArgs()));
 	}
 
-	@Command(category = "General", help = "How does this work?", name = "help", arguments = "[command or category]")
+	@Command(category = "General", help = "How does this work?", name = "help", arguments = "[command or category]", sendTyping = false)
 	public static void help(CommandEvent event) {
 		if (event.getArgs().isEmpty()) {
 			List<String> msgs = new ArrayList<>();
@@ -146,11 +172,13 @@ public class General {
 	@Command(category = "General", help = "Some information about the bot.", name = "info")
 	public static void info(CommandEvent event) {
 		EmbedBuilder embed = new EmbedBuilder();
+		Color color = new Color(Random.randInt(256*256*256));
 		embed.setTitle(event.getJDA().getSelfUser().getName());
-		embed.setColor(new Color(Random.randInt(256*256*256)));
+		embed.setColor(color);
 		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
-		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA and JDA Utilities. "
-				+ "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") or [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\").");
+		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. "
+				+ "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") or [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")."
+				+ " PS, the color used is #" + Integer.toHexString(color.getRGB()).substring(2).toUpperCase() + ".");
 		event.reply(embed.build());
 	}
 
@@ -159,7 +187,7 @@ public class General {
 		event.reply("If you want to invite me to your server, click this link: <" + event.getJDA().asBot().getInviteUrl(Permission.ADMINISTRATOR) + ">.");
 	}
 
-	@Command(category = "General", help = "Tells you the latency of this bot with the Discord servers.", name = "ping")
+	@Command(category = "General", help = "Tells you the latency of this bot with the Discord servers.", name = "ping", sendTyping = false)
 	public static void ping(CommandEvent event) {
 		long nanos = System.nanoTime();
 		event.getChannel().sendTyping().complete();
@@ -171,14 +199,14 @@ public class General {
 	@Command(category = "General", help = "Generates a QR code from the given text.", name = "qrcode", arguments = "<text>")
 	public static void qrCode(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
-			Map<String, String> data;
+			DownloadResult result;
 			try {
-				int rng = Random.randInt(10000);
-				data = Downloader.downloadFile("https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=" + Main.percentEncode(event.getArgs()), "data/general/" + rng + ".png");
-				event.getChannel().sendFile(new File(data.get("fileLocation")), new MessageBuilder().append("Here you go:").build()).complete();
-				new File(data.get("fileLocation")).delete();
+				int rng = Random.randInt(1000, 9999);
+				result = Downloader.downloadFile("https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=" + Main.percentEncode(event.getArgs()), "data/general/" + rng + ".png");
+				event.getChannel().sendFile(new File(result.getFileLocation()), new MessageBuilder().append("Here you go:").build()).queue();
+				new File(result.getFileLocation()).delete();
 			} catch (IOException e) {
-				event.reply("An unknown error occured while creating the QR code, please try again.");
+				event.reply("An unknown error occurred while creating the QR code, please try again.");
 				e.printStackTrace();
 			}
 		} else Main.sendCommandHelp(event);
@@ -192,12 +220,12 @@ public class General {
 		event.reply(String.format("You rolled **%s**.", Random.randInt(max)));
 	}
 
-	@Command(category = "General", help = "Spin the revolver's chamber and then *PANG*. \nThe given bet will be removed from your balance if you lose or doubled if you win, if the given bet is 0 or not given there's nothing to lose.", name = "russianroulette", aliases = {"rr"}, cooldown = 30)
-	public static void russianRoulette(CommandEvent event) {
+	@Command(category = "General", help = "Spin the revolver's chamber and then *PANG*. \nThe given bet will be removed from your balance if you lose or doubled if you win, if the given bet is 0 or not given there's nothing to lose.", name = "russianroulette", cooldown = 30)
+	public static void russianRoulette(CommandEvent event) throws IOException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0]) && Integer.parseInt(event.getArgs().split(" ")[0]) != 0) {
 			int bet = Integer.parseInt(event.getArgs().split(" ")[0]);
 			if (!Economy.hasAccount(event.getMember()))
-				event.replyFormatted("You cannot bet without having a bank account, you can make one with %sbank register.", Main.getPrefix(event.getGuild()));
+				event.reply("You cannot bet without having a bank account, you can make one with %sbank register.", Main.getPrefix(event.getGuild()));
 			else if (!Economy.hasEnoughBalance(event.getMember(), bet)) event.reply("You do not have enough balance to bid that high.");
 			else {
 				int bullets = Random.randInt(1, 5);
@@ -208,7 +236,7 @@ public class General {
 					Economy.removeBalance(event.getMember(), bet);
 				else
 					Economy.addBalance(event.getMember(), bet);
-				event.replyFormatted("%s credits have been %s %s your bank account, old balance: **%s** credits, new balance: **%s** credits.", bet, shot ? "removed" : "added", shot ? "from" : "to", oldBalance, Economy.getBalance(event.getMember()));
+				event.reply("%s credits have been %s %s your bank account, old balance: **%s** credits, new balance: **%s** credits.", bet, shot ? "removed" : "added", shot ? "from" : "to", oldBalance, Economy.getBalance(event.getMember()));
 			}
 		} else {
 			int bullets = Random.randInt(1, 5);
@@ -240,6 +268,7 @@ public class General {
 
 	@Command(category = "General", help = "Let's the bot say something, this does filter out @\u200Beveryone and @\u200Bhere.", name = "say", arguments = "<text>")
 	public static void say(CommandEvent event) {
+		event.reply(" ");
 		if (event.getArgs().length() != 0) event.reply(event.getArgs().replaceAll("@everyone", "@\u200Beveryone").replaceAll("@here", "@\u200Bhere"));
 		else Main.sendCommandHelp(event);
 	}
@@ -247,12 +276,12 @@ public class General {
 	@Command(category = "General", help = "Tells you in how many servers the bot is in.", name = "servercount")
 	public static void serverCount(CommandEvent event) {
 		if (Main.getShards().size() != 1)
-			event.replyFormatted("This shard is currently in **%s** servers and can see **%s** users.\n"
+			event.reply("This shard is currently in **%s** servers and can see **%s** users.\n"
 					+ "This bot is currently in **%s** servers and can see **%s** users.",
 					event.getJDA().getGuilds().size(), event.getJDA().getUsers().size(),
 					Main.getGuilds().size(), Main.getUsers().size());
 		else
-			event.replyFormatted("This bot is currently in **%s** servers and can see **%s** users.",
+			event.reply("This bot is currently in **%s** servers and can see **%s** users.",
 					event.getJDA().getGuilds().size(), event.getJDA().getUsers().size());
 	}
 
@@ -265,8 +294,7 @@ public class General {
 	public static void shorten(CommandEvent event) {
 		if (event.getArgs().length() != 0) {
 			Message msg = event.getChannel().sendMessage("Shortening your URL, please wait...").complete();
-			Response<ShortenResponse> resp = new BitlyClient("dd800abec74d5b12906b754c630cdf1451aea9e0").shorten().setLongUrl(event.getArgs()).call();
-			Main.print(LogType.INFO, resp.status_txt, resp.status_code, resp == null, msg == null);
+			Response<ShortenResponse> resp = new BitlyClient(Main.apiKeys.get("bitly")).shorten().setLongUrl(event.getArgs()).call();
 			if (resp.status_txt.equals("INVALID_URI")) msg.editMessage("The given URL was invalid, according to bit.ly.").complete();
 			else msg.editMessage("Here you go: <" + resp.data.url + ">").complete();
 		} else Main.sendCommandHelp(event);
@@ -286,11 +314,11 @@ public class General {
 			try {
 				data = Main.getHTML("http://api.urbandictionary.com/v0/define?term=" + searchTerm.replaceAll(" ", "+"));
 			} catch (IOException e) {
-				event.reply("An unknown error occured while trying to get the data, please try again.");
+				event.reply("An unknown error occurred while trying to get the data, please try again.");
 				return;
 			}
 			if (data.contains("\"result_type\":\"no_results\""))
-				event.replyFormatted("No results found for the search term **%s**.", searchTerm);
+				event.reply("No results found for the search term **%s**.", searchTerm);
 			else {
 				Gson gson = new Gson();
 				Map dataMap = gson.fromJson(data, Map.class);
@@ -308,10 +336,513 @@ public class General {
 
 	@Command(category = "General", help = "Tells you how much RAM is allocated, how much RAM is used and the amount of processors available.", name = "usage")
 	public static void usage(CommandEvent event) {
-		event.replyFormatted("RAM used: **%s**, RAM allocated: **%s**, cores: **%s**.",
+		event.reply("RAM used: **%s**, RAM allocated: **%s**, cores: **%s**.",
 				Main.formatFileSize(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()),
 				Main.formatFileSize(Runtime.getRuntime().totalMemory()),
 				Runtime.getRuntime().availableProcessors());
 	}
+
+	@Command(category = "General", help = "Tells you who's boss!", name = "botowner")
+	public static void botOwner(CommandEvent event) {
+		event.reply("My owner is %s.", Main.getOwner().getAsMention());
+	}
+
+	@Command(category = "General", help = "Steam general information.", name = "steam")
+	public static void steam(CommandEvent event) {
+		Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Gives you a lot of information about a user.", name = "getuserinfo", parent = "com.ptsmods.impulse.commands.General.steam", cooldown = 30, arguments = "<user>")
+	public static void steamGetUserInfo(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			if (event.getArgs().contains(" ")) event.reply("Due to a bug in the Steam API, usernames cannot have spaces in them.");
+			else {
+				String userid = "";
+				if (Main.isDouble(event.getArgs())) userid = event.getArgs();
+				else {
+					Map data;
+					try {
+						data = (Map) new Gson().fromJson(Main.getHTML("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + Main.apiKeys.get("steam") + "&vanityurl=" + event.getArgs()), Map.class).get("response");
+					} catch (IOException e) {
+						throw new CommandException("An unknown error occurred while getting the Steam 64 ID from the username.", e);
+					}
+					if ((double) data.get("success") == 42) {
+						event.reply("That's not a valid username.");
+						return;
+					}
+					else userid = (String) data.get("steamid");
+				}
+				Map data;
+				List data1;
+				try {
+					data1 = (List) ((Map) new Gson().fromJson(Main.getHTML("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + Main.apiKeys.get("steam") + "&steamids=" + userid), Map.class).get("response")).get("players");
+				} catch (JsonSyntaxException | IOException e) {
+					throw new CommandException("An unknown error occurred while getting the player summaries.", e);
+				}
+				if (data1.isEmpty()) event.reply("That's not a valid ID.");
+				else {
+					data = (Map) data1.get(0);
+					try {
+						data.put("games", ((Map) new Gson().fromJson(Main.getHTML("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=" + Main.apiKeys.get("steam") + "&steamid=" + userid), Map.class).get("response")).get("games"));
+					} catch (JsonSyntaxException | IOException e) {
+						throw new CommandException("An unknown error occurred while getting the player's owned games.", e);
+					}
+					List ownedGames = new ArrayList();
+					for (Map game : (List<Map>) data.get("games"))
+						ownedGames.add(String.format("%s (%s)", games.get(Integer.parseInt(game.get("appid").toString().split("\\.")[0])), game.get("appid").toString().split("\\.")[0]));
+					event.reply(String.format("```fix\nUsername: %s\nSteam ID: %s\nProfile URL: %s\nAvatar: %s\nGame count: %s\nGames owned: \n\t%s```",
+							data.get("personaname"),
+							data.get("steamid"),
+							data.get("profileurl"),
+							data.get("avatarfull"),
+							((List) data.get("games")).size(),
+							Main.joinCustomChar("\n\t", ownedGames)));
+				}
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "See what game or app is attached to this mysterious id :O, or just use a name, whatever you like.", name = "applookup", parent = "com.ptsmods.impulse.commands.General.steam", cooldown = 30, arguments = "<game>")
+	public static void steamAppLookup(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			Map data;
+			if (Main.isInteger(event.getArgs())) {
+				try {
+					data = new Gson().fromJson(Main.getHTML("https://steamspy.com/api.php?request=appdetails&appid=" + event.getArgs()), Map.class);
+				} catch (JsonSyntaxException | IOException e) {
+					throw new CommandException("An unknown error occurred while getting the data for that game.", e);
+				}
+				if (data.get("name") == null) {
+					event.reply("A game with the given ID could not be found.");
+					return;
+				}
+			} else {
+				int id = -1;
+				for (Integer game : games.keySet())
+					if (games.get(game).equalsIgnoreCase(event.getArgs())) {
+						id = game;
+						break;
+					}
+				if (id == -1) {
+					event.reply("A game with the given name could not be found.");
+					return;
+				} else {
+					try {
+						data = new Gson().fromJson(Main.getHTML("https://steamspy.com/api.php?request=appdetails&appid=" + id), Map.class);
+					} catch (JsonSyntaxException | IOException e) {
+						throw new CommandException("An unknown error occurred while getting the data for that game.", e);
+					}
+					if (data.get("name") == null) {
+						event.reply("The given game is too new, no data could be found.");
+						return;
+					}
+				}
+			}
+			event.reply("```fix\nID: %s\nName: %s\nDeveloper: %s\nPublisher: %s\nDownloads: %.0f\nURL: https://store.steampowered.com/app/%s\nPrice: $%s.%s```",
+					data.get("appid").toString().split("\\.")[0],
+					data.get("name"),
+					data.get("developer"),
+					data.get("publisher"),
+					data.get("owners"),
+					data.get("appid").toString().split("\\.")[0],
+					(int) Double.parseDouble(data.get("price").toString()) / 100,
+					(int) Double.parseDouble(data.get("price").toString()) % 100);
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Shows you the top 100 games played by players since march 2009.", name = "top100forever", parent = "com.ptsmods.impulse.commands.General.steam", cooldown = 30)
+	public static void steamTop100Forever(CommandEvent event) throws CommandException {
+		Map data;
+		try {
+			data = new Gson().fromJson(Main.getHTML("https://steamspy.com/api.php?request=top100forever"), Map.class);
+		} catch (JsonSyntaxException | IOException e) {
+			throw new CommandException("An unknown error occurred while getting the top 100 list.", e);
+		}
+		String msg = "```fix\n";
+		int counter = 0;
+		for (Map game : ((Map<String, Map>) data).values()) {
+			counter += 1;
+			msg += counter + ". " + game.get("name") + "\n";
+			if (msg.length() > 1900) {
+				event.reply(msg + "```");
+				msg = "```fix\n";
+			}
+		}
+		event.reply(msg + "```");
+	}
+
+	@Subcommand(help = "Shows you the top 100 games played by players since the last 2 weeks.", name = "top100in2weeks", parent = "com.ptsmods.impulse.commands.General.steam", cooldown = 30)
+	public static void steamTop100In2Weeks(CommandEvent event) throws CommandException {
+		Map data;
+		try {
+			data = new Gson().fromJson(Main.getHTML("https://steamspy.com/api.php?request=top100in2weeks"), Map.class);
+		} catch (JsonSyntaxException | IOException e) {
+			throw new CommandException("An unknown error occurred while getting the top 100 list.", e);
+		}
+		String msg = "```fix\n";
+		int counter = 0;
+		for (Map game : ((Map<String, Map>) data).values()) {
+			counter += 1;
+			msg += counter + ". " + game.get("name") + "\n";
+			if (msg.length() > 1900) {
+				event.reply(msg + "```");
+				msg = "```fix\n";
+			}
+		}
+		event.reply(msg + "```");
+	}
+
+	@Subcommand(help = "Tells you how many apps are currently on Steam.", name = "appcount", parent = "com.ptsmods.impulse.commands.General.steam")
+	public static void steamAppCount(CommandEvent event) {
+		event.reply("There are currently **%s** apps and games on Steam (latest app: **%s**).", games.size(), games.values().toArray(new String[0])[games.values().size()-1]);
+	}
+
+	@Subcommand(help = "Get CS:GO stats from a user.\nExample:\n[p]steam getcsgostats PlanetTeamSpeak (Warning: I am noob)\n[p]steam getcsgostats 76561198187354157 (Same user but with Steam 64 ID)", name = "getcsgostats", parent = "com.ptsmods.impulse.commands.General.steam", cooldown = 30)
+	public static void steamGetCSGOStats(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			String userid;
+			String username;
+			if (Main.isDouble(event.getArgs())) {
+				Map data;
+				try {
+					data = new Gson().fromJson(Main.getHTML("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=" + Main.apiKeys.get("steam") + "&steamids=" + event.getArgs()), Map.class);
+				} catch (JsonSyntaxException | IOException e) {
+					throw new CommandException("An unknown error occurred while getting the player summaries.", e);
+				}
+				if (data.isEmpty()) {
+					event.reply("That's not a valid user ID.");
+					return;
+				} else {
+					username = ((Map) ((List) ((Map) data.get("response")).get("players")).get(0)).get("personaname").toString();
+					userid = new String(event.getArgs().toCharArray());
+				}
+			} else {
+				Map data;
+				try {
+					data = (Map) new Gson().fromJson(Main.getHTML("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=" + Main.apiKeys.get("steam") + "&vanityurl=" + event.getArgs()), Map.class).get("response");
+				} catch (JsonSyntaxException | IOException e) {
+					throw new CommandException("An unknown error occurred while resolving the vanity URL.", e);
+				}
+				if ((double) data.get("success") == 42D) {
+					event.reply("That's not a valid username.");
+					return;
+				} else {
+					username = new String(event.getArgs().toCharArray());
+					userid = data.get("steamid").toString();
+				}
+			}
+			List data;
+			try {
+				data = (List) ((Map) new Gson().fromJson(Main.getHTML("http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=730&key=" + Main.apiKeys.get("steam") + "&steamid=" + userid), Map.class).get("playerstats")).get("stats");
+			} catch (JsonSyntaxException | IOException e) {
+				throw new CommandException("An unknown error occurred while getting the user stats.", e);
+			}
+			if (data.isEmpty())
+				event.reply("The given user does not seem to own a copy of CS:GO.");
+			else {
+				Map<String, String> data1 = new HashMap();
+				for (int i : Main.range(data.size()))
+					data1.put(((Map) data.get(i)).get("name").toString(), ((Map) data.get(i)).get("value").toString());
+				event.reply("```fix\nUsername: %s\nUser ID: %s\nTotal kills: %s\nTotal deaths: %s\nKDR: %.4f\nTotal time played: %s\nTotal bombs planted: %s\nTotal wins: %s\nTotal damage done: %s\nTotal money earned: %s\nHeadshots done: %s\nTotal shots fired: %s\nTotal shots hit: %s\nHit ratio: %.2f%%\nTotal rounds played: %s```",
+						username,
+						userid,
+						data1.get("total_kills").toString().split("\\.")[0],
+						data1.get("total_deaths").toString().split("\\.")[0],
+						Double.parseDouble(data1.get("total_kills")) / Double.parseDouble(data1.get("total_deaths")),
+						Main.formatMillis(Integer.parseInt(data1.get("total_time_played").toString().split("\\.")[0]) * 1000).replaceAll("\\*", ""),
+						data1.get("total_planted_bombs").toString().split("\\.")[0],
+						data1.get("total_wins").toString().split("\\.")[0],
+						data1.get("total_damage_done").toString().split("\\.")[0],
+						data1.get("total_money_earned").toString().split("\\.")[0],
+						data1.get("total_kills_headshot").toString().split("\\.")[0],
+						data1.get("total_shots_fired").toString().split("\\.")[0],
+						data1.get("total_shots_hit").toString().split("\\.")[0],
+						Main.percentage(Double.parseDouble(data1.get("total_shots_fired")), Double.parseDouble(data1.get("total_shots_hit"))),
+						data1.get("total_rounds_played").toString().split("\\.")[0]);
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "General", help = "Get some user or tank info.", name = "wot")
+	public static void wot(CommandEvent event) {
+		Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Get some user info.\nUser has to be the Wargaming username and server has to be eu, ru, asia, na, or kr.", name = "getuserinfo", parent = "com.ptsmods.impulse.commands.General.wot", cooldown = 30, arguments = "<user> <server>")
+	public static void wotGetUserInfo(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty() && event.getArgs().split(" ").length == 2) {
+			String username = event.getArgs().split(" ")[0];
+			String server = event.getArgs().split(" ")[1].toLowerCase();
+			String userid = null;
+			if (server.equals("na")) server = "com";
+			Map data;
+			try {
+				data = new Gson().fromJson(Main.getHTML("https://api.worldoftanks." + server + "/wot/account/list/?application_id=" + Main.apiKeys.get("wargaming") + "&search=" + username), Map.class);
+			} catch (JsonSyntaxException | IOException e) {
+				throw new CommandException("An unknown error occurred while getting the user's id.", e);
+			}
+			if (data.containsKey("error"))
+				event.reply("An unknown error occurred while getting the data: %s, %s.", Main.getIntFromPossibleDouble(((Map) data.get("error")).get("code")), ((Map) data.get("error")).get("message"));
+			else {
+				Map data1;
+				if (Main.getIntFromPossibleDouble(((Map) data.get("meta")).get("count")) > 1) {
+					List<Map<String, String>> users = new ArrayList();
+					for (int i : Main.range(((List) data.get("data")).size()))
+						users.add(Main.newHashMap(new String[] {"username", "id"}, new String[] {((Map) ((List) data.get("data")).get(i)).get("nickname").toString(), String.format("%.0f", ((Map) ((List) data.get("data")).get(i)).get("account_id"))}));
+					String msg = "Found multiple results, please pick 1:\n";
+					for (int i : Main.range(users.size())) msg += i+1 + ". " + users.get(i).get("username") + "\n";
+					event.reply(msg.trim());
+					Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000, event.getMessage().getCreationTime().toEpochSecond());
+					if (response == null) {
+						event.reply("No response gotten.");
+						return;
+					} else if (Main.isInteger(response.getContent())) {
+						int choice = Integer.parseInt(response.getContent());
+						if (choice > users.size()) {
+							event.reply("The chosen number was larger than the amount of choices.");
+							return;
+						} else if (choice <= 0) {
+							event.reply("The chosen number was smaller than 1.");
+							return;
+						} else
+							userid = users.get(choice-1).get("id");
+					}
+				} else
+					userid = ((Map) ((List) data.get("data")).get(0)).get("account_id").toString();
+				try {
+					data1 = (Map) ((Map) new Gson().fromJson(Main.getHTML("https://api.worldoftanks." + server + "/wot/account/info/?application_id=" + Main.apiKeys.get("wargaming") + "&account_id=" + userid), Map.class).get("data")).get(userid);
+				} catch (JsonSyntaxException | IOException e) {
+					throw new CommandException("An unknown error occurred while getting the user's data.", e);
+				}
+				username = data1.get("nickname").toString();
+				String globalRating = data1.get("global_rating").toString().split("\\.")[0];
+				String clientLang = data1.get("client_language").toString();
+				Long lastBattleTime = Main.getLongFromPossibleDouble(data1.get("last_battle_time")) * 1000;
+				Long createdAt = Main.getLongFromPossibleDouble(data1.get("created_at")) * 1000;
+				data1 = (Map) ((Map) data1.get("statistics")).get("all");
+				event.reply("```fix\nUsername: %s\nUser ID: %s\nCreated at: %s (DD/MM/YY)\nLast battle: %s (DD/MM/YY)\nGlobal rating: %s\nClient language: %s\nSpotted: %s\nMax xp earned: %s\nAverage damage blocked: %s\nDirect hits received: %s\nTimes ammoracked player: %s\nPenetrations received: %s\nPenetrations done: %s\nShots: %s\nHits: %s\nHit percentage: %s\nFree xp: %s\nBattles done: %s\nSurived battles: %s\nBattles won: %s\nBattles lost: %s\nBattles drawn: %s\nDropped capture points: %s\nTotal damage dealt: %s```",
+						username,
+						userid,
+						new SimpleDateFormat("dd/MM/yyyy").format(new Date(createdAt)),
+						new SimpleDateFormat("dd/MM/yyyy").format(new Date(lastBattleTime)),
+						globalRating,
+						clientLang,
+						data1.get("spotted").toString().split("\\.")[0],
+						data1.get("max_xp").toString().split("\\.")[0],
+						data1.get("avg_damage_blocked"),
+						data1.get("direct_hits_received").toString().split("\\.")[0],
+						data1.get("explosion_hits").toString().split("\\.")[0],
+						data1.get("piercings_received").toString().split("\\.")[0],
+						data1.get("piercings").toString().split("\\.")[0],
+						data1.get("shots").toString().split("\\.")[0],
+						data1.get("hits").toString().split("\\.")[0],
+						Main.percentage(Double.parseDouble(data1.get("shots").toString()), Double.parseDouble(data1.get("hits").toString())),
+						data1.get("xp").toString().split("\\.")[0],
+						data1.get("battles").toString().split("\\.")[0],
+						data1.get("survived_battles").toString().split("\\.")[0],
+						data1.get("wins").toString().split("\\.")[0],
+						data1.get("losses").toString().split("\\.")[0],
+						data1.get("draws").toString().split("\\.")[0],
+						data1.get("dropped_capture_points").toString().split("\\.")[0],
+						data1.get("damage_dealt").toString().split("\\.")[0]);
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Get some tank info.", name = "gettankinfo", parent = "com.ptsmods.impulse.commands.General.wot", arguments = "<tank>", cooldown = 30)
+	public static void wotGetTankInfo(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			List<Map> tanks;
+			try {
+				tanks = new ArrayList<>(((Map<String, Map>) new Gson().fromJson(Main.getHTML("https://api.worldoftanks.com/wot/encyclopedia/tanks/?application_id=" + Main.apiKeys.get("wargaming")), Map.class).get("data")).values());
+			} catch (JsonSyntaxException | IOException e) {
+				throw new CommandException("An unknown error occurred while getting the tank ID matching the given name.", e);
+			}
+			boolean found = false;
+			int tankID = -1;
+			for (Map tank : tanks)
+				if (tank.get("short_name_i18n").toString().equalsIgnoreCase(event.getArgs())) {
+					tankID = Main.getIntFromPossibleDouble(tank.get("tank_id"));
+					found = true;
+					break;
+				}
+			if (!found) event.reply("A tank with the given name could not be found.");
+			else {
+				Map data;
+				try {
+					data = (Map) new Gson().fromJson(Main.getHTML("https://api.worldoftanks.com/wot/encyclopedia/tankinfo/?application_id=" + Main.apiKeys.get("wargaming") + "&tank_id=" + tankID), Map.class).get("data");
+				} catch (JsonSyntaxException | IOException e) {
+					throw new CommandException("An unknown error occurred while getting data for this tank.", e);
+				}
+				if (data.get(Integer.toString(tankID)) == null) event.reply("No data found for that tank.");
+				else {
+					data = (Map) data.get(Integer.toString(tankID));
+					event.reply("```fix\nTank name: %s\nTank ID: %s\nTier: %s\nEngine power: %s\nVision radius: %s (metres)\nMax gun penetration: %s (mm)\nMax health: %s\nWeight (tonnes): %s\nRadio distance: %s\nTank type: %s\nChassis rotation speed (degrees per second): %s\nGun name: %s\nMax ammo: %s\nNation: %s\nTurret rotation speed: %s\nIs premium: %s\nGold price: %s\nCredit price: %s\nXp price: %s\nSpeed limit: %s (km/s)\nMax damage: %s\n```",
+							data.get("name_i18n"),
+							tankID,
+							data.get("level").toString().split("\\.")[0],
+							data.get("engine_power").toString().split("\\.")[0],
+							data.get("circular_vision_radius").toString().split("\\.")[0],
+							data.get("gun_piercing_power_max").toString().split("\\.")[0],
+							data.get("max_health").toString().split("\\.")[0],
+							data.get("weight"),
+							data.get("radio_distance").toString().split("\\.")[0],
+							data.get("type_i18n"),
+							data.get("chassis_rotation_speed").toString().split("\\.")[0],
+							data.get("gun_name"),
+							data.get("gun_max_ammo").toString().split("\\.")[0],
+							data.get("nation_i18n"),
+							data.get("turret_rotation_speed").toString().split("\\.")[0],
+							data.get("is_premium"),
+							data.get("price_gold").toString().split("\\.")[0],
+							data.get("price_credit").toString().split("\\.")[0],
+							data.get("price_xp").toString().split("\\.")[0],
+							data.get("speed_limit").toString().split("\\.")[0],
+							data.get("gun_damage_max").toString().split("\\.")[0]);
+				}
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "General", help = "Generates a LMGTFY URL.", name = "lmgtfy")
+	public static void lmgtfy(CommandEvent event) {
+		if (!event.argsEmpty())
+			event.reply("https://lmgtfy.com/?q=" + Main.percentEncode(event.getArgs()));
+		else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "General", help = "Generates a name of the given length which must be greater than 3, but less than 10, defaults to a random number between 3 and 10.", name = "genname", arguments = "[length]")
+	public static void genName(CommandEvent event) {
+		int length = !event.argsEmpty() && Main.isInteger(event.getArgs()) && Integer.parseInt(event.getArgs()) >= 3 && Integer.parseInt(event.getArgs()) <= 10 ? Integer.parseInt(event.getArgs()) : Random.randInt(3, 10);
+		String name = "";
+		int vowelsPassed = 0; // max of 2 vowels in a row.
+		int consonantsPassed = 0; // max of 2 consonants in a row.
+		for (int i : Main.range(length)) {
+			boolean useVowel = Random.choice(true, false) && vowelsPassed != 2 || consonantsPassed == 2;
+			if (useVowel) {
+				name += Random.choice(vowels);
+				vowelsPassed += 1;
+				consonantsPassed = 0;
+			} else {
+				name += Random.choice(consonants);
+				consonantsPassed += 1;
+				vowelsPassed = 0;
+			}
+		}
+		while (name.endsWith("v")) name = name.substring(0, name.length()-1); // no Russian names allowed here.
+		event.reply(Main.encase(name));
+	}
+
+	@Command(category = "General", help = "Tells you the time in the given location.", name = "time", arguments = "<location>", cooldown = 30)
+	public static void time(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			Map data;
+			try {
+				data = new Gson().fromJson(Main.getHTML("https://maps.googleapis.com/maps/api/geocode/json?address=" + event.getArgs() + "&key=" + Main.apiKeys.get("geocoding")), Map.class);
+			} catch (JsonSyntaxException | IOException e) {
+				throw new CommandException("An unknown error occurred while getting the longitude and latitude from the Google API.", e);
+			}
+			if (data.get("status").toString().equals("ZERO_RESULTS"))
+				event.reply("No results found for **%s**.", event.getArgs());
+			else if (data.get("status").toString().equals("OK")) {
+				double lng = (double) ((Map) ((Map) ((Map) ((List) data.get("results")).get(0)).get("geometry")).get("location")).get("lng");
+				double lat = (double) ((Map) ((Map) ((Map) ((List) data.get("results")).get(0)).get("geometry")).get("location")).get("lat");
+				String address = ((Map) ((List) data.get("results")).get(0)).get("formatted_address").toString();
+				Map data1;
+				try {
+					data1 = new Gson().fromJson(Main.getHTML("https://maps.googleapis.com/maps/api/timezone/json?location=" + lat + "," + lng + "&timestamp=" + new Date().getTime()/1000 +"&key=" + Main.apiKeys.get("timezone")), Map.class);
+				} catch (JsonSyntaxException | IOException e) {
+					throw new CommandException("An unknown error occurred while getting the time and timezone from the Google API.", e);
+				}
+				if (data1.get("status").toString().equals("OK"))
+					event.reply("**%s**\n\t%s (%s)",
+							new SimpleDateFormat("EEEE d MMM y HH:mm:ss").format(new Date(System.currentTimeMillis() + Main.getIntFromPossibleDouble(data1.get("dstOffset")) + Main.getIntFromPossibleDouble(data1.get("rawOffset")))),
+							address,
+							data1.get("timeZoneName"));
+				else event.reply("An unknown error occurred while getting the time and timezone from the Google API.");
+			} else event.reply("An unknown error occurred while getting the longitude and latitude from the Google API.");
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "General", help = "Some general server information.", name = "server")
+	public static void server(CommandEvent event) {
+		Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Shows you the server icon.", name = "icon", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverIcon(CommandEvent event) {
+		event.reply(event.getGuild().getIconUrl());
+	}
+
+	@Subcommand(help = "Shows you all the custom emotes this server has.", name = "emotes", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverEmotes(CommandEvent event) {
+		String emotes = "";
+		for (Emote emote : event.getGuild().getEmotes())
+			emotes += emote.getAsMention() + " ";
+		emotes += "(" + event.getGuild().getEmotes().size() + " emotes)";
+		event.reply(event.getGuild().getEmotes().isEmpty() ? "This server has no custom emotes." : emotes.trim());
+	}
+
+	@Subcommand(help = "Shows you all the roles this server has.", name = "roles", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverRoles(CommandEvent event) {
+		List<String> roles = new ArrayList();
+		for (Role role : event.getGuild().getRoles())
+			if (!role.getName().toLowerCase().equals("@everyone") && !role.getName().toLowerCase().equals("@here"))
+				roles.add(role.getName());
+		event.reply("This server has the following roles: %s (%s roles)", Main.joinNiceString(roles), roles.size());
+	}
+
+	@Subcommand(help = "Tells you who the owner of this server is.", name = "owner", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverOwner(CommandEvent event) {
+		event.reply("This server's owner is %s.", event.getGuild().getOwner().getAsMention());
+	}
+
+	//@Subcommand(help = "", name = "", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	@Subcommand(help = "Shows you some information about the given role.", name = "roleinfo", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true, arguments = "<role>")
+	public static void serverRoleInfo(CommandEvent event) {
+		if (!event.argsEmpty()) {
+			Role role = null;
+			if (!event.getMessage().getMentionedRoles().isEmpty()) role = event.getMessage().getMentionedRoles().get(0);
+			else role = event.getGuild().getRolesByName(event.getArgs(), true).isEmpty() ? null : Random.choice(event.getGuild().getRolesByName(event.getArgs(), true));
+			if (role == null) event.reply("The given role could not be found.");
+			else {
+				int userCount = 0;
+				for (Member member : event.getGuild().getMembers())
+					if (member.getRoles().contains(role)) userCount += 1;
+				EmbedBuilder embed = new EmbedBuilder();
+				role.getPermissions();
+				embed.setTitle("Role info");
+				embed.setColor(role.getColor() == null ? new Color(0) : role.getColor());
+				embed.addField("Name", role.getName(), true);
+				embed.addField("Color", "#" + Integer.toHexString(role.getColor() == null ? new Color(0).getRGB() : role.getColor().getRGB()).substring(2).toUpperCase(), true);
+				embed.addField("Position", "" + role.getPosition(), true);
+				embed.addField("User count", "" + userCount, true);
+				embed.addField("Mentionable", "" + role.isMentionable(), true);
+				embed.addField("Hoisted", "" + role.isHoisted(), true);
+				embed.addField("Administrator", "" + role.hasPermission(Permission.ADMINISTRATOR), true);
+				embed.addField("Can ban members", "" + role.hasPermission(Permission.BAN_MEMBERS), true);
+				embed.addField("Can kick members", "" + role.hasPermission(Permission.KICK_MEMBERS), true);
+				embed.addField("Can change nickname", "" + role.hasPermission(Permission.NICKNAME_CHANGE), true);
+				embed.addField("Voice connect", "" + role.hasPermission(Permission.VOICE_CONNECT), true);
+				embed.addField("Create instant invites", "" + role.hasPermission(Permission.CREATE_INSTANT_INVITE), true);
+				embed.addField("Can deafen members", "" + role.hasPermission(Permission.VOICE_DEAF_OTHERS), true);
+				embed.addField("Can embed links", "" + role.hasPermission(Permission.MESSAGE_EMBED_LINKS), true);
+				embed.addField("Can use external emotes", "" + role.hasPermission(Permission.MESSAGE_EXT_EMOJI), true);
+				embed.addField("Can manage channels", "" + role.hasPermission(Permission.MANAGE_CHANNEL), true);
+				embed.addField("Can manage emotes", "" + role.hasPermission(Permission.MANAGE_EMOTES), true);
+				embed.addField("Can manage messages", "" + role.hasPermission(Permission.MESSAGE_MANAGE), true);
+				embed.addField("Can manage nicknames", "" + role.hasPermission(Permission.NICKNAME_MANAGE), true);
+				embed.addField("Can manage roles", "" + role.hasPermission(Permission.MANAGE_ROLES), true);
+				embed.addField("Can manage server", "" + role.hasPermission(Permission.MANAGE_SERVER), true);
+				embed.addField("Can mention everyone", "" + role.hasPermission(Permission.MESSAGE_MENTION_EVERYONE), true);
+				embed.addField("Can move members", "" + role.hasPermission(Permission.VOICE_MOVE_OTHERS), true);
+				embed.addField("Can mute members", "" + role.hasPermission(Permission.VOICE_MUTE_OTHERS), true);
+				embed.addField("Can read message history", "" + role.hasPermission(Permission.MESSAGE_HISTORY), true);
+				event.reply(embed.build());
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+
 
 }
