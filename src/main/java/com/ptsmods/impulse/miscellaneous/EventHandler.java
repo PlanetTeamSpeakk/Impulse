@@ -43,16 +43,22 @@ public class EventHandler extends ListenerAdapter {
 		for (Method cmd : Main.getCommands()) {
 			if (passedClasses.contains(cmd.getDeclaringClass())) continue;
 			passedClasses.add(cmd.getDeclaringClass());
-			Method method = Main.getMethod(cmd.getDeclaringClass(), "on" + event.getClass().getSimpleName().replaceAll("Event", ""), event.getClass());
+			Class eventClass = event.getClass();
+			Method method = Main.getMethod(cmd.getDeclaringClass(), "on" + eventClass.getSimpleName().replaceAll("Event", ""), eventClass);
+			while (method == null && eventClass.getSuperclass() != null) {
+				eventClass = eventClass.getSuperclass();
+				method = Main.getMethod(cmd.getDeclaringClass(), "on" + eventClass.getSimpleName().replaceAll("Event", ""), eventClass);
+			}
 			if (method != null && method.isAnnotationPresent(SubscribeEvent.class)) {
 				method.setAccessible(true);
+				final Method method1 = method;
 				Main.runAsynchronously(() -> {
 					Object obj = null;
 					try {
 						obj = cmd.getDeclaringClass().newInstance();
 					} catch (InstantiationException | IllegalAccessException e1) {}
 					try {
-						method.invoke(obj, event);
+						method1.invoke(obj, event);
 					} catch (InvocationTargetException e) {
 						e.getCause().printStackTrace();
 					} catch (IllegalAccessException | IllegalArgumentException e) {
@@ -151,7 +157,7 @@ public class EventHandler extends ListenerAdapter {
 								for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, logging, etc.
 									try {
 										hook.run(cevent);
-									} catch (SecurityException e) {
+									} catch (CommandPermissionException e) {
 										if (e.getMessage() != null && !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage()).queue();
 										return;
 									}
@@ -168,7 +174,7 @@ public class EventHandler extends ListenerAdapter {
 										cooldowns.put(event.getAuthor().getId(), userCooldowns);
 									}
 								} catch (InvocationTargetException e) {
-									sendStackTrace(e.getCause(), event);
+									new EventHandler().sendStackTrace(e.getCause(), event);
 								}
 							}
 						}

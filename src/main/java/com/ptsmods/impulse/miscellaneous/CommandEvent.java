@@ -58,7 +58,7 @@ public class CommandEvent {
 		message = args == null || args.length == 0 ? message : String.format(message, args);
 		new ArrayList();
 		String msg = "";
-		boolean inBox = message.indexOf("```") != message.lastIndexOf("```");
+		boolean inBox = message.indexOf("```") != message.lastIndexOf("```") && message.contains("```");
 		String boxLang = "";
 		try {
 			boxLang = message.substring(message.indexOf("```") + 3);

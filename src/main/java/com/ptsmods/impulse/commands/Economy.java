@@ -226,17 +226,17 @@ public class Economy {
 		else return Main.getIntFromPossibleDouble(((Map) bank.get(member.getGuild().getId())).get(member.getUser().getId()));
 	}
 
-	public static void setBalance(Member member, int balance) throws IOException {
+	public static void setBalance(Member member, int balance) {
 		if (!hasAccount(member)) throw new UserHasNoBankAccountException();
 		((Map) bank.get(member.getGuild().getId())).put(member.getUser().getId(), balance);
 		saveBank();
 	}
 
-	public static void addBalance(Member member, int balance) throws IOException {
+	public static void addBalance(Member member, int balance) {
 		setBalance(member, getBalance(member) + balance);
 	}
 
-	public static void removeBalance(Member member, int balance) throws IOException {
+	public static void removeBalance(Member member, int balance) {
 		setBalance(member, getBalance(member) - balance);
 	}
 
@@ -273,11 +273,11 @@ public class Economy {
 		}
 	}
 
-	private static void saveBank() throws IOException {
+	private static void saveBank() {
 		try {
 			DataIO.saveJson(bank, "data/economy/bank.json");
 		} catch (IOException e) {
-			throw new IOException("An unknown error occurred while saving the data file.", e);
+			throw new RuntimeException("An unknown error occurred while saving the data file.", e);
 		}
 	}
 

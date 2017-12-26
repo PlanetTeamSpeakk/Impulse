@@ -67,7 +67,7 @@ public class Miscellaneous {
 
 	@Subcommand(help = "Edit a custom command.", name = "edit", parent = "com.ptsmods.impulse.commands.Miscellaneous.customCom", arguments = "<command>; <message>", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void customComEdit(CommandEvent event) {
-		if (!event.getArgs().isEmpty() && event.getArgs().split(";").length >= 2 && event.getArgs().split("; ").length >= 2) {
+		if (!event.getArgs().isEmpty() && event.getArgs().split(";").length >= 2 || event.getArgs().split("; ").length >= 2) {
 			String[] args = event.getArgs().contains("; ") ? event.getArgs().split("; ") : event.getArgs().split(";");
 			if (!settings.containsKey(event.getGuild().getId())) event.reply("This server has no custom commands.");
 			else if (!((Map) settings.get(event.getGuild().getId())).containsKey(args[0])) event.reply("That custom command does not seem to exist.");

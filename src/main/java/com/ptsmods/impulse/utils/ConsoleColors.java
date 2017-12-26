@@ -1,5 +1,7 @@
 package com.ptsmods.impulse.utils;
 
+import java.awt.Color;
+
 import org.fusesource.jansi.AnsiConsole;
 
 public enum ConsoleColors {
@@ -72,6 +74,7 @@ public enum ConsoleColors {
 
 	private final String ansiColorCode;
 	private final String name;
+	private final Color color;
 
 	private ConsoleColors(String ansiColorCode) {
 		this.ansiColorCode = ansiColorCode;
@@ -113,6 +116,25 @@ public enum ConsoleColors {
 			}
 		}
 		this.name = Main.encase(name);
+		if 		(name.contains("highintensity black")) 	color = Color.getHSBColor( 0.000f, 0.000f, 0.502f );
+		else if (name.contains("highintensity red")) 	color = Color.getHSBColor( 0.000f, 1.000f, 1.000f );
+		else if (name.contains("highintensity blue")) 	color = Color.getHSBColor( 0.667f, 1.000f, 1.000f );
+		else if (name.contains("highintensity purple")) color = Color.getHSBColor( 0.833f, 1.000f, 1.000f );
+		else if (name.contains("highintensity green")) 	color = Color.getHSBColor( 0.333f, 1.000f, 1.000f );
+		else if (name.contains("highintensity yellow")) color = Color.getHSBColor( 0.167f, 1.000f, 1.000f );
+		else if (name.contains("highintensity cyan")) 	color = Color.getHSBColor( 0.500f, 1.000f, 1.000f );
+		else if (name.contains("highintensity white")) 	color = Color.getHSBColor( 0.000f, 0.000f, 1.000f );
+		else if (name.contains("reset"))			 	color = Color.getHSBColor( 0.000f, 0.000f, 1.000f );
+		else if	(name.contains("black")) 				color = Color.getHSBColor(0.000f, 0.000f, 0.000f);
+		else if (name.contains("black")) 				color = Color.getHSBColor( 0.000f, 0.000f, 0.000f );
+		else if (name.contains("red")) 					color = Color.getHSBColor( 0.000f, 1.000f, 0.502f );
+		else if (name.contains("blue")) 				color = Color.getHSBColor( 0.667f, 1.000f, 0.502f );
+		else if (name.contains("purple")) 				color = Color.getHSBColor( 0.833f, 1.000f, 0.502f );
+		else if (name.contains("green")) 				color = Color.getHSBColor( 0.333f, 1.000f, 0.502f );
+		else if (name.contains("yellow")) 				color = Color.getHSBColor( 0.167f, 1.000f, 0.502f );
+		else if (name.contains("cyan")) 				color = Color.getHSBColor( 0.500f, 1.000f, 0.502f );
+		else if (name.contains("white")) 				color = Color.getHSBColor( 0.000f, 0.000f, 0.753f );
+		else color = null;
 	}
 
 	public String getName() {
@@ -139,6 +161,23 @@ public enum ConsoleColors {
 
 	public static void print(String s) {
 		AnsiConsole.out().print(s);
+	}
+
+	public static boolean isANSI(String arg) {
+		for (ConsoleColors color : ConsoleColors.values())
+			if (color.getAnsiColorCode().equals(arg)) return true;
+		return false;
+	}
+
+	public static String getCleanString(String string) {
+		if (string == null) return null;
+		for (ConsoleColors color : ConsoleColors.values())
+			string = string.replaceAll(color.getAnsiColorCode().replaceAll("\\[", "\\\\["), "");
+		return string;
+	}
+	
+	public Color toColor() {
+		return color;
 	}
 
 }

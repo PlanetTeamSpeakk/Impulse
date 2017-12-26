@@ -39,6 +39,7 @@ public class Owner {
 					"java.io," +
 					"java.lang," +
 					"java.util," +
+					"java.awt," +
 					"Packages.net.dv8tion.jda.core," +
 					"Packages.net.dv8tion.jda.core.entities," +
 					"Packages.net.dv8tion.jda.core.entities.impl," +
@@ -90,7 +91,7 @@ public class Owner {
 		try {
 			engine.put("event", event);
 			engine.put("message", event.getMessage());
-			engine.put("channel", event.getChannel());
+			engine.put("channel", event.getTextChannel());
 			engine.put("args", event.getArgs());
 			engine.put("jda", event.getJDA());
 			engine.put("author", event.getAuthor());

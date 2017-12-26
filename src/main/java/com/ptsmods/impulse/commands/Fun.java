@@ -13,13 +13,17 @@ import com.google.common.collect.Lists;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
+import com.ptsmods.impulse.miscellaneous.Subcommand;
+import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
 import com.ptsmods.impulse.utils.DataIO;
+import com.ptsmods.impulse.utils.LaughingMao;
 import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class Fun {
 
@@ -50,6 +54,194 @@ public class Fun {
 			"{VICTIM} screams as Pyramid Head lifts Sarcen up using his superhuman strength. Before {VICTIM} can even utter a scream of terror, Pyramid Head uses his superhuman strength to horrifically tear {VICTIM} into two halves; {VICTIM} stares at the monstrosity in shock and disbelief as {VICTIM} gurgles up blood, the upper body organs spilling out of the dismembered torso, before the eyes roll backward into the skull.",
 			"{VICTIM} steps on a land mine and is horrifically blown to multiple pieces as the device explodes, {VICTIM}'s entrails and gore flying up and splattering all around as if someone had thrown a watermelon onto the ground from the top of a multiple story building.",
 	"{VICTIM} is killed instantly as the top half of his head is blown off by a Red Army sniper armed with a Mosin Nagant, {VICTIM}'s brains splattering everywhere in a horrific fashion."};
+	private static final Map<String, Integer> times = Main.newHashMap(new String[] {
+			"minute",
+			"hour",
+			"day",
+			"week",
+			"month"
+	}, new Integer[] {
+			60,
+			3600,
+			86400,
+			604800,
+			181440000
+	});
+	private static final Map<String, Map<String, Object>> plants = Main.newHashMap(new String[] {
+			/* === VEGETABLES === */
+			"carrots",
+			"potatoes",
+			"pumpkin",
+			"tomatoes",
+			"cabbage",
+			"cucumber",
+			"onions",
+			"broccoli",
+			"lettuce",
+			"spinach",
+			"eggplant",
+			"cauliflower",
+			"peas",
+			"maize",
+			"radish",
+			"garlic",
+			"celery",
+			"kale",
+			"bell pepper",
+			"asparagus",
+			"turnip",
+			"bean",
+			"leek",
+			"zucchini",
+			"artichoke",
+			"chilli pepper",
+			"red cabbage",
+			/* === FRUITS === */
+			"apple tree",
+			"orange tree",
+			"banana tree",
+			"grapevine",
+			"strawberry bush",
+			"pear tree",
+			"pineapple",
+			"cherry tree",
+			"lemon tree",
+			"peach tree",
+			"mango tree",
+			"berry tree",
+			"watermelon",
+			"grapefruit tree",
+			"kiwi tree",
+			"papaya tree",
+			"pomegranate tree",
+			"fig tree",
+			"avocado tree",
+			"apricot tree",
+			"blackberry bush",
+			"cranberry bush",
+			"cantaloupe bush",
+			"palm tree",
+			"passion fruit bush",
+			"olive tree",
+			"raspberry bush",
+			"lime tree"
+	}, new Map[] {
+			/* === VEGETABLES === */
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {15*times.get("minute"), "carrot", 250, 65}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {15*times.get("minute"), "potato", 250, 65}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "pumpkin", 1000, 250}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "tomato", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "cabbage", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {45*times.get("minute"), "cucumber", 750, 375}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "onion", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"}, 	// value = seconds / 3.6
+					new Object[] {times.get("hour"), "broccoli", 1000, 250}),		// price = value / 4
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {45*times.get("minute"), "lettuce", 750, 375}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {45*times.get("minute"), "spinach leaf", 750, 375}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "eggplant", 1000, 250}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "cauliflower", 1000, 250}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {15*times.get("minute"), "pea", 250, 65}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "corn", 1000, 250}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "radish", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {45*times.get("minute"), "garlic", 750, 375}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {15*times.get("minute"), "celery stalk", 250, 65}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "kale stalk", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "sprout", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {45*times.get("minute"), "bell pepper", 750, 375}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "asparagus", 1000, 250}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {45*times.get("minute"), "turnip", 750, 375}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {15*times.get("minute"), "bean", 250, 65}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "leek", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {45*times.get("minute"), "zucchini", 750, 375}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "chilli pepper", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "red cabbage", 1000, 500}),
+			/* === FRUITS === */
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "apple", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "orange", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "banana", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {2*times.get("hour"), "grape", 2000, 500}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {30*times.get("minute"), "strawberry", 500, 125}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "pear", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "pineapple", 1000, 250}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "cherry", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "lemon", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "peach", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "mango", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "berry", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {times.get("hour"), "watermelon", 1000, 250}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "grapefruit", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "kiwi", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "papaya", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "pomegranate", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "fig", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "avocado", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "apricot", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {2*times.get("hour"), "blackberry", 2000, 500}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {2*times.get("hour"), "cranberry", 2000, 500}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {2*times.get("hour"), "cantaloupe", 2000, 500}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {6*times.get("hour"), "coconut", 6000, 1500}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {2*times.get("hour"), "passion fruit", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "olive", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {2*times.get("hour"), "raspberry", 3000, 750}),
+			Main.newHashMap(new String[] {"growthtime", "item", "value", "price"},
+					new Object[] {3*times.get("hour"), "lime", 3000, 750})
+	});
+	private static Map<String, Map<String, Map<String, Object>>> garden;
+	private static List<String> sadMaos;
+	private static Map<String, Integer> easterEgg = new HashMap();
 
 	static {
 		try {
@@ -57,7 +249,7 @@ public class Fun {
 		} catch (IOException e) {
 			throw new RuntimeException("An unknown error occurred while loading the data file.", e);
 		}
-		if (!memes.containsKey("global"))
+		if (!memes.containsKey("global")) {
 			memes.put("global", Lists.newArrayList(
 					"https://cdn.impulsebot.com/F7LEB4bHAF.png",
 					"https://cdn.impulsebot.com/rhgduDZReD.jpg",
@@ -72,7 +264,7 @@ public class Fun {
 					"https://cdn.impulsebot.com/BaFZzoHj1A.jpg",
 					"https://cdn.impulsebot.com/nbtDNX4g6G.png",
 					"https://cdn.impulsebot.com/rPoaYlL4rX.jpg", // thanks to Gesty#6002 and nev#3618 for providing me these memes.
-					"https://cdn.impulsebot.com/VPSo40OS6s.jpg",
+					"https://cdn.impulsebot.com/VPSo40OS6s.jpg", // almost all jpg, though, smh.
 					"https://cdn.impulsebot.com/B8PfBlv94t.jpg",
 					"https://cdn.impulsebot.com/VXyXT6jF2X.jpg",
 					"https://cdn.impulsebot.com/dnHi8uLLVS.jpg",
@@ -96,10 +288,21 @@ public class Fun {
 					"https://cdn.impulsebot.com/yXPkaNbPuc.jpg",
 					"https://cdn.impulsebot.com/D8FPZHVW2G.jpg",
 					"https://cdn.impulsebot.com/wSxlddLBGK.jpg"));
+			try {
+				DataIO.saveJson(memes, "data/fun/memes.json");
+			} catch (IOException e) {
+				throw new RuntimeException("An unknown error occurred while saving the data file.", e);
+			}
+		}
 		try {
-			DataIO.saveJson(memes, "data/fun/memes.json");
+			garden = DataIO.loadJsonOrDefault("data/fun/garden.json", Map.class, new HashMap());
 		} catch (IOException e) {
-			throw new RuntimeException("An unknown error occurred while saving the data file.", e);
+			throw new RuntimeException("An unknown error occurred while loading the garden.", e);
+		}
+		try {
+			sadMaos = DataIO.loadJsonOrDefault("data/fun/sadmaos.json", List.class, new ArrayList());
+		} catch (IOException e) {
+			throw new RuntimeException("An unknown error occurred while loading the sad maos.", e);
 		}
 	}
 
@@ -370,7 +573,7 @@ public class Fun {
 			for (Character ch : event.getArgs().toLowerCase().toCharArray())
 				if (ch.charValue() >= 'a' && ch.charValue() <='z')
 					output += ":regional_indicator_" + ch + ":";
-				else if (ch.charValue() >= '0' && ch.charValue() <= '9')
+				else
 					switch (ch.charValue()) {
 					case '0': {output += ":zero:";  break;}
 					case '1': {output += ":one:";   break;}
@@ -382,11 +585,219 @@ public class Fun {
 					case '7': {output += ":seven:"; break;}
 					case '8': {output += ":eight:"; break;}
 					case '9': {output += ":nine:";  break;}
-					default: break;
+					default: {output += ch; break;}
 					}
-				else output += ch;
 			event.reply(output);
 		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Fun", help = "Plant or harvest crops.", name = "garden")
+	public static void garden(CommandEvent event) {
+		Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Plant a plant.", name = "plant", parent = "com.ptsmods.impulse.commands.Fun.garden", guildOnly = true, arguments = "<plant>")
+	public static void gardenPlant(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			event.setArgs(event.getArgs().toLowerCase());
+			if (!plants.containsKey(event.getArgs())) event.reply("That plant could not be found, to list all plants type %sgarden plants.", Main.getPrefix(event.getGuild()));
+			else if (!Economy.hasAccount(event.getMember())) event.reply("You do not have a bank account, you can make one with %sbank register.", Main.getPrefix(event.getGuild()));
+			else if (!Economy.hasEnoughBalance(event.getMember(), (int) plants.get(event.getArgs()).get("price"))) event.reply("You do not have enough money to plant that, you have **%s credits**, but you need **%s credits**.", Economy.getBalance(event.getMember()), (int) plants.get(event.getArgs()).get("price"));
+			else if (garden.containsKey(event.getGuild().getId()) && garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId()) && garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).containsKey(event.getArgs())) event.reply("You have already planted that plant.");
+			else {
+				event.reply("Are you sure you want to plant **a %s** for **%s credits**? It will take %s to grow. (yes/no)",
+						event.getArgs(), (int) plants.get(event.getArgs()).get("price"), Main.formatMillis((int) plants.get(event.getArgs()).get("growthtime") * 1000));
+				Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000, event.getMessage().getCreationTime().toEpochSecond());
+				if (response == null || !response.getContent().startsWith("y")) event.reply("Kk, then not.");
+				else {
+					Economy.removeBalance(event.getMember(), (int) plants.get(event.getArgs()).get("price"));
+					if (!garden.containsKey(event.getGuild().getId())) garden.put(event.getGuild().getId(), new HashMap());
+					if (!garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) garden.get(event.getGuild().getId()).put(event.getAuthor().getId(), Main.newHashMap(new String[] {"items"}, new Map[] {new HashMap()}));
+					garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).put(event.getArgs(), (double) System.currentTimeMillis());
+					try {
+						DataIO.saveJson(garden, "data/fun/garden.json");
+					} catch (IOException e) {
+						throw new CommandException("An unknown error occurred while saving the data file.", e);
+					}
+					event.reply("Successfully planted **a %s**, it will take %s to grow, you can always view it's statistics with **%sgarden info %s**.",
+							event.getArgs(), Main.formatMillis((int) plants.get(event.getArgs()).get("growthtime") * 1000), Main.getPrefix(event.getGuild()), event.getArgs());
+				}
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Harvest a plant.", name = "harvest", parent = "com.ptsmods.impulse.commands.Fun.garden", guildOnly = true, arguments = "<plant>")
+	public static void gardenHarvest(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			event.setArgs(event.getArgs().toLowerCase());
+			if (!plants.containsKey(event.getArgs())) event.reply("That plant could not be found, to list all plants type %sgarden plants.", Main.getPrefix(event.getGuild()));
+			else if (!garden.containsKey(event.getGuild().getId())) event.reply("No one in this server has planted any plants yet.");
+			else if (!garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) event.reply("You have not planted any plants yet.");
+			else if (!garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).containsKey(event.getArgs())) event.reply("You have not planted that plant.");
+			else if (Double.parseDouble(garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get(event.getArgs()).toString())+(int) plants.get(event.getArgs()).get("growthtime")*1000 >= System.currentTimeMillis()) event.reply("You cannot harvest that plant yet, it still has to grow for another %s.",
+					Main.formatMillis((long) Double.parseDouble(garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get(event.getArgs()).toString())+(int) plants.get(event.getArgs()).get("growthtime")*1000 - System.currentTimeMillis()));
+			else {
+				((Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).put(plants.get(event.getArgs()).get("item"), Main.getIntFromPossibleDouble(((Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).getOrDefault(plants.get(event.getArgs()).get("item"), 0)) + 1);
+				garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).remove(event.getArgs());
+				try {
+					DataIO.saveJson(garden, "data/fun/garden.json");
+				} catch (IOException e) {
+					throw new CommandException("An unknown error occurred while saving the data file.", e);
+				}
+				int amount = Integer.parseInt(((Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).get(plants.get(event.getArgs()).get("item")).toString().split("\\.")[0]);
+				event.reply("Successfully harvested your **%s** you got **1 %s** which brings you to a total of **%s %s**, you can sell them with %sgarden sell.",
+						event.getArgs(), plants.get(event.getArgs()).get("item"), amount, amount == 1 ? "" : Main.plural(plants.get(event.getArgs()).get("item").toString()), Main.getPrefix(event.getGuild()));
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Get information about a plant.", name = "info", parent = "com.ptsmods.impulse.commands.Fun.garden", arguments = "<plant>")
+	public static void gardenInfo(CommandEvent event) {
+		if (!event.argsEmpty()) {
+			event.setArgs(event.getArgs().toLowerCase());
+			if (!plants.containsKey(event.getArgs())) event.reply("That plant could not be found, to list all plants type %sgarden plants.", Main.getPrefix(event.getGuild()));
+			else {
+				EmbedBuilder builder = new EmbedBuilder()
+						.setColor(Color.GREEN)
+						.setTitle(Main.pascalCase(event.getArgs()))
+						.addField("Name", Main.pascalCase(event.getArgs()), true)
+						.addField("Item", plants.get(event.getArgs()).get("item").toString(), true)
+						.addField("Growthtime", Main.formatMillis(Long.parseLong(plants.get(event.getArgs()).get("growthtime").toString()) * 1000), true);
+				if (event.getGuild() != null
+						&& garden.containsKey(event.getGuild().getId())
+						&& garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())
+						&& garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).containsKey(event.getArgs())) {
+					long timeLeft = Long.parseLong(garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get(event.getArgs()).toString().split("\\.")[0])-System.currentTimeMillis();
+					timeLeft = timeLeft < 0 ? 0 : timeLeft;
+					builder.addField("Growthtime left", Main.formatMillis(timeLeft), true);
+				}
+				event.reply(builder.build());
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Get all available and planted plants.", name = "plants", parent = "com.ptsmods.impulse.commands.Fun.garden", cooldown = 5)
+	public static void gardenPlants(CommandEvent event) {
+		EmbedBuilder builder = new EmbedBuilder()
+				.setColor(Color.GREEN)
+				.setTitle("Available plants")
+				.setDescription("Formulas:\n\tvalue = seconds / 3.6\n\tprice = value / 4");
+		for (String plant : Main.sort(new ArrayList<>(plants.keySet())))
+			builder.addField(Main.pascalCase(plant), Main.formatMillis(Long.parseLong(plants.get(plant).get("growthtime").toString()) * 1000), true);
+		event.reply(builder.build());
+		if (event.getGuild() != null
+				&& garden.containsKey(event.getGuild().getId())
+				&& garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) {
+			builder.clearFields();
+			builder.setTitle("Your plants");
+			for (String plant : garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).keySet())
+				if (!plant.equalsIgnoreCase("items")) {
+					long timeLeft = 0;
+					timeLeft = (int)plants.get(plant).get("growthtime")*1000-(System.currentTimeMillis()-(long)Double.parseDouble(garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get(plant).toString()));
+					timeLeft = timeLeft < 0 ? 0 : timeLeft;
+					builder.addField(Main.pascalCase(plant), Main.formatMillis(timeLeft), true);
+				}
+			if (builder.getFields().size() > 0) event.reply(builder.build());
+		}
+	}
+
+	@Subcommand(help = "Shows you all your items.", name = "items", parent = "com.ptsmods.impulse.commands.Fun.garden", guildOnly = true)
+	public static void gardenItems(CommandEvent event) {
+		if (garden.containsKey(event.getGuild().getId())) {
+			if (garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) {
+				if (!((Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).isEmpty()) {
+					EmbedBuilder builder = new EmbedBuilder()
+							.setColor(Color.GREEN)
+							.setTitle("Your items");
+					for (String item : ((Map<String, Double>) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).keySet())
+						builder.addField(Main.pascalCase(item), "" + ((Map<String, Double>) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).get(item).intValue(), true);
+					event.reply(builder.build());
+				} else event.reply("You have no items.");
+			} else event.reply("You haven't planted anything yet.");
+		} else event.reply("No one in this server has planted anything yet.");
+	}
+
+	@Subcommand(help = "Sell all your earned items and convert them into money.", name = "sell", parent = "com.ptsmods.impulse.commands.Fun.garden", guildOnly = true)
+	public static void gardenSell(CommandEvent event) throws CommandException {
+		if (Economy.hasAccount(event.getMember())) {
+			if (garden.containsKey(event.getGuild().getId())) {
+				if (garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) {
+					Map items = (Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items");
+					if (!items.isEmpty()) {
+						int value = 0;
+						for (Object item :  items.keySet())
+							for (Map plant : plants.values())
+								if (plant.get("item").toString().equals(item.toString())) {
+									value += (int) plant.get("value");
+									items.remove(item);
+									break;
+								}
+						garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).put("items", items);
+						try {
+							DataIO.saveJson(garden, "data/fun/garden.json");
+						} catch (IOException e) {
+							throw new CommandException("An unknown error occurred while saving the garden file.", e);
+						}
+						Economy.addBalance(event.getMember(), value);
+						event.reply("Successfully sold all your items, **%s credits** have been added to your account.", value);
+					} else event.reply("You do not have any items.");
+				} else event.reply("You have not touched the garden yet.");
+			} else event.reply("No one in this server has touched the garden yet.");
+		} else event.reply("You do not have a bank account, you can make one with %sbank register.", Main.getPrefix(event.getGuild()));
+	}
+
+	@Command(category = "Fun", help = "Make Mao either happy, or sad.", name = "sadmao", guildOnly = true, userPermissions = {Permission.MESSAGE_MANAGE})
+	public static void sadMao(CommandEvent event) throws CommandException {
+		if (!sadMaos.contains(event.getGuild().getId())) {
+			sadMaos.add(event.getGuild().getId());
+			try {
+				DataIO.saveJson(sadMaos, "data/fun/sadmaos.json");
+			} catch (IOException e) {
+				throw new CommandException("Mao seems too powerful, he cannot be deactivated :O.", e);
+			}
+			event.reply("You've made Mao sad, now he's too sad to laugh when someone says ayy.");
+		} else {
+			sadMaos.remove(event.getGuild().getId());
+			try {
+				DataIO.saveJson(sadMaos, "data/fun/sadmaos.json");
+			} catch (IOException e) {
+				throw new CommandException("Mao is too depressed to ever be happy again, he cannot be activated. :(", e);
+			}
+			event.reply("You've made Mao happy, now he's no longer too sad to laugh when someone says ayy.");
+		}
+	}
+
+	@Command(category = "Fun", help = "There's no such thing.", name = "easteregg", hidden = true)
+	public static void easterEgg(CommandEvent event) {
+		if (!easterEgg.containsKey(event.getAuthor().getId())) easterEgg.put(event.getAuthor().getId(), 1);
+		String output = "";
+		switch (easterEgg.get(event.getAuthor().getId())) {
+		case 1: {output = "Easteregg?"; break;}
+		case 2: {output = "Never heard of it."; break;}
+		case 3: {output = "Stop that."; break;}
+		case 4: {output = "There's nothing here."; break;}
+		case 5: {output = "Nothing to see here!"; break;}
+		case 6: {output = "You stop that right now!"; break;}
+		case 7: {output = "I'll have a talk with your mom if you don't stop it right now!"; break;}
+		case 8: {output = "Ok, that's it! I'm calling your mom!"; easterEgg.put(event.getAuthor().getId(), 0); Main.sendPrivateMessage(Main.getOwner(), event.getAuthor().getAsMention() + " has gotten to easter egg #8, they're bullying me. :("); break;}
+		}
+		easterEgg.put(event.getAuthor().getId(), easterEgg.get(event.getAuthor().getId())+1);
+		event.reply(output);
+	}
+
+	@SubscribeEvent
+	public static void onMessageReceived(MessageReceivedEvent event) {
+		if (event.getMessage().getContent().toLowerCase().contains("ayy") && (event.getGuild() == null || !sadMaos.contains(event.getGuild().getId()) && !event.getGuild().getName().toLowerCase().contains("bots"))) {
+			LaughingMao.sendLMao(event.getChannel(), null);
+			String[] LMAO = {
+					"\uD83C\uDDF1", 		 // regional_indicator_l
+					"\uD83C\uDDF2",			// regional_indicator_m
+					"\uD83C\uDDE6",		   // regional_indicator_a
+					"\uD83C\uDDF4"		  // regional_indicator_o
+			};
+			for (String ch : LMAO)
+				event.getMessage().addReaction(ch).queue();
+		}
 	}
 
 }

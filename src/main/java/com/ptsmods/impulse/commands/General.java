@@ -13,12 +13,15 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.ptsmods.impulse.Main.TimeType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
+import com.ptsmods.impulse.utils.Cleverbot;
 import com.ptsmods.impulse.utils.Downloader;
 import com.ptsmods.impulse.utils.Downloader.DownloadResult;
+import com.ptsmods.impulse.utils.MathHelper;
 import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.EmbedBuilder;
@@ -47,7 +50,6 @@ public class General {
 	static {
 		Main.apiKeys.put("steam", "4097EECAE0C75569D595A25BEB4BCB3C");
 		Main.apiKeys.put("wargaming", "a223cd2a48a13e5b2e484f4a9ec80d33");
-		Main.apiKeys.put("bitly", "dd800abec74d5b12906b754c630cdf1451aea9e0");
 		Main.apiKeys.put("geocoding", "AIzaSyCXkFcW0v8XJWGK2Im2_fApsbh3I8OGCDI");
 		Main.apiKeys.put("timezone", "AIzaSyCXkFcW0v8XJWGK2Im2_fApsbh3I8OGCDI");
 		List<Map> data;
@@ -64,7 +66,7 @@ public class General {
 	public static void calc(CommandEvent event) {
 		if (event.getArgs().length() != 0)
 			try {
-				event.reply("`%s` = `%s`", event.getArgs(), Main.eval(event.getArgs()));
+				event.reply("`%s` = `%s`", event.getArgs(), MathHelper.eval(event.getArgs()));
 			} catch (RuntimeException e) {
 				event.reply(e.getMessage());
 			}
@@ -172,13 +174,14 @@ public class General {
 	@Command(category = "General", help = "Some information about the bot.", name = "info")
 	public static void info(CommandEvent event) {
 		EmbedBuilder embed = new EmbedBuilder();
-		Color color = new Color(Random.randInt(256*256*256));
 		embed.setTitle(event.getJDA().getSelfUser().getName());
-		embed.setColor(color);
+		embed.setColor(new Color(Random.randInt(256*256*256)));
 		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
 		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. "
-				+ "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") or [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")."
-				+ " PS, the color used is #" + Integer.toHexString(color.getRGB()).substring(2).toUpperCase() + ".");
+				+ "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") "
+				+ "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\") "
+				+ "and check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\").");
+		embed.setFooter("PS, the color used is #" + Integer.toHexString(embed.build().getColor().getRGB()).substring(2).toUpperCase() + ".", null);
 		event.reply(embed.build());
 	}
 
@@ -191,7 +194,7 @@ public class General {
 	public static void ping(CommandEvent event) {
 		long nanos = System.nanoTime();
 		event.getChannel().sendTyping().complete();
-		long replyTime = new Date().getTime()/1000-event.getMessage().getCreationTime().toEpochSecond();
+		long replyTime = Main.getTime(TimeType.MILLISECONDS)/1000-event.getMessage().getCreationTime().toEpochSecond();
 		replyTime = replyTime < 0 ? 0 : replyTime;
 		event.reply("Ping: **" + (System.nanoTime()-nanos)/1000000F + " milliseconds**, took **" + replyTime + " second" + (replyTime != 1 ? "s" : "") + "** to reply.");
 	}
@@ -203,7 +206,7 @@ public class General {
 			try {
 				int rng = Random.randInt(1000, 9999);
 				result = Downloader.downloadFile("https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=" + Main.percentEncode(event.getArgs()), "data/general/" + rng + ".png");
-				event.getChannel().sendFile(new File(result.getFileLocation()), new MessageBuilder().append("Here you go:").build()).queue();
+				event.getChannel().sendFile(new File(result.getFileLocation()), new MessageBuilder().append("Here you go:").build()).complete();
 				new File(result.getFileLocation()).delete();
 			} catch (IOException e) {
 				event.reply("An unknown error occurred while creating the QR code, please try again.");
@@ -268,7 +271,6 @@ public class General {
 
 	@Command(category = "General", help = "Let's the bot say something, this does filter out @\u200Beveryone and @\u200Bhere.", name = "say", arguments = "<text>")
 	public static void say(CommandEvent event) {
-		event.reply(" ");
 		if (event.getArgs().length() != 0) event.reply(event.getArgs().replaceAll("@everyone", "@\u200Beveryone").replaceAll("@here", "@\u200Bhere"));
 		else Main.sendCommandHelp(event);
 	}
@@ -366,7 +368,7 @@ public class General {
 					} catch (IOException e) {
 						throw new CommandException("An unknown error occurred while getting the Steam 64 ID from the username.", e);
 					}
-					if ((double) data.get("success") == 42) {
+					if ((double) data.get("success") == 42D) {
 						event.reply("That's not a valid username.");
 						return;
 					}
@@ -557,7 +559,7 @@ public class General {
 						data1.get("total_kills_headshot").toString().split("\\.")[0],
 						data1.get("total_shots_fired").toString().split("\\.")[0],
 						data1.get("total_shots_hit").toString().split("\\.")[0],
-						Main.percentage(Double.parseDouble(data1.get("total_shots_fired")), Double.parseDouble(data1.get("total_shots_hit"))),
+						MathHelper.percentage(Double.parseDouble(data1.get("total_shots_fired")), Double.parseDouble(data1.get("total_shots_hit"))),
 						data1.get("total_rounds_played").toString().split("\\.")[0]);
 			}
 		} else Main.sendCommandHelp(event);
@@ -620,7 +622,7 @@ public class General {
 				Long lastBattleTime = Main.getLongFromPossibleDouble(data1.get("last_battle_time")) * 1000;
 				Long createdAt = Main.getLongFromPossibleDouble(data1.get("created_at")) * 1000;
 				data1 = (Map) ((Map) data1.get("statistics")).get("all");
-				event.reply("```fix\nUsername: %s\nUser ID: %s\nCreated at: %s (DD/MM/YY)\nLast battle: %s (DD/MM/YY)\nGlobal rating: %s\nClient language: %s\nSpotted: %s\nMax xp earned: %s\nAverage damage blocked: %s\nDirect hits received: %s\nTimes ammoracked player: %s\nPenetrations received: %s\nPenetrations done: %s\nShots: %s\nHits: %s\nHit percentage: %s\nFree xp: %s\nBattles done: %s\nSurived battles: %s\nBattles won: %s\nBattles lost: %s\nBattles drawn: %s\nDropped capture points: %s\nTotal damage dealt: %s```",
+				event.reply("```fix\nUsername: %s\nUser ID: %s\nCreated at: %s (DD/MM/YY)\nLast battle: %s (DD/MM/YY)\nGlobal rating: %s\nClient language: %s\nSpotted: %s\nMax xp earned: %s\nAverage damage blocked: %s\nDirect hits received: %s\nTimes ammoracked player: %s\nPenetrations received: %s\nPenetrations done: %s\nShots: %s\nHits: %s\nHit percentage: %s%%\nFree xp: %s\nBattles done: %s\nSurived battles: %s\nBattles won: %s\nBattles lost: %s\nBattles drawn: %s\nDropped capture points: %s\nTotal damage dealt: %s```",
 						username,
 						userid,
 						new SimpleDateFormat("dd/MM/yyyy").format(new Date(createdAt)),
@@ -636,7 +638,7 @@ public class General {
 						data1.get("piercings").toString().split("\\.")[0],
 						data1.get("shots").toString().split("\\.")[0],
 						data1.get("hits").toString().split("\\.")[0],
-						Main.percentage(Double.parseDouble(data1.get("shots").toString()), Double.parseDouble(data1.get("hits").toString())),
+						MathHelper.percentage(Double.parseDouble(data1.get("shots").toString()), Double.parseDouble(data1.get("hits").toString())),
 						data1.get("xp").toString().split("\\.")[0],
 						data1.get("battles").toString().split("\\.")[0],
 						data1.get("survived_battles").toString().split("\\.")[0],
@@ -738,7 +740,7 @@ public class General {
 		if (!event.argsEmpty()) {
 			Map data;
 			try {
-				data = new Gson().fromJson(Main.getHTML("https://maps.googleapis.com/maps/api/geocode/json?address=" + event.getArgs() + "&key=" + Main.apiKeys.get("geocoding")), Map.class);
+				data = new Gson().fromJson(Main.getHTML("https://maps.googleapis.com/maps/api/geocode/json?address=" + Main.percentEncode(event.getArgs()) + "&key=" + Main.apiKeys.get("geocoding")), Map.class);
 			} catch (JsonSyntaxException | IOException e) {
 				throw new CommandException("An unknown error occurred while getting the longitude and latitude from the Google API.", e);
 			}
@@ -756,7 +758,7 @@ public class General {
 				}
 				if (data1.get("status").toString().equals("OK"))
 					event.reply("**%s**\n\t%s (%s)",
-							new SimpleDateFormat("EEEE d MMM y HH:mm:ss").format(new Date(System.currentTimeMillis() + Main.getIntFromPossibleDouble(data1.get("dstOffset")) + Main.getIntFromPossibleDouble(data1.get("rawOffset")))),
+							new SimpleDateFormat("EEEE d MMM y HH:mm:ss").format(new Date(System.currentTimeMillis() + Main.getIntFromPossibleDouble(data1.get("dstOffset"))*1000 + Main.getIntFromPossibleDouble(data1.get("rawOffset"))*1000 - 3600000)),
 							address,
 							data1.get("timeZoneName"));
 				else event.reply("An unknown error occurred while getting the time and timezone from the Google API.");
@@ -788,16 +790,15 @@ public class General {
 		List<String> roles = new ArrayList();
 		for (Role role : event.getGuild().getRoles())
 			if (!role.getName().toLowerCase().equals("@everyone") && !role.getName().toLowerCase().equals("@here"))
-				roles.add(role.getName());
+				roles.add("**" + role.getName() + "**");
 		event.reply("This server has the following roles: %s (%s roles)", Main.joinNiceString(roles), roles.size());
 	}
 
-	@Subcommand(help = "Tells you who the owner of this server is.", name = "owner", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	@Subcommand(help = "Tells you who the owner of this server is.", name = "owner", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true, cooldown = 60)
 	public static void serverOwner(CommandEvent event) {
 		event.reply("This server's owner is %s.", event.getGuild().getOwner().getAsMention());
 	}
 
-	//@Subcommand(help = "", name = "", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
 	@Subcommand(help = "Shows you some information about the given role.", name = "roleinfo", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true, arguments = "<role>")
 	public static void serverRoleInfo(CommandEvent event) {
 		if (!event.argsEmpty()) {
@@ -810,7 +811,6 @@ public class General {
 				for (Member member : event.getGuild().getMembers())
 					if (member.getRoles().contains(role)) userCount += 1;
 				EmbedBuilder embed = new EmbedBuilder();
-				role.getPermissions();
 				embed.setTitle("Role info");
 				embed.setColor(role.getColor() == null ? new Color(0) : role.getColor());
 				embed.addField("Name", role.getName(), true);
@@ -843,6 +843,60 @@ public class General {
 		} else Main.sendCommandHelp(event);
 	}
 
+	@Subcommand(help = "Counts the members in this server.", name = "membercount", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverMemberCount(CommandEvent event) {
+		int members = 0;
+		int bots = 0;
+		for (Member member : event.getGuild().getMembers())
+			if (member.getUser().isBot())
+				bots += 1;
+			else members += 1;
+		event.reply("This server has **%s users** and **%s bots** with a total of **%s members**.", members, bots, members+bots);
+	}
 
+	@Subcommand(help = "Tells you the ID of this server and this channel.", name = "id", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverId(CommandEvent event) {
+		event.reply("This server's ID is **%s**, this channel's ID is **%s**.", event.getGuild().getId(), event.getChannel().getId());
+	}
+
+	@Subcommand(help = "Tells you what the default channel of this server is.", name = "defaultchannel", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverDefaultChannel(CommandEvent event) {
+		event.reply("This server's default channel is %s.", event.getGuild().getDefaultChannel().getAsMention());
+	}
+
+	@Subcommand(help = "Tells you some information about the given user.", name = "userinfo", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true, arguments = "<user>")
+	public static void serverUserInfo(CommandEvent event) {
+		if (!event.argsEmpty()) {
+			Member member = Main.getMemberFromInput(event.getMessage());
+			List<String> roles = new ArrayList();
+			for (Role role1 : member.getRoles())
+				if (!role1.getName().equalsIgnoreCase("@everyone") && !role1.getName().equalsIgnoreCase("@here")) roles.add(role1.getName());
+			EmbedBuilder embed = new EmbedBuilder();
+			embed.setTitle("Role info");
+			embed.setColor(member.getColor() == null ? new Color(0) : member.getColor());
+			embed.addField("Name", member.getUser().getName(), true);
+			embed.addField("Discriminator", member.getUser().getDiscriminator(), true);
+			embed.addField("Nickname", member.getEffectiveName(), true);
+			embed.addField("ID", member.getUser().getId(), true);
+			embed.addField("Status", member.getOnlineStatus().name(), true);
+			embed.addField("Playing", member.getGame() == null ? "" : member.getGame().getName(), true);
+			embed.addField("Is bot", "" + member.getUser().isBot(), true);
+			embed.addField("Muted in this server", "" + member.getVoiceState().isMuted(), true);
+			embed.addField("Deafened in this server", "" + member.getVoiceState().isDeafened(), true);
+			embed.addField("Joined discord at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getUser().getCreationTime().toEpochSecond()*1000)), true);
+			embed.addField("Joined server at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getJoinDate().toEpochSecond()*1000)), true);
+			embed.addField("Color", "#" + Integer.toHexString(member.getColor() == null ? 0 : member.getColor().getRGB()).substring(2).toUpperCase(), true);
+			embed.addField("Roles", Main.joinNiceString(roles), true);
+			event.reply(embed.build());
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "General", help = "Have a conversation with the bot.", name = "cleverbot")
+	public static void Cleverbot(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			String response = Cleverbot.newBot().askQuestion(event.getArgs());
+			event.reply(response == null || response.isEmpty() ? "No response gotten, try again." : response);
+		} else Main.sendCommandHelp(event);
+	}
 
 }

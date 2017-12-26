@@ -34,7 +34,7 @@ public class DataIO {
 		directories = Main.removeArg(directories, directories.length-1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();
 		if (!new File(path).exists()) new File(path).createNewFile();
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		Gson gson = new GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().setDateFormat("EEEE d MMM y HH:mm:ss").create();
 		FileWriter writer = new FileWriter(tmpPath);
 		try {
 			writer.write(gson.toJson(gson.toJsonTree(obj)));
@@ -44,7 +44,7 @@ public class DataIO {
 		try {
 			loadJson(tmpPath, obj.getClass());
 		} catch (Throwable e) {
-			throw new RuntimeException("The saved data file was corrupt and could not be read, the actual file has not been changed.", e);
+			throw new IOException("The saved data file was corrupt and could not be read, the actual file has not been changed.", e);
 		} finally {
 			new File(tmpPath).delete();
 		}
