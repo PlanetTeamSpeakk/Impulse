@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +25,31 @@ public class DataIO {
 
 	private DataIO() { }
 
-	public static void saveJson(Object obj, String path) throws IOException {
+	// for sets and lists.
+	public static void saveJson(Collection collection, String path) throws IOException {
+		Throwable t = new Exception();
+		while (t != null)
+			try {
+				saveJson0(new ArrayList<>(collection), path);
+				t = null;
+			} catch (ConcurrentModificationException e) {
+				t = e;
+			}
+	}
+
+	// for maps.
+	public static void saveJson(Map map, String path) throws IOException {
+		Throwable t = new Exception();
+		while (t != null)
+			try {
+				saveJson0(new HashMap<>(map), path);
+				t = null;
+			} catch (ConcurrentModificationException e) {
+				t = e;
+			}
+	}
+
+	private static void saveJson0(Object obj, String path) throws IOException {
 		if (path == null || path.isEmpty()) throw new IOException("The path cannot be empty.");
 		if (obj == null) throw new NullPointerException("The object cannot be null.");
 		if (!(obj instanceof Map) && !(obj instanceof List) && !(obj instanceof Set)) Main.print(LogType.WARN, "The given object was not a Map, a List or a Set, this might throw an unexpected StackOverflowError.");

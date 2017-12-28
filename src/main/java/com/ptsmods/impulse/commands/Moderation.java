@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.ptsmods.impulse.Main;
+import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
@@ -27,6 +28,7 @@ import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.entities.impl.MessageImpl;
+import net.dv8tion.jda.core.events.ShutdownEvent;
 import net.dv8tion.jda.core.events.channel.text.TextChannelCreateEvent;
 import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.core.events.channel.text.update.GenericTextChannelUpdateEvent;
@@ -59,7 +61,7 @@ public class Moderation {
 	private static Map pastNicks;
 	private static Map pastNames;
 	private static Map<String, List<Message>> messages = new HashMap();
-	private static Map<Double, Map<String, Object>> loggedMessages = new HashMap();
+	private static Map<String, Map<String, Object>> loggedMessages = new HashMap();
 	private static Map<String, Channel> channels = new HashMap();
 	private static Map<String, Role> roles = new HashMap();
 
@@ -101,14 +103,16 @@ public class Moderation {
 			throw new RuntimeException("An unknown error occurred while loading the modlog.json file.", e);
 		}
 		try {
-			Map<String, Map<String, Object>> loggedMessages = DataIO.loadJsonOrDefault("data/mod/loggedMessages.json", Map.class, new HashMap());
-			for (String key : loggedMessages.keySet())
-				Moderation.loggedMessages.put(Double.parseDouble(key), loggedMessages.get(key));
-			loggedMessages.clear();
+			givemeSettings = DataIO.loadJsonOrDefault("data/mod/givemeSettings.json", Map.class, new HashMap());
+		} catch (IOException e) {
+			throw new RuntimeException("An unknown error occurred while loading the modlog.json file.", e);
+		}
+		try {
+			loggedMessages = DataIO.loadJsonOrDefault("data/mod/loggedMessages.json", Map.class, new HashMap());
 		} catch (IOException e) {
 			throw new RuntimeException("An unknown error occurred while loading the loggedMessages.json file.", e);
 		}
-		for (Double message : loggedMessages.keySet())
+		for (String message : new ArrayList<>(loggedMessages.keySet()))
 			if (System.currentTimeMillis()-(double) loggedMessages.get(message).get("sent") > 1000*60*60*24*7*2) loggedMessages.remove(message); // removing messages older than 2 weeks.
 		try {
 			DataIO.saveJson(loggedMessages, "data/mod/loggedMessages.json");
@@ -372,7 +376,7 @@ public class Moderation {
 			for (Role role : roles)
 				((Map) givemeSettings.get(event.getGuild().getId())).put(role.getName(), role.getId());
 			try {
-				DataIO.saveJson(givemeSettings, "data/giveme/givemeSettings.json");
+				DataIO.saveJson(givemeSettings, "data/mod/givemeSettings.json");
 			} catch (IOException e) {
 				event.reply("An unknown error occurred while saving the data file.");
 				return;
@@ -403,7 +407,7 @@ public class Moderation {
 						counter += 1;
 					}
 				try {
-					DataIO.saveJson(givemeSettings, "data/giveme/givemeSettings.json");
+					DataIO.saveJson(givemeSettings, "data/mod/givemeSettings.json");
 				} catch (IOException e) {
 					event.reply("An unknown error occurred while saving the data file.");
 					return;
@@ -826,7 +830,7 @@ public class Moderation {
 	}
 
 	@SubscribeEvent
-	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+	public static void onGuildMemberJoin(GuildMemberJoinEvent event) {
 		if (settings.containsKey(event.getGuild().getId()) && ((List) ((Map) settings.get(event.getGuild().getId())).get("mutes")).contains(event.getUser().getId()))
 			Main.mute(event.getGuild().getMember(event.getUser()));
 		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString().isEmpty() && event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()) != null)
@@ -838,7 +842,7 @@ public class Moderation {
 	}
 
 	@SubscribeEvent
-	public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
+	public static void onGuildMemberLeave(GuildMemberLeaveEvent event) {
 		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString().isEmpty() && event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()) != null)
 			event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()).sendMessage(((Map) settings.get(event.getGuild().getId())).get("farewell").toString()
 					.replaceAll("USER", Main.str(event.getUser()))
@@ -874,21 +878,18 @@ public class Moderation {
 
 	@SubscribeEvent
 	public static void onMessageUpdate(MessageUpdateEvent event) {
-		log(event.getGuild(), "pencil2", "Message Edit", "Member: %s\nChannel: %s\nBefore: %s\nAfter: %s", Main.str(event.getAuthor()), event.getChannel().getName(), loggedMessages.containsKey((double) event.getMessageIdLong()) ? loggedMessages.get((double) event.getMessageIdLong()).get("content") : "Unknown", event.getMessage().getContent());
-		loggedMessages.put((double) event.getMessage().getIdLong(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()})); // ik it's updating the sent variable, it is supposed to.
-		try {																																																								// that's so when a message has been edited it is considered active and won't be deleted in another 2 weeks.
-			DataIO.saveJson(loggedMessages, "data/mod/loggedMessages.json");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		log(event.getGuild(), "pencil2", "Message Edit", "Member: %s\nChannel: %s\nBefore: %s\nAfter: %s", Main.str(event.getAuthor()), event.getChannel().getName(), loggedMessages.containsKey(event.getMessageId()) ? loggedMessages.get(event.getMessageId()).get("content") : "Unknown", event.getMessage().getContent());
+		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()})); // ik it's updating the sent variable, it is supposed to.
 	}
 
 	@SubscribeEvent
 	public static void onMessageDelete(MessageDeleteEvent event) {
-		Message message = new MessageImpl(event.getMessageIdLong(), event.getChannel(), false)
-				.setAuthor(Main.getUserById(loggedMessages.get((double) event.getMessageIdLong()).get("author").toString()))
-				.setContent(loggedMessages.get((double) event.getMessageIdLong()).get("content").toString());
-		log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", Main.str(message.getAuthor()), event.getTextChannel().getName(), message.getContent());
+		if (loggedMessages.containsKey(event.getMessageId())) {
+			Message message = new MessageImpl(event.getMessageIdLong(), event.getChannel(), false)
+					.setAuthor(Main.getUserById(loggedMessages.get(event.getMessageId()).get("author").toString()))
+					.setContent(loggedMessages.get(event.getMessageId()).get("content").toString());
+			log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", Main.str(message.getAuthor()), event.getTextChannel().getName(), message.getContent());
+		}
 	}
 
 	@SubscribeEvent
@@ -993,13 +994,8 @@ public class Moderation {
 	}
 
 	@SubscribeEvent
-	public void onMessageReceived(MessageReceivedEvent event) {
-		loggedMessages.put((double) event.getMessage().getIdLong(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()}));
-		try {
-			DataIO.saveJson(loggedMessages, "data/mod/loggedMessages.json");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public static void onMessageReceived(MessageReceivedEvent event) {
+		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()}));
 		if (event.getGuild() == null) return;
 		if (filters.containsKey(event.getGuild().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE))
 			for (String part : event.getMessage().getContent().split(" "))
@@ -1025,11 +1021,6 @@ public class Moderation {
 	public static void onGuildMemberNickChange(GuildMemberNickChangeEvent event) {
 		if (!pastNicks.containsKey(event.getUser().getId())) pastNicks.put(event.getUser().getId(), Lists.newArrayList(event.getPrevNick()));
 		else ((List) pastNicks.get(event.getUser().getId())).add(event.getPrevNick());
-		try {
-			DataIO.saveJson(pastNicks, "data/mod/pastNicks.json");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		log(event.getGuild(), "warning", "Member Nickname Change", "Member: %s\nBefore: %s\nAfter: %s", Main.str(event.getMember()), event.getPrevNick(), event.getNewNick());
 	}
 
@@ -1037,8 +1028,23 @@ public class Moderation {
 	public static void onUserNameUpdate(UserNameUpdateEvent event) {
 		if (!pastNames.containsKey(event.getUser().getId())) pastNicks.put(event.getUser().getId(), Lists.newArrayList(event.getOldName()));
 		else ((List) pastNames.get(event.getUser().getId())).add(event.getOldName());
+	}
+
+	@SubscribeEvent
+	public static void onShutdown(ShutdownEvent event) {
+		Main.print(LogType.DEBUG, "Shutting down, saving files.");
+		try {
+			DataIO.saveJson(loggedMessages, "data/mod/loggedMessages.json");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		try {
 			DataIO.saveJson(pastNames, "data/mod/pastNames.json");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			DataIO.saveJson(pastNicks, "data/mod/pastNicks.json");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

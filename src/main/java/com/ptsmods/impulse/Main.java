@@ -19,7 +19,6 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +47,7 @@ import com.google.common.collect.Lists;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandExecutionHook;
+import com.ptsmods.impulse.miscellaneous.CommandPermissionException;
 import com.ptsmods.impulse.miscellaneous.EventHandler;
 import com.ptsmods.impulse.miscellaneous.ImpulseSM;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
@@ -56,6 +56,7 @@ import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.ConsoleColors;
 import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.Downloader;
+import com.ptsmods.impulse.utils.EventListenerManager;
 
 import net.dv8tion.jda.client.entities.Group;
 import net.dv8tion.jda.core.AccountType;
@@ -65,6 +66,7 @@ import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.ShardedRateLimiter;
 import net.dv8tion.jda.core.entities.Channel;
+import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Icon;
@@ -83,6 +85,7 @@ import net.dv8tion.jda.core.entities.impl.RoleImpl;
 import net.dv8tion.jda.core.entities.impl.TextChannelImpl;
 import net.dv8tion.jda.core.entities.impl.UserImpl;
 import net.dv8tion.jda.core.entities.impl.VoiceChannelImpl;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
 import net.swisstech.bitly.BitlyClient;
@@ -116,11 +119,13 @@ public class Main {
 	private static List<Message> messages = new ArrayList<>();
 	private static Map<String, List<Method>> linkedSubcommands = new HashMap();
 	private static EventHandler eventHandler = new EventHandler();
+	private static Map<String, Map<String, Long>> cooldowns = new HashMap();
 
 	static {
 		try {
 			System.setOut(new SystemOutPrintStream());
 		} catch (FileNotFoundException e) {}
+		miscellaneousExecutor.allowCoreThreadTimeOut(true);
 		apiKeys.put("bitly", "dd800abec74d5b12906b754c630cdf1451aea9e0");
 		isWindows = osName.toLowerCase().contains("windows");
 		isMac = osName.toLowerCase().contains("mac");
@@ -221,7 +226,9 @@ public class Main {
 				else shardAmount = Integer.parseInt(Config.get("shards"));
 				if (shardAmount < 1) shardAmount = 1;
 				print(LogType.INFO, "Loading commands...");
-				for (Class clazz : new Reflections("com.ptsmods.impulse.commands", new SubTypesScanner(false)).getSubTypesOf(Object.class))
+				for (Class clazz : new Reflections("com.ptsmods.impulse.commands", new SubTypesScanner(false)).getSubTypesOf(Object.class)) {
+					//if (clazz == Moderation.class) continue;
+					EventListenerManager.registerListenersFromClass(clazz);
 					for (Method method : getMethods(clazz))
 						if (method.isAnnotationPresent(Command.class)) {
 							if (Lists.newArrayList(method.getParameterTypes()).equals(Lists.newArrayList(CommandEvent.class))) {
@@ -238,6 +245,7 @@ public class Main {
 									print(LogType.DEBUG, "Found a subcommand that has an invalid parent.", method.toString());
 								}
 							else print(LogType.DEBUG, "Found a command that requires more than only a CommandEvent.", method.toString());
+				}
 				for (Method subcommand : subcommands) {
 					Method parentCommand;
 					try {
@@ -365,6 +373,7 @@ public class Main {
 				if (status == 0) shard.shutdown();
 				else shard.shutdownNow();
 			commandsExecutor.shutdown();
+			miscellaneousExecutor.shutdown();
 			System.exit(status);
 		} else
 			for (JDA shard : shards)
@@ -540,8 +549,117 @@ public class Main {
 		return roles.size() == 0 ? null : roles.get(0);
 	}
 
-	public static void executeCommand(Runnable runnable) {
-		commandsExecutor.execute(runnable);
+	public static void executeCommand(MessageReceivedEvent event) {
+		commandsExecutor.execute(() -> {
+			try {
+				String prefix = Main.getPrefix(event.getGuild());
+				String[] parts = null;
+				String rawContent = event.getMessage().getRawContent();
+				if (rawContent.toLowerCase().startsWith(prefix.toLowerCase()))
+					parts = Arrays.copyOf(rawContent.substring(prefix.length()).trim().split("\\s+",2), 2);
+				if (parts != null)
+					if (event.isFromType(ChannelType.PRIVATE) || event.getTextChannel().canTalk()) {
+						String name = parts[0];
+						String args = parts[1] == null ? "" : parts[1];
+						int i = Main.getCommandIndex().getOrDefault(name.toLowerCase(), -1);
+						if (i != -1) {
+							Method command = Main.getCommands().get(i);
+							while (args.split(" ").length != 0 && !Main.getSubcommands(command).isEmpty()) {
+								boolean found = false;
+								for (Method subcommand : Main.getSubcommands(command))
+									if (subcommand.getAnnotation(Subcommand.class).name().equals(args.split(" ")[0])) {
+										command = subcommand;
+										args = Main.join(Main.removeArg(args.split(" "), 0));
+										found = true;
+										break;
+									}
+								if (!found) break;
+							}
+							Permission[] permissions = {};
+							Permission[] botPermissions = {};
+							boolean guildOnly = false;
+							boolean ownerCommand = false;
+							boolean sendTyping = true;
+							double cooldown = 1D;
+							if (command.isAnnotationPresent(Command.class)) {
+								Command annotation = command.getAnnotation(Command.class);
+								annotation.name();
+								permissions = annotation.userPermissions();
+								botPermissions = annotation.botPermissions();
+								guildOnly = annotation.guildOnly();
+								ownerCommand = annotation.ownerCommand();
+								cooldown = annotation.cooldown();
+								sendTyping = annotation.sendTyping();
+							} else if (command.isAnnotationPresent(Subcommand.class)) {
+								Subcommand annotation = command.getAnnotation(Subcommand.class);
+								annotation.name();
+								permissions = annotation.userPermissions();
+								botPermissions = annotation.botPermissions();
+								guildOnly = annotation.guildOnly();
+								ownerCommand = annotation.ownerCommand();
+								cooldown = annotation.cooldown();
+								sendTyping = annotation.sendTyping();
+							}
+							if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown*1000)
+								event.getChannel().sendMessage("You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".").queue();
+							else if (event.getGuild() == null && guildOnly)
+								event.getChannel().sendMessage("That command cannot be used in direct messages.").queue();
+							else if (ownerCommand && !event.getAuthor().getId().equals(Main.getOwner().getId()))
+								event.getChannel().sendMessage("That command can only be used by my owner.").queue();
+							else if (event.getMember() != null && !event.getMember().hasPermission(permissions)) {
+								List<String> nonPresentPerms = new ArrayList();
+								for (Permission perm : permissions)
+									if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
+								event.getChannel().sendMessage("You need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to use that.").queue();
+							} else if (event.getGuild() != null && !event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(botPermissions)) {
+								List<String> nonPresentPerms = new ArrayList();
+								for (Permission perm : permissions)
+									if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
+								event.getChannel().sendMessage("I need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to do that.").queue();
+							} else {
+								if (sendTyping) event.getChannel().sendTyping().complete();
+								CommandEvent cevent = new CommandEvent(event, args, command);
+								for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, logging, etc.
+									try {
+										hook.run(cevent);
+									} catch (CommandPermissionException e) {
+										if (e.getMessage() != null && !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage()).queue();
+										return;
+									}
+								Object obj = null;
+								try {
+									obj = command.getDeclaringClass().newInstance(); // so commands that aren't static still work.
+								} catch (Throwable e) {}
+								command.setAccessible(true);
+								try {
+									command.invoke(obj, cevent);
+									if (!Main.getOwner().getId().equals(event.getAuthor().getId())) {
+										Map userCooldowns = cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap());
+										userCooldowns.put(command.toString(), System.currentTimeMillis());
+										cooldowns.put(event.getAuthor().getId(), userCooldowns);
+									}
+								} catch (InvocationTargetException e) {
+									sendStackTrace(e.getCause(), event);
+								}
+							}
+						}
+					}
+			} catch (Throwable e) {
+				sendStackTrace(e, event);
+			}
+		});
+	}
+
+	private static void sendStackTrace(Throwable e, MessageReceivedEvent event) {
+		e.printStackTrace();
+		StackTraceElement stElement = null;
+		for (StackTraceElement element : e.getStackTrace())
+			if (element.getFileName() != null && element.getClassName().startsWith("com.ptsmods.impulse.commands")) stElement = element;
+		event.getChannel().sendMessageFormat("A `%s` exception was thrown at line %s in %s while parsing the command%s.%s",
+				e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), e.getMessage() != null ? String.format(": `%s`", e.getMessage()) : "", Main.devMode() ? "" : String.format("\nMy owner, %s, has been informed.", Main.getOwner().getAsMention())).queue();
+		if (!Main.devMode())
+			Main.sendPrivateMessage(Main.getOwner(), String.format("A `%s` exception was thrown at line %s in %s while parsing the message `%s`. Stacktrace:\n```java\n%s```",
+					e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), event.getMessage().getContent(), Main.generateStackTrace(e)));
 	}
 
 	public static void runAsynchronously(Runnable runnable) {
@@ -608,12 +726,13 @@ public class Main {
 	}
 
 	public static boolean devMode() {
-		if (devMode && shards.size() > 0 && !shards.get(0).getPresence().getGame().equals(Game.of("DEVELOPER MODE"))) setGame("DEVELOPER MODE");
+		if (devMode && shards.size() > 0 && !shards.get(0).getPresence().getGame().equals(Game.of("DEVELOPER MODE")) && done()) setGame("DEVELOPER MODE");
 		return devMode;
 	}
 
 	public static void devMode(boolean bool) {
 		devMode = bool;
+		devMode();
 	}
 
 	public static UserImpl getOwner() {
@@ -941,7 +1060,8 @@ public class Main {
 	/**
 	 * What have I done?
 	 */
-	public static void doesJavaHaveALimitOnHowLongTheNamesOfMethodsCanBeIDontThinkSoSoIllJustContinueThisUntillIGetTiredOfItAndWantToStopTheCapitalisationIsStartingToBecomeABitConfusingSoIThinkIllStopRightHere(Object lelJkIllJustContinueWithTheArgumentsAyyLmaoNoOneCanStopMeMuahahahahahahaFuJava) {
+	public static void somebodyOnceToldMeTheWorldIsGonnaRollMeIAintTheSharpestToolInTheShedSheWasLookingKindOfDumbWithHerFingerAndHerThumbInTheShapeOfAnLOnHerForeheadWellTheYearsStartComingAndTheyDontStopComingFedToTheRulesAndIHitTheGroundRunningDidntMakeSenseNotToLiveForFunYourBrainGetsSmartButYourHeadGetsDumbSoMuchToDoSoMuchToSeeSoWhatsWrongWithTakingTheBackstreetYoullNeverComeIfYouDontGoYoullNeverShineIfYouDontGlow(Object
+			HEYNOWYOUREANALLSTARGETYOURGAMEONGOPLAYHEYNOWYOUREAROCKSTARGETYOURSHOWONGETPAIDANDALLTHATGLITTERSISGOLDONLYSHOOTINGSTARSCANBREAKTHEMOLD) {
 		return;
 	}
 
@@ -1265,7 +1385,7 @@ public class Main {
 		else if (obj instanceof Guild) 		return obj == null ? "null" : ((Guild) obj).getName();
 		else if (obj instanceof Channel) 	return obj == null ? "null" : ((Channel) obj).getName();
 		// more to be added later.
-		else return obj.toString();
+		else return obj == null ? "null" : obj.toString();
 	}
 
 	public static EventHandler getEventHandler() {
@@ -1321,13 +1441,16 @@ public class Main {
 	}
 
 	public static TextChannel cloneChannel(TextChannel channel) {
-		return new TextChannelImpl(channel.getIdLong(), (GuildImpl) channel.getGuild())
-				.setLastMessageId(channel.getLatestMessageIdLong())
+		TextChannelImpl channel1 = new TextChannelImpl(channel.getIdLong(), (GuildImpl) channel.getGuild())
 				.setName(channel.getName())
 				.setNSFW(channel.isNSFW())
 				.setParent(channel.getParent() == null ? -1 : channel.getParent().getIdLong())
 				.setRawPosition(channel.getPositionRaw())
 				.setTopic(channel.getTopic());
+		try {
+			channel1.setLastMessageId(channel.getLatestMessageIdLong());
+		} catch (IllegalStateException e) {}
+		return channel1;
 	}
 
 	public static VoiceChannel cloneChannel(VoiceChannel channel) {
@@ -1401,184 +1524,159 @@ public class Main {
 		return new BufferedInputStream(Main.class.getResourceAsStream(name) == null ? Main.class.getClassLoader().getResourceAsStream(name) : Main.class.getResourceAsStream(name));
 	}
 
+	public static boolean isSuperClass(Class clazz, Class superClass) {
+		while (clazz.getSuperclass() != null)
+			if (clazz.getSuperclass().equals(superClass)) return true;
+			else clazz = clazz.getSuperclass();
+		return false;
+	}
+
+	public static ThreadPoolExecutor getThreadPool(String name) {
+		switch (name.toLowerCase()) {
+		case "miscellaneous": return miscellaneousExecutor;
+		case "commands": return commandsExecutor;
+		default: return null;
+		}
+	}
+
 	private static final class SystemOutPrintStream extends PrintStream {
 
 		private static final PrintStream originalOut = System.out;
 
 		public SystemOutPrintStream() throws FileNotFoundException {
-			super(new FileOutputStream("log.log"));
+			super(new FileOutputStream("bot.log"));
 		}
 
 		@Override
 		public void print(boolean arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(char arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(int arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(long arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(float arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(double arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(char[] arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(String arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void print(Object arg) {
-			cleanFile();
 			originalOut.print(arg);
 			super.print(arg);
 		}
 
 		@Override
 		public void println(boolean arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(char arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(int arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(long arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(float arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(double arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(char[] arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(String arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public void println(Object arg) {
-			cleanFile();
 			originalOut.println(arg);
 			super.println(arg);
 		}
 
 		@Override
 		public PrintStream printf(String arg, Object... args) {
-			cleanFile();
 			originalOut.printf(arg, args);
 			return super.printf(arg, args);
 		}
 
 		@Override
 		public PrintStream append(CharSequence arg) {
-			cleanFile();
 			originalOut.append(arg);
 			return super.append(arg);
 		}
 
 		@Override
 		public PrintStream append(CharSequence arg, int start, int end) {
-			cleanFile();
 			originalOut.append(arg, start, end);
 			return super.append(arg, start, end);
 		}
 
 		@Override
 		public PrintStream append(char arg) {
-			cleanFile();
 			originalOut.append(arg);
 			return super.append(arg);
-		}
-
-		public void cleanFile() {
-			Main.miscellaneousExecutor.execute(() -> {
-				List<String> lines;
-				try {
-					lines = Files.readAllLines(new File("log.log").toPath());
-				} catch (IOException e1) {
-					e1.printStackTrace();
-					return;
-				}
-				try (PrintWriter writer = new PrintWriter(new FileWriter("log.cfg", false))) {
-					for (String line : lines)
-						writer.println(ConsoleColors.getCleanString(line));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			});
 		}
 
 	}

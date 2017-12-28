@@ -24,6 +24,14 @@ public class Random {
 
 	private Random() { }
 
+	static {
+		try {
+			seeds = DataIO.loadJsonOrDefault("data/random/seeds.json", Map.class, new HashMap());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public static int randInt() {
 		return randInt(0, Integer.MAX_VALUE);
 	}
@@ -145,12 +153,10 @@ public class Random {
 	 */
 	@SuppressWarnings("deprecation")
 	public static void seed(String key) {
-		//	callerClass = Class.forName(Thread.currentThread().getStackTrace()[2].getClassName());
-		//  this method is 90 times slower than using the sun.reflect.Reflection#getCallerClass(int) method.
 		callerClass = sun.reflect.Reflection.getCallerClass(2); // 0 is java.lang.Thread, 1 is this class and 2 is the actual caller class.
-		if (!seeds.get(callerClass.getName()).containsKey(key)) {
+		if (!seeds.getOrDefault(callerClass.getName(), new HashMap<>()).containsKey(key)) {
 			shouldMakeNewSeed = true;
-			Map callerClassSeeds = seeds.getOrDefault(callerClass.getName(), new HashMap());
+			Map callerClassSeeds = seeds.getOrDefault(callerClass.getName(), new HashMap<>());
 			callerClassSeeds.put(key, 0D);
 			seeds.put(callerClass.getName(), callerClassSeeds);
 			try {

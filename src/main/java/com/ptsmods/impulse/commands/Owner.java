@@ -19,6 +19,7 @@ import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
+import com.ptsmods.impulse.miscellaneous.CommandPermissionException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
 
@@ -55,6 +56,10 @@ public class Owner {
 		} catch (ScriptException e) {
 			throw new RuntimeException("An error occurred while setting up the imports for the evaluator.", e);
 		}
+		Main.addCommandHook((event) -> {
+			if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && Main.devMode())
+				throw new CommandPermissionException("Developer mode is enabled which means only my owner can use commands.");
+		});
 	}
 
 	@Command(category = "Owner", help = "Sends a message to every server.", name = "announce", arguments = "<message>", ownerCommand = true)

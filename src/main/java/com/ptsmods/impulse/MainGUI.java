@@ -1,7 +1,6 @@
 package com.ptsmods.impulse;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Font;
 import java.awt.Insets;
 import java.awt.SystemColor;
@@ -27,10 +26,12 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.text.DefaultCaret;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -42,12 +43,13 @@ public class MainGUI {
 
 	public static final Font sansSerif = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
 	private static boolean initialized = false;
-	private static JFrame mainFrame;
+	private static JFrame mainFrame = new JFrame();
 	private static JTextArea LTA = new JTextArea(); // Log TextArea
 	private static Map<String, JTextField> configKeys = new HashMap();
 	private static final DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 	private static final String impulsePngMD5 = "f71c6df8e8f8b70a366c54d2f88e4b2d";
 	private static boolean hasPngChanged = true;
+	private static final JRadioButton devModeRBtn = new JRadioButton("Devmode");
 
 	/**
 	 * Initialize the contents of the frame.
@@ -55,8 +57,6 @@ public class MainGUI {
 	 */
 	public static void initialize() throws IllegalAccessException {
 		if (!initialized) {
-			df.setMaximumFractionDigits(340);
-			mainFrame = new JFrame();
 			// Just checking if the file has changed, if not set the icon and start normally, if it has don't and passive-aggressively ask the user to change it back.
 			// Because maybe they've changed the icon and are claiming they've made it.
 			String MD5 = null;
@@ -83,6 +83,7 @@ public class MainGUI {
 				LTA.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
 				LTA.setEditable(false);
 				LTA.setBounds(0, 0, (int) mainFrame.getBounds().getWidth()-9, (int) mainFrame.getBounds().getHeight()-56);
+				((DefaultCaret) LTA.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
 				JPanel logPane = new JPanel();
 				tabbedPane.addTab("Log", null, logPane, "The log.");
@@ -90,6 +91,7 @@ public class MainGUI {
 
 				JScrollPane scrollPane = new JScrollPane(LTA);
 				scrollPane.setBounds(LTA.getBounds());
+				scrollPane.setAutoscrolls(true);
 				logPane.add(scrollPane);
 
 				JPanel settings = new JPanel();
@@ -112,12 +114,12 @@ public class MainGUI {
 					textField1.setFont(sansSerif);
 					textField1.setBounds(5, pos, width1 < 16 ? 16 : width1, height1);
 					textField1.addKeyListener(new KeyListener() {
-						@Override public void keyTyped(KeyEvent e) 		{update(e.getComponent());}
-						@Override public void keyReleased(KeyEvent e) 	{update(e.getComponent());}
-						@Override public void keyPressed(KeyEvent e) 	{update(e.getComponent());}
+						@Override public void keyTyped(KeyEvent e) 		{update();}
+						@Override public void keyReleased(KeyEvent e) 	{update();}
+						@Override public void keyPressed(KeyEvent e) 	{update();}
 
-						private void update(Component component) {
-							int newWidth = (int) sansSerif.getStringBounds(((JTextField) component).getText(), frc).getWidth() + 8;
+						private void update() {
+							int newWidth = (int) sansSerif.getStringBounds(textField1.getText(), frc).getWidth() + 8;
 							textField1.setBounds(5, (int) textField1.getBounds().getY(), newWidth < 16 ? 16 : newWidth, height1);
 						}
 					});
@@ -125,6 +127,33 @@ public class MainGUI {
 					settings.add(textField1);
 					pos += 20;
 				}
+				JTextField gameTF = new JTextField("Game");
+				int width = (int) sansSerif.getStringBounds("Game", frc).getWidth() + 8;
+				int height = (int) sansSerif.getStringBounds("Game", frc).getHeight() + 2;
+				gameTF.setFont(sansSerif);
+				gameTF.setBounds(5, pos, width, height);
+				gameTF.setBorder(BorderFactory.createEmptyBorder());
+				gameTF.setBackground(SystemColor.menu);
+				gameTF.setEditable(false);
+				settings.add(gameTF);
+				pos += 20;
+				JTextField gameTF1 = new JTextField(Main.devMode() ? "DEVELOPER MODE" : "try " + Config.get("prefix") + "help");
+				int width1 = (int) sansSerif.getStringBounds(gameTF1.getText(), frc).getWidth() + 8;
+				int height1 = (int) sansSerif.getStringBounds(gameTF1.getText(), frc).getHeight() + 4;
+				gameTF1.setFont(sansSerif);
+				gameTF1.setBounds(5, pos, width1 < 16 ? 16 : width1, height1);
+				gameTF1.addKeyListener(new KeyListener() {
+					@Override public void keyTyped(KeyEvent e) 		{update();}
+					@Override public void keyReleased(KeyEvent e) 	{update();}
+					@Override public void keyPressed(KeyEvent e) 	{update();}
+
+					private void update() {
+						int newWidth = (int) sansSerif.getStringBounds(gameTF1.getText(), frc).getWidth() + 8;
+						gameTF1.setBounds(5, (int) gameTF1.getBounds().getY(), newWidth < 16 ? 16 : newWidth, height1);
+					}
+				});
+				settings.add(gameTF1);
+				pos += 20;
 				pos += 8;
 				JButton saveBtn = new JButton("Save");
 				saveBtn.setFont(sansSerif);
@@ -135,9 +164,20 @@ public class MainGUI {
 					public void actionPerformed(ActionEvent e) {
 						for (String key : configKeys.keySet())
 							Config.put(key, configKeys.get(key).getText());
+						if (Main.done()) Main.setGame(gameTF1.getText());
 						Main.playSound(Main.getResourceAsStream("chimes.wav"));
 					}});
 				settings.add(saveBtn);
+				devModeRBtn.setFont(sansSerif);
+				devModeRBtn.setSelected(Main.devMode());
+				devModeRBtn.setBounds(94, pos, 128, 24);
+				devModeRBtn.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						Main.devMode(devModeRBtn.isSelected());
+						Main.print(LogType.INFO, "Devmode has been", devModeRBtn.isSelected() ? "enabled." : "disabled.");
+					}});
+				settings.add(devModeRBtn);
 				pos += 32;
 				JButton refreshBtn = new JButton("Refresh");
 				refreshBtn.setFont(sansSerif);

@@ -24,6 +24,7 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 
 public class Fun {
 
@@ -796,7 +797,9 @@ public class Fun {
 					"\uD83C\uDDF4"		  // regional_indicator_o
 			};
 			for (String ch : LMAO)
-				event.getMessage().addReaction(ch).queue();
+				try {
+					event.getMessage().addReaction(ch).queue();
+				} catch (InsufficientPermissionException ignored) {}
 		}
 	}
 

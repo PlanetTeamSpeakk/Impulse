@@ -80,7 +80,7 @@ public class Marriage {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Marriage", help = "Forcible marry 2 members, you pervert. \nExample: [p]forcemarry @Homie #1 @Homie #36", name = "forcemarry", userPermissions = {Permission.MANAGE_ROLES}, botPermissions = {Permission.MANAGE_ROLES}, arguments = "<user1> <user2>", guildOnly = true)
+	@Command(category = "Marriage", help = "Forcible marry 2 members, you pervert. \nExample: [p]forcemarry @Homie #1 @Homie #36", name = "forcemarry", userPermissions = {Permission.MANAGE_ROLES}, botPermissions = {Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE}, arguments = "<user1> <user2>", guildOnly = true)
 	public static void forceMarry(CommandEvent event) {
 		if (!event.getArgs().isEmpty() || event.getMessage().getMentionedUsers().size() < 2) {
 			Member mem1 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
@@ -95,7 +95,7 @@ public class Marriage {
 			else if (isMarriedToMember) event.reply("They're already married.");
 			else if (mem2.equals(event.getSelfMember()) && !mem1.getUser().equals(Main.getOwner()) || mem1.equals(event.getSelfMember()) && !mem2.getUser().equals(Main.getOwner())) event.reply("I'd only marry my owner.");
 			else {
-				Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", mem1.getUser().getName(), mem2.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions(Permission.ALL_TEXT_PERMISSIONS).complete();
+				Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", mem1.getUser().getName(), mem2.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions().complete();
 				event.getGuild().getController().addSingleRoleToMember(mem1, role).queue();
 				event.getGuild().getController().addSingleRoleToMember(mem2, role).queue();
 				marriageChannel.sendMessageFormat("%s was forced to marry %s.", mem2.getAsMention(), mem1.getAsMention()).queue();

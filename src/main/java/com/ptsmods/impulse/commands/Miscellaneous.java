@@ -84,7 +84,7 @@ public class Miscellaneous {
 	}
 
 	@SubscribeEvent
-	public void onMessageReceived(MessageReceivedEvent event) {
+	public static void onMessageReceived(MessageReceivedEvent event) {
 		if (event.getGuild() == null) return;
 		String serverPrefix = Main.getPrefix(event.getGuild());
 		if (event.getMessage().getContent().startsWith(serverPrefix))
