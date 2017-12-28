@@ -29,6 +29,7 @@ import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Icon;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 
 public class Owner {
 
@@ -67,7 +68,9 @@ public class Owner {
 		if (event.getArgs().length() != 0) {
 			Message status = event.getChannel().sendMessageFormat("Sending announcement to every guild...", Main.getGuilds().size()).complete();
 			for (Guild guild : Main.getGuilds())
-				guild.getDefaultChannel().sendMessageFormat("%s ~ %s#%s", event.getArgs(), event.getAuthor().getName(), event.getAuthor().getDiscriminator()).queue();
+				try {
+					guild.getDefaultChannel().sendMessageFormat("%s ~ %s#%s", event.getArgs(), event.getAuthor().getName(), event.getAuthor().getDiscriminator()).queue();
+				} catch (InsufficientPermissionException ignored) {}
 			status.editMessage("Announcement sent.").queue();
 		} else Main.sendCommandHelp(event);
 	}
