@@ -209,8 +209,10 @@ public class Economy {
 			if (!cooldowns.containsKey(event.getGuild().getId())) cooldowns.put(event.getGuild().getId(), new HashMap());
 			Long cooldown = (Long) ((Map) cooldowns.get(event.getGuild().getId())).get(event.getAuthor().getId());
 			if (cooldown == null || System.currentTimeMillis()-cooldown >= Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000) {
-				addBalance(event.getMember(), Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCredits")));
-				event.reply("It's payday :smile:, you have been given %s credits.", Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCredits")));
+				int credits = Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCredits"));
+				if (credits == -1) credits = 360; // for some reason it returns -1 instead of 360 in some occasions.
+				addBalance(event.getMember(), credits);
+				event.reply("It's payday :smile:, you have been given %s credits.", credits);
 				((Map) cooldowns.get(event.getGuild().getId())).put(event.getAuthor().getId(), System.currentTimeMillis());
 			} else event.reply("You cannot do that yet, you have to wait for another " + Main.formatMillis(Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000 - (System.currentTimeMillis()-cooldown)) + ".");
 		} else event.reply("You do not have a bank account, you can make one with %sbank register.", Main.getPrefix(event.getGuild()));
