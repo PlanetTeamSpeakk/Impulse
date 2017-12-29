@@ -106,7 +106,7 @@ public class Marriage {
 			Permission.VOICE_USE_VAD
 	}, botPermissions = {Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE}, arguments = "<user1> <user2>", guildOnly = true)
 	public static void forceMarry(CommandEvent event) {
-		if (!event.getArgs().isEmpty() && event.getMessage().getMentionedUsers().size() < 2) {
+		if (!event.getArgs().isEmpty() && event.getMessage().getMentionedUsers().size() > 1) {
 			Member mem1 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
 			Member mem2 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(1));
 			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
@@ -171,9 +171,9 @@ public class Marriage {
 				List<Role> marriageRolesOfAuthor = new ArrayList<>();
 				List<Role> marriageRolesOfCrush = new ArrayList<>();
 				for (Role role : event.getMember().getRoles())
-					if (role.getName().contains(heart) && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRolesOfAuthor.add(role);
+					if (role.getName().contains(heart) && role.getColor() != null && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRolesOfAuthor.add(role);
 				for (Role role : member.getRoles())
-					if (role.getName().contains(heart) && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRolesOfCrush.add(role);
+					if (role.getName().contains(heart) && role.getColor() != null && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRolesOfCrush.add(role);
 				MessageChannel marriageChannel = null;
 				boolean isMarriedToMember = false;
 				for (Role role : marriageRolesOfAuthor)

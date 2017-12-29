@@ -5,12 +5,11 @@ import java.io.File;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.MessageEmbed;
-import net.dv8tion.jda.core.entities.TextChannel;
 
 public class SilentCommandEvent extends CommandEvent {
 
 	/**
-	 * Any messages sent using a 'reply', 'sendFile', or 'sendMessage' method won't through.
+	 * Any messages sent using a 'reply', 'sendFile', or 'sendMessage' methods won't be sent.
 	 * Used to invoke other commands without it replying any messages.
 	 * @param parent The actual {@link com.ptsmods.impulse.miscellaneous.CommandEvent CommandEvent} that has to be made silent.
 	 */
@@ -38,9 +37,6 @@ public class SilentCommandEvent extends CommandEvent {
 	public void sendFile(MessageChannel channel, File file, String message) { }
 
 	@Override
-	public void sendFile(TextChannel channel, File file, String message) { }
-
-	@Override
 	public void sendMessage(MessageChannel channel, Message message) { }
 
 	@Override
@@ -48,13 +44,4 @@ public class SilentCommandEvent extends CommandEvent {
 
 	@Override
 	public void sendMessage(MessageChannel channel, String message) { }
-
-	@Override
-	public void sendMessage(TextChannel channel, Message message) { }
-
-	@Override
-	public void sendMessage(TextChannel channel, MessageEmbed message) { }
-
-	@Override
-	public void sendMessage(TextChannel channel, String message) { }
 }

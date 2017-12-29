@@ -1,5 +1,7 @@
 package com.ptsmods.impulse.commands;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,6 +31,7 @@ import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Icon;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.TextChannel;
 
 public class Owner {
 
@@ -257,7 +260,7 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Owner", help = "Calculates the average amount of messages the bot receives per second.", name = "averagemessages", ownerCommand = true, hidden = true, arguments = "<seconds>")
+	@Command(category = "Owner", help = "Calculates the average amount of messages the bot receives per second.", name = "averagemessages", ownerCommand = true, arguments = "<seconds>")
 	public static void averageMessages(CommandEvent event) {
 		if (!event.argsEmpty() && Main.isFloat(event.getArgs())) {
 			Message status = event.getTextChannel().sendMessage("Retrieving messages, please wait...").complete();
@@ -271,6 +274,45 @@ public class Owner {
 					(System.currentTimeMillis()-millis)/1000,
 					(float) (Main.getReceivedMessages().size()-msgs)/(float) ((System.currentTimeMillis()-millis)/1000)).queue();
 		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Owner", help = "Sent a message to either a user, a channel, or a guild.", name = "whisper", arguments = "<id> <message>")
+	public static void whisper(CommandEvent event) {
+		if (!event.argsEmpty() && event.getArgs().split(" ").length > 1 && Main.isLong(event.getArgs().split(" ")[0])) {
+			String id = event.getArgs().split(" ")[0];
+			String message = Main.join(Main.removeArg(event.getArgs().split(" "), 0)) + " ~ " + Main.str(event.getAuthor());
+			boolean toUser = false;
+			boolean toChannel = false;
+			if (Main.getUserById(id) != null) {
+				Main.sendPrivateMessage(Main.getUserById(id), message);
+				toUser = true;
+			} else if (Main.getTextChannelById(id) != null) {
+				Main.getTextChannelById(id).sendMessage(message).queue();
+				toChannel = true;
+			} else if (Main.getGuildById(id) != null) {
+				for (TextChannel channel : Main.getGuildById(id).getTextChannels())
+					if (channel.canTalk()) {
+						channel.sendMessage(message).queue();
+						break;
+					}
+			} else {
+				event.reply("Could not find a user, channel, or guild with the given ID.");
+				return;
+			}
+			event.reply("Successfully sent the message to a %s.", toUser ? "user" : toChannel ? "channel" : "guild");
+		}
+	}
+
+	@Command(category = "Owner", help = "Copies text to the system clipboard, useful for transferring text from your main PC to the VPS.", name = "copy", ownerCommand = true, arguments = "<text>")
+	public static void copy(CommandEvent event) {
+		if (!event.argsEmpty()) {
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(event.getArgs()), null);
+			event.reply("Successfully copied the given text to the system clipboard.");
+		} else Main.sendCommandHelp(event);
+	}
+
+	public static void version(CommandEvent event) {
+		event.reply("This bot is running Impulse %s.", Main.version);
 	}
 
 }

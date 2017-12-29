@@ -122,7 +122,11 @@ public class General {
 			if (!msg.trim().isEmpty()) msgs.add(msg);
 			for (String msg1 : msgs)
 				Main.sendPrivateMessage(event.getAuthor(), msg1.trim());
-			event.getMessage().addReaction("\uD83D\uDC4D").queue();
+			try {
+				event.getMessage().addReaction("\uD83D\uDC4D").queue();
+			} catch (Exception e) {
+				event.reply("Help has been sent in your DMs.");
+			}
 		} else {
 			for (Method cmdM : Main.getCommands()) {
 				Command cmd = cmdM.getAnnotation(Command.class);

@@ -18,7 +18,6 @@ import com.ptsmods.impulse.utils.EventListenerManager;
 import net.dv8tion.jda.core.entities.impl.JDAImpl;
 import net.dv8tion.jda.core.events.Event;
 import net.dv8tion.jda.core.events.ReadyEvent;
-import net.dv8tion.jda.core.events.ShutdownEvent;
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.core.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
@@ -33,6 +32,26 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class EventHandler extends ListenerAdapter {
+
+	public EventHandler() {
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			Main.print(LogType.DEBUG, "Cleaning log...");
+			List<String> lines;
+			try {
+				lines = Files.readAllLines(new File("bot.log").toPath());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+				return;
+			}
+			try (PrintWriter writer = new PrintWriter(new FileWriter("bot.log", false))) {
+				for (String line : lines)
+					writer.println(ConsoleColors.getCleanString(line));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			Main.print(LogType.DEBUG, "Log cleaned.");
+		}));
+	}
 
 	@Override
 	public void onGenericEvent(Event event) {
@@ -152,25 +171,6 @@ public class EventHandler extends ListenerAdapter {
 				}
 			});
 		}
-	}
-
-	@Override
-	public void onShutdown(ShutdownEvent event) {
-		Main.print(LogType.DEBUG, "Cleaning log...");
-		List<String> lines;
-		try {
-			lines = Files.readAllLines(new File("bot.log").toPath());
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			return;
-		}
-		try (PrintWriter writer = new PrintWriter(new FileWriter("bot.log", false))) {
-			for (String line : lines)
-				writer.println(ConsoleColors.getCleanString(line));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Main.print(LogType.DEBUG, "Log cleaned.");
 	}
 
 }

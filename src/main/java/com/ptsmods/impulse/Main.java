@@ -94,6 +94,7 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 
 public class Main {
 
+	public static final String version = "v1.1.4-beta";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
@@ -116,13 +117,13 @@ public class Main {
 	private static boolean eclipse = false;
 	private static boolean headless = false;
 	private static User owner = null;
-	private static List<String> categories = new ArrayList<>();
 	private static List<Method> commands = new ArrayList<>();
 	private static List<Method> subcommands = new ArrayList<>();
 	private static List<Message> messages = new ArrayList<>();
 	private static Map<String, List<Method>> linkedSubcommands = new HashMap();
 	private static EventHandler eventHandler = new EventHandler();
 	private static Map<String, Map<String, Long>> cooldowns = new HashMap();
+	private static List<String> categories = new ArrayList();
 
 	static {
 		try {
@@ -208,7 +209,9 @@ public class Main {
 					Config.put("prefix", "\\");
 					Config.addComment("The ID of the owner, this should be your id as anyone who has this can do anything with your bot in any server.");
 					Config.put("ownerId", "");
-					Config.addComment("The amount of shards you want, for every shard the startup time takes 5 more seconds, this is due to rate limiting.");
+					Config.addComment("Any potential co-owners, these users have exactly the same permissions as the owner. You can divide the IDs with a semi-colon (;).");
+					Config.put("coOwnerIds", "");
+					Config.addComment("The amount of shards you want, for every shard the startup time takes at least 5 more seconds, this is due to rate limiting.");
 					Config.addComment("If you don't know what shards are, maybe you should learn some stuff about computers before making your own Discord bot.");
 					Config.put("shards", "1");
 					Config.addComment("The key used to send bot stats to https://carbinotex.net");
@@ -217,8 +220,8 @@ public class Main {
 					Config.put("discordBotListKey", "");
 					Config.addComment("The key used to send bot stats to https://bots.discord.pw");
 					Config.put("discordBotsKey", "");
-					print(LogType.WARN, "The config hasn't been changed yet, please open config.cfg and change the variables.");
-					System.exit(0);
+					print(LogType.WARN, "The config hasn't been changed yet, please go to the settings tab or open config.cfg and change the variables.");
+					return;
 				} else if (Config.get("token").isEmpty() || Config.get("ownerId").isEmpty() || Config.get("prefix").isEmpty() || Config.get("shards").isEmpty()) {
 					print(LogType.WARN, "The config hasn't been changed yet, please go to the settings tab or open config.cfg and change the variables.");
 					return;
@@ -230,13 +233,12 @@ public class Main {
 				if (shardAmount < 1) shardAmount = 1;
 				print(LogType.INFO, "Loading commands...");
 				for (Class clazz : new Reflections("com.ptsmods.impulse.commands", new SubTypesScanner(false)).getSubTypesOf(Object.class)) {
-					//if (clazz == Moderation.class) continue;
 					EventListenerManager.registerListenersFromClass(clazz);
 					for (Method method : getMethods(clazz))
 						if (method.isAnnotationPresent(Command.class)) {
 							if (Lists.newArrayList(method.getParameterTypes()).equals(Lists.newArrayList(CommandEvent.class))) {
 								commands.add(method);
-								getCategory(method.getAnnotation(Command.class).category());
+								if (!categories.contains(method.getAnnotation(Command.class).category())) categories.add(method.getAnnotation(Command.class).category());
 								commandIndex.put(method.getAnnotation(Command.class).name(), commands.size()-1);
 							} else print(LogType.DEBUG, "Found a command that requires more than only a CommandEvent.", method.toString());
 						} else if (method.isAnnotationPresent(Subcommand.class))
@@ -436,22 +438,24 @@ public class Main {
 		if (cmd.isAnnotationPresent(Command.class)) {
 			Command command = cmd.getAnnotation(Command.class);
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
-			String cmdHelp = "";
-			for (String part : (command.help() == null ? "" : command.help()).split("\n"))
-				cmdHelp += part.replaceAll("\\[p\\]", getPrefix(event.getGuild())) + "\n";
-			cmdHelp = cmdHelp.trim();
+			String cmdHelp = command.help() == null || command.help().isEmpty() ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()).startsWith("\\") ? "\\\\" : getPrefix(event.getGuild()));
 			String cmdSubcommands = "";
 			if (!getSubcommands(cmd).isEmpty()) {
 				cmdSubcommands = "**Subcommands**\n\t";
-				for (Method scommand : getSubcommands(cmd)) {
-					Subcommand scmd = scommand.getAnnotation(Subcommand.class);
-					if (!event.isOwner() && !event.isCoOwner())
-						if (scmd.hidden() ||
-								scmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) ||
-								event.getMember() != null && !event.getMember().hasPermission(scmd.userPermissions()))
-							continue;
-					cmdSubcommands += String.format("**%s**", scmd.name()) + (scmd.help() == null || scmd.help().isEmpty() ? "" : ": " + scmd.help().split("\n")[0]) + "\n\t";
-				}
+				List<String> subcommandNames = new ArrayList();
+				for (Method scmdMethod : getSubcommands(cmd))
+					subcommandNames.add(scmdMethod.getAnnotation(Subcommand.class).name());
+				for (String scmdName : Main.sort(subcommandNames))
+					for (Method scommand : getSubcommands(cmd)) {
+						Subcommand scmd = scommand.getAnnotation(Subcommand.class);
+						if (!scmdName.equals(scmd.name())) continue;
+						if (!event.isOwner() && !event.isCoOwner())
+							if (scmd.hidden() ||
+									scmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) ||
+									event.getMember() != null && !event.getMember().hasPermission(scmd.userPermissions()))
+								continue;
+						cmdSubcommands += String.format("**%s**", scmd.name()) + (scmd.help() == null || scmd.help().isEmpty() ? "" : ": " + scmd.help().split("\n")[0]) + "\n\t";
+					}
 				cmdSubcommands = cmdSubcommands.trim();
 			}
 			return channel.sendMessage(String.format("**%s**%s%s%s",
@@ -462,22 +466,24 @@ public class Main {
 		} else if (cmd.isAnnotationPresent(Subcommand.class)) {
 			Subcommand command = cmd.getAnnotation(Subcommand.class);
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
-			String cmdHelp = "";
-			for (String part : (command.help() == null ? "" : command.help()).split("\n"))
-				cmdHelp += part.replaceAll("\\[p\\]", getPrefix(event.getGuild())) + "\n";
-			cmdHelp = cmdHelp.trim();
+			String cmdHelp = command.help() == null || command.help().isEmpty() ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()).startsWith("\\") ? "\\\\" : getPrefix(event.getGuild()));
 			String cmdSubcommands = "";
 			if (getSubcommands(cmd).size() != 0) {
 				cmdSubcommands = "**Subcommands**\n\t";
-				for (Method scmdMethod : getSubcommands(cmd)) {
-					Subcommand scmd = scmdMethod.getAnnotation(Subcommand.class);
-					if (!event.isOwner() && !event.isCoOwner())
-						if (scmd.hidden() ||
-								scmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) ||
-								event.getMember() != null && !event.getMember().hasPermission(scmd.userPermissions()))
-							continue;
-					cmdSubcommands += String.format("**%s**", scmd.name()) + (scmd.help() == null || scmd.help().isEmpty() ? "" : ": " + scmd.help().split("\n")[0]) + "\n\t";
-				}
+				List<String> subcommandNames = new ArrayList();
+				for (Method scmdMethod : getSubcommands(cmd))
+					subcommandNames.add(scmdMethod.getAnnotation(Subcommand.class).name());
+				for (String scmdName : Main.sort(subcommandNames))
+					for (Method scmdMethod : getSubcommands(cmd)) {
+						Subcommand scmd = scmdMethod.getAnnotation(Subcommand.class);
+						if (!scmdName.equals(scmd.name())) continue;
+						if (!event.isOwner() && !event.isCoOwner())
+							if (scmd.hidden() ||
+									scmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) ||
+									event.getMember() != null && !event.getMember().hasPermission(scmd.userPermissions()))
+								continue;
+						cmdSubcommands += String.format("**%s**", scmd.name()) + (scmd.help() == null || scmd.help().isEmpty() ? "" : ": " + scmd.help().split("\n")[0]) + "\n\t";
+					}
 				cmdSubcommands = cmdSubcommands.trim();
 			}
 			try {
@@ -609,47 +615,52 @@ public class Main {
 								cooldown = annotation.cooldown();
 								sendTyping = annotation.sendTyping();
 							}
-							if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown*1000)
-								event.getChannel().sendMessage("You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".").queue();
-							else if (event.getGuild() == null && guildOnly)
-								event.getChannel().sendMessage("That command cannot be used in direct messages.").queue();
-							else if (ownerCommand && !event.getAuthor().getId().equals(Main.getOwner().getId()))
-								event.getChannel().sendMessage("That command can only be used by my owner.").queue();
-							else if (event.getMember() != null && !event.getMember().hasPermission(permissions)) {
-								List<String> nonPresentPerms = new ArrayList();
-								for (Permission perm : permissions)
-									if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
-								event.getChannel().sendMessage("You need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to use that.").queue();
-							} else if (event.getGuild() != null && !event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(botPermissions)) {
-								List<String> nonPresentPerms = new ArrayList();
-								for (Permission perm : permissions)
-									if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
-								event.getChannel().sendMessage("I need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to do that.").queue();
-							} else {
-								if (sendTyping) event.getChannel().sendTyping().complete();
-								CommandEvent cevent = new CommandEvent(event, args, command);
-								for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, logging, etc.
-									try {
-										hook.run(cevent);
-									} catch (CommandPermissionException e) {
-										if (e.getMessage() != null && !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage()).queue();
-										return;
-									}
-								Object obj = null;
-								try {
-									obj = command.getDeclaringClass().newInstance(); // so commands that aren't static still work.
-								} catch (Throwable e) {}
-								command.setAccessible(true);
-								try {
-									command.invoke(obj, cevent);
-									if (!Main.getOwner().getId().equals(event.getAuthor().getId())) {
-										Map userCooldowns = cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap());
-										userCooldowns.put(command.toString(), System.currentTimeMillis());
-										cooldowns.put(event.getAuthor().getId(), userCooldowns);
-									}
-								} catch (InvocationTargetException e) {
-									sendStackTrace(e.getCause(), event);
+							if (!event.getAuthor().getId().equals(Main.getOwner().getId()))
+								if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown*1000) {
+									event.getChannel().sendMessage("You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".").queue();
+									return;
+								} else if (event.getGuild() == null && guildOnly) {
+									event.getChannel().sendMessage("That command cannot be used in direct messages.").queue();
+									return;
+								} else if (ownerCommand) {
+									event.getChannel().sendMessage("That command can only be used by my owner.").queue();
+									return;
+								} else if (event.getMember() != null && !event.getMember().hasPermission(permissions)) {
+									List<String> nonPresentPerms = new ArrayList();
+									for (Permission perm : permissions)
+										if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
+									event.getChannel().sendMessage("You need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to use that.").queue();
+									return;
+								} else if (event.getGuild() != null && !event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(botPermissions)) {
+									List<String> nonPresentPerms = new ArrayList();
+									for (Permission perm : permissions)
+										if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
+									event.getChannel().sendMessage("I need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to do that.").queue();
+									return;
 								}
+							if (sendTyping) event.getChannel().sendTyping().complete();
+							CommandEvent cevent = new CommandEvent(event, args, command);
+							for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, logging, etc.
+								try {
+									hook.run(cevent);
+								} catch (CommandPermissionException e) {
+									if (e.getMessage() != null && !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage()).queue();
+									return;
+								}
+							Object obj = null;
+							try {
+								obj = command.getDeclaringClass().newInstance(); // so commands that aren't static still work.
+							} catch (Throwable e) {}
+							command.setAccessible(true);
+							try {
+								command.invoke(obj, cevent);
+								if (!Main.getOwner().getId().equals(event.getAuthor().getId())) {
+									Map userCooldowns = cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap());
+									userCooldowns.put(command.toString(), System.currentTimeMillis());
+									cooldowns.put(event.getAuthor().getId(), userCooldowns);
+								}
+							} catch (InvocationTargetException e) {
+								sendStackTrace(e.getCause(), event);
 							}
 						}
 					}
@@ -752,20 +763,11 @@ public class Main {
 		user.openPrivateChannel().complete().sendMessage(msg).queue();
 	}
 
-	public static String getCategory(String category) {
-		if (!categories.contains(category)) categories.add(category);
-		return category;
-	}
-
-	public static Object[] removeArg(Object[] args, int arg) {
+	public static <T> T[] removeArg(T[] args, int arg) {
 		List<Object> data = new ArrayList<>();
 		for (int x = 0; x < args.length; x++)
 			if (x != arg) data.add(args[x]);
-		return data.toArray(new Object[0]);
-	}
-
-	public static String[] removeArg(String[] args, int arg) {
-		return castStringArray(removeArg((Object[]) args, arg));
+		return (T[]) Arrays.copyOf(data.toArray(), data.size(), args.getClass());
 	}
 
 	public static Object[] removeArgs(Object[] args, Integer... arg) {
@@ -792,10 +794,6 @@ public class Main {
 
 	public static <T, U> T[] castArray(U[] original, T[] newType) {
 		return (T[]) Arrays.copyOf(original, original.length, newType.getClass());
-	}
-
-	public static List<String> getCategories() {
-		return categories;
 	}
 
 	public static List<Method> getCommands() {
@@ -1557,6 +1555,22 @@ public class Main {
 		List<Permission> permissions = new ArrayList();
 		Collections.addAll(permissions, new Permission[] {Permission.CREATE_INSTANT_INVITE, Permission.NICKNAME_CHANGE, Permission.VOICE_CONNECT, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_ATTACH_FILES, Permission.MESSAGE_HISTORY, Permission.MESSAGE_EXT_EMOJI, Permission.MESSAGE_ADD_REACTION, Permission.VOICE_SPEAK, Permission.VOICE_USE_VAD});
 		return permissions;
+	}
+
+	public static TextChannel getTextChannelById(String id) {
+		for (TextChannel channel : getTextChannels())
+			if (channel.getId().equals(id)) return channel;
+		return null;
+	}
+
+	public static Guild getGuildById(String id) {
+		for (Guild guild : getGuilds())
+			if (guild.getId().equals(id)) return guild;
+		return null;
+	}
+
+	public static List<String> getCategories() {
+		return categories;
 	}
 
 	private static final class SystemOutPrintStream extends PrintStream {

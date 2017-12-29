@@ -482,7 +482,7 @@ public class Moderation {
 	@Subcommand(help = "Sets this server's prefix.", name = "serverprefix", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetServerPrefix(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"}, new Object[] {"", "", false, false, event.getArgs(), new HashMap(), new ArrayList()}));
+			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"}, new Object[] {"", "", true, false, event.getArgs(), new HashMap(), new ArrayList()}));
 			else ((Map) settings.get(event.getGuild().getId())).put("serverPrefix", event.getArgs());
 			try {
 				DataIO.saveJson(settings, "data/mod/settings.json");
@@ -501,7 +501,7 @@ public class Moderation {
 			else channel = event.getGuild().getTextChannelsByName(event.getArgs(), true).get(0);
 			if (channel == null) event.reply("The given channel could not be found.");
 			else {
-				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"}, new Object[] {channel.getId(), "", false, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, new HashMap(), new ArrayList()}));
+				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"}, new Object[] {channel.getId(), "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, new HashMap(), new ArrayList()}));
 				else ((Map) settings.get(event.getGuild().getId())).put("channel", channel.getId());
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
@@ -516,7 +516,7 @@ public class Moderation {
 	@Subcommand(help = "Sets if the bot should ban users who sent a message which mentions more than 8 users.", name = "banmentionspam", parent = "com.ptsmods.impulse.commands.Moderation.modset", arguments = "<flag>", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetBanMentionSpam(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes"}, new Object[] {"", "", false, true, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, new HashMap(), new ArrayList()}));
+			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes"}, new Object[] {"", "", true, true, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, new HashMap(), new ArrayList()}));
 			else ((Map) settings.get(event.getGuild().getId())).put("banMentionSpam", !(boolean) ((Map) settings.get(event.getGuild().getId())).get("banMentionSpam"));
 			try {
 				DataIO.saveJson(settings, "data/mod/settings.json");
@@ -549,16 +549,14 @@ public class Moderation {
 
 	@Subcommand(help = "Toggle whether new members should automatically get a role assigned when they join.", name = "toggleautorole", parent = "com.ptsmods.impulse.commands.Moderation.modset", guildOnly = true, userPermissions = {Permission.MANAGE_ROLES})
 	public static void modsetToggleAutorole(CommandEvent event) throws CommandException {
-		if (!event.getArgs().isEmpty()) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, new HashMap(), new ArrayList()}));
-			else ((Map) settings.get(event.getGuild().getId())).put("autoroleEnabled", !(boolean) ((Map) settings.get(event.getGuild().getId())).get("autoroleEnabled"));
-			try {
-				DataIO.saveJson(settings, "data/mod/settings.json");
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while loading the data file.", e);
-			}
-			event.reply("Successfully toggled autoroleEnabled to " + ((Map) settings.get(event.getGuild().getId())).get("autoroleEnabled") + ".");
-		} else Main.sendCommandHelp(event);
+		if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes"}, new Object[] {"", "", false, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, new HashMap(), new ArrayList()}));
+		else ((Map) settings.get(event.getGuild().getId())).put("autoroleEnabled", !(boolean) ((Map) settings.get(event.getGuild().getId())).get("autoroleEnabled"));
+		try {
+			DataIO.saveJson(settings, "data/mod/settings.json");
+		} catch (IOException e) {
+			throw new CommandException("An unknown error occurred while loading the data file.", e);
+		}
+		event.reply("Successfully toggled autoroleEnabled to " + ((Map) settings.get(event.getGuild().getId())).get("autoroleEnabled") + ".");
 	}
 
 	@Subcommand(help = "Set the message that should be sent when a new user joins.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "greeting", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
@@ -849,7 +847,7 @@ public class Moderation {
 			Main.mute(event.getGuild().getMember(event.getUser()));
 		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("autorole").toString().isEmpty() && event.getGuild().getRoleById(((Map) settings.get(event.getGuild().getId())).get("autorole").toString()) != null)
 			try {
-				event.getGuild().getController().addSingleRoleToMember(event.getMember(), event.getGuild().getRoleById(((Map) settings.get(event.getGuild().getId())).get("autorole").toString()));
+				event.getGuild().getController().addSingleRoleToMember(event.getMember(), event.getGuild().getRoleById(((Map) settings.get(event.getGuild().getId())).get("autorole").toString())).queue();
 			} catch (Exception e) {}
 		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString().isEmpty() && event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()) != null)
 			event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()).sendMessage(((Map) settings.get(event.getGuild().getId())).get("greeting").toString()

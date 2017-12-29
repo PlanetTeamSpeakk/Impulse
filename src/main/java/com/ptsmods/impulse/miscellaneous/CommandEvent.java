@@ -2,7 +2,6 @@ package com.ptsmods.impulse.miscellaneous;
 
 import java.io.File;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 
 import net.dv8tion.jda.client.entities.Group;
 import net.dv8tion.jda.core.JDA;
@@ -56,7 +55,6 @@ public class CommandEvent {
 
 	public void reply(String message, Object... args) {
 		message = args == null || args.length == 0 ? message : String.format(message, args);
-		new ArrayList();
 		String msg = "";
 		boolean inBox = message.indexOf("```") != message.lastIndexOf("```") && message.contains("```");
 		String boxLang = "";
@@ -96,15 +94,7 @@ public class CommandEvent {
 		Main.sendPrivateMessage(event.getAuthor(), args != null && args.length > 0 ? String.format(message, args) : message);
 	}
 
-	public void sendMessage(TextChannel channel, String message) {
-		channel.sendMessage(message).queue();
-	}
-
 	public void sendMessage(MessageChannel channel, String message) {
-		channel.sendMessage(message).queue();
-	}
-
-	public void sendMessage(TextChannel channel, Message message) {
 		channel.sendMessage(message).queue();
 	}
 
@@ -112,16 +102,8 @@ public class CommandEvent {
 		channel.sendMessage(message).queue();
 	}
 
-	public void sendMessage(TextChannel channel, MessageEmbed message) {
-		channel.sendMessage(message).queue();
-	}
-
 	public void sendMessage(MessageChannel channel, MessageEmbed message) {
 		channel.sendMessage(message).queue();
-	}
-
-	public void sendFile(TextChannel channel, File file, String message) {
-		channel.sendFile(file, new MessageBuilder().append(message).build()).queue();
 	}
 
 	public void sendFile(MessageChannel channel, File file, String message) {
