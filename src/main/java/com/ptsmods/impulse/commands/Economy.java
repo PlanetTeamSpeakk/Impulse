@@ -72,7 +72,7 @@ public class Economy {
 					"You do not have a bank account, you can register one with %sbank register." :
 						"That user does not have a bank account, they can register one with %sbank register.",
 						Main.getPrefix(event.getGuild()));
-			else if (!Main.isInteger(arg0) && !Main.isInteger(arg0.substring(1)) && !arg0.startsWith("+") && !arg0.startsWith("-")) Main.sendCommandHelp(event);
+			else if (!Main.isInteger(arg0) || !arg0.startsWith("+") && !arg0.startsWith("-") && !Main.isInteger(arg0.substring(1))) Main.sendCommandHelp(event);
 			else {
 				int oldBalance = getBalance(member);
 				if (arg0.startsWith("+")) addBalance(member, Integer.parseInt(arg0.substring(1)));

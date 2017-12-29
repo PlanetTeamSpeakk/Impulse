@@ -28,7 +28,6 @@ import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.entities.impl.MessageImpl;
-import net.dv8tion.jda.core.events.ShutdownEvent;
 import net.dv8tion.jda.core.events.channel.text.TextChannelCreateEvent;
 import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.core.events.channel.text.update.GenericTextChannelUpdateEvent;
@@ -66,6 +65,9 @@ public class Moderation {
 	private static Map<String, Role> roles = new HashMap();
 
 	static {
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			saveFiles();
+		}));
 		try {
 			settings = DataIO.loadJsonOrDefault("data/mod/settings.json", Map.class, new HashMap());
 		} catch (IOException e) {
@@ -184,7 +186,7 @@ public class Moderation {
 						+ "**Moderator:** %s\n"
 						+ "**Reason:** Unknown, type %sreason %s <reason> to add it.",
 						caseNum, actionType, emoji,
-						user.getName(), user.getDiscriminator(), user.getId(),
+						Main.str(user), user.getId(),
 						moderator == null ? "Unknown" : moderator.getName() + "#" + moderator.getDiscriminator() + " (" + moderator.getId() + ")",
 								Main.getPrefix(guild), caseNum).complete().getId();
 				((Map) ((Map) settings.get(guild.getId())).get("cases")).put("" + caseNum, Main.newHashMap(new String[] {"messageId", "user", "moderator", "reason", "caseNum"}, new Object[] {messageId, user.getId(), moderator == null ? "" : moderator.getId(), "Unknown", caseNum}));
@@ -559,15 +561,15 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the message that should be sent when a new user joins.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "greeting", parent = "com.ptsmods.impulse.commands.Moderation.modset")
+	@Subcommand(help = "Set the message that should be sent when a new user joins.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "greeting", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetGreeting(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			User user = event.getAuthor();
 			Guild guild = event.getGuild();
 			event.reply("Testing new greeting:\n\n%s\n\nWould you like to keep it? (yes/no)",
 					event.getArgs()
-					.replaceAll("USER", Main.str(user))
 					.replaceAll("USER_MENTION", user.getAsMention())
+					.replaceAll("USER", Main.str(user))
 					.replaceAll("SERVER", Main.str(guild)));
 			Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000, event.getMessage().getCreationTime().toEpochSecond());
 			if (response == null) event.reply("No response gotten, guess not.");
@@ -585,15 +587,15 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the message that should be sent when an old user leaves.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "farewell", parent = "com.ptsmods.impulse.commands.Moderation.modset")
+	@Subcommand(help = "Set the message that should be sent when an old user leaves.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "farewell", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetFarewell(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			User user = event.getAuthor();
 			Guild guild = event.getGuild();
 			event.reply("Testing new farewell:\n\n%s\n\nWould you like to keep it? (yes/no)",
 					event.getArgs()
-					.replaceAll("USER", Main.str(user))
 					.replaceAll("USER_MENTION", user.getAsMention())
+					.replaceAll("USER", Main.str(user))
 					.replaceAll("SERVER", Main.str(guild)));
 			Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000, event.getMessage().getCreationTime().toEpochSecond());
 			if (response == null) event.reply("No response gotten, guess not.");
@@ -611,7 +613,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Sets whether greetings and farewells should be sent in DMs.", name = "dm", parent = "com.ptsmods.impulse.commands.Moderation.modset")
+	@Subcommand(help = "Sets whether greetings and farewells should be sent in DMs.", name = "dm", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetDm(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, new HashMap(), new ArrayList()}));
@@ -625,7 +627,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Sets the channel in which the bot should greet and farewell users.", name = "welcomechannel", parent = "com.ptsmods.impulse.commands.Moderation.modset")
+	@Subcommand(help = "Sets the channel in which the bot should greet and farewell users.", name = "welcomechannel", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetWelcomeChannel(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			TextChannel channel = null;
@@ -634,7 +636,7 @@ public class Moderation {
 			if (channel == null) event.reply("The given channel could not be found.");
 			else {
 				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", channel.getId(), false, new HashMap(), new ArrayList()}));
-				else ((Map) settings.get(event.getGuild().getId())).put("welcomeChannel", !(boolean) ((Map) settings.get(event.getGuild().getId())).get("dm"));
+				else ((Map) settings.get(event.getGuild().getId())).put("welcomeChannel", channel.getId());
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
 				} catch (IOException e) {
@@ -643,6 +645,18 @@ public class Moderation {
 				event.reply("Successfully set the channel to " + channel.getAsMention() + ".");
 			}
 		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Disable the welcome system.", name = "disable", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
+	public static void modsetDisableGreeting(CommandEvent event) throws CommandException {
+		if (!settings.containsKey(event.getGuild().getId())) event.reply("This server has not yet set up the welcome system.");
+		else ((Map) settings.get(event.getGuild().getId())).put("welcomeChannel", "");
+		try {
+			DataIO.saveJson(settings, "data/mod/settings.json");
+		} catch (IOException e) {
+			throw new CommandException("An unknown error occurred while loading the data file.", e);
+		}
+		event.reply("Successfully disabled the welcome system, to enable it again type %smodset welcomechannel <channel>.", Main.getPrefix(event.getGuild()));
 	}
 
 	@Command(category = "Moderation", help = "Shows you the past names of a user.", name = "pastnames", arguments = "<user>")
@@ -833,10 +847,14 @@ public class Moderation {
 	public static void onGuildMemberJoin(GuildMemberJoinEvent event) {
 		if (settings.containsKey(event.getGuild().getId()) && ((List) ((Map) settings.get(event.getGuild().getId())).get("mutes")).contains(event.getUser().getId()))
 			Main.mute(event.getGuild().getMember(event.getUser()));
+		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("autorole").toString().isEmpty() && event.getGuild().getRoleById(((Map) settings.get(event.getGuild().getId())).get("autorole").toString()) != null)
+			try {
+				event.getGuild().getController().addSingleRoleToMember(event.getMember(), event.getGuild().getRoleById(((Map) settings.get(event.getGuild().getId())).get("autorole").toString()));
+			} catch (Exception e) {}
 		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString().isEmpty() && event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()) != null)
 			event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()).sendMessage(((Map) settings.get(event.getGuild().getId())).get("greeting").toString()
-					.replaceAll("USER", Main.str(event.getUser()))
 					.replaceAll("USER_MENTION", event.getUser().getAsMention())
+					.replaceAll("USER", Main.str(event.getUser()))
 					.replaceAll("SERVER", Main.str(event.getGuild()))).queue();
 		log(event.getGuild(), "inbox_tray", "Member Join", "Member joined: %s.", Main.str(event.getUser()));
 	}
@@ -845,8 +863,8 @@ public class Moderation {
 	public static void onGuildMemberLeave(GuildMemberLeaveEvent event) {
 		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString().isEmpty() && event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()) != null)
 			event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString()).sendMessage(((Map) settings.get(event.getGuild().getId())).get("farewell").toString()
-					.replaceAll("USER", Main.str(event.getUser()))
 					.replaceAll("USER_MENTION", event.getUser().getAsMention())
+					.replaceAll("USER", Main.str(event.getUser()))
 					.replaceAll("SERVER", Main.str(event.getGuild()))).queue();
 		log(event.getGuild(), "outbox_tray", "Member Leave", "Member left: %s.", Main.str(event.getUser()));
 	}
@@ -1030,8 +1048,7 @@ public class Moderation {
 		else ((List) pastNames.get(event.getUser().getId())).add(event.getOldName());
 	}
 
-	@SubscribeEvent
-	public static void onShutdown(ShutdownEvent event) {
+	private static void saveFiles() {
 		Main.print(LogType.DEBUG, "Shutting down, saving files.");
 		try {
 			DataIO.saveJson(loggedMessages, "data/mod/loggedMessages.json");

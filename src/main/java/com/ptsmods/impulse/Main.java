@@ -94,9 +94,12 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 
 public class Main {
 
+	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
 	public static final Thread mainThread = Thread.currentThread();
+	public static final List<Permission> defaultPermissions = Collections.unmodifiableList(getDefaultPermissions());
+	public static final Permission[] defaultPermissionsArray = defaultPermissions.toArray(new Permission[0]);
 	private static final String osName = System.getProperty("os.name");
 	private static final BitlyClient bitlyClient = new BitlyClient(Main.apiKeys.get("bitly"));
 	private static boolean done = false;
@@ -433,7 +436,10 @@ public class Main {
 		if (cmd.isAnnotationPresent(Command.class)) {
 			Command command = cmd.getAnnotation(Command.class);
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
-			String cmdHelp = command.help() == null ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()));
+			String cmdHelp = "";
+			for (String part : (command.help() == null ? "" : command.help()).split("\n"))
+				cmdHelp += part.replaceAll("\\[p\\]", getPrefix(event.getGuild())) + "\n";
+			cmdHelp = cmdHelp.trim();
 			String cmdSubcommands = "";
 			if (!getSubcommands(cmd).isEmpty()) {
 				cmdSubcommands = "**Subcommands**\n\t";
@@ -456,7 +462,10 @@ public class Main {
 		} else if (cmd.isAnnotationPresent(Subcommand.class)) {
 			Subcommand command = cmd.getAnnotation(Subcommand.class);
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
-			String cmdHelp = command.help() == null ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()));
+			String cmdHelp = "";
+			for (String part : (command.help() == null ? "" : command.help()).split("\n"))
+				cmdHelp += part.replaceAll("\\[p\\]", getPrefix(event.getGuild())) + "\n";
+			cmdHelp = cmdHelp.trim();
 			String cmdSubcommands = "";
 			if (getSubcommands(cmd).size() != 0) {
 				cmdSubcommands = "**Subcommands**\n\t";
@@ -828,7 +837,7 @@ public class Main {
 		while (true) {
 			if (messages.isEmpty()) continue;
 			Message lastMsg = messages.get(messages.size()-1);
-			if (lastMsg.getCreationTime().toEpochSecond() > messageSentTimestamp && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong() && lastMsg.getChannel().getIdLong() == channel.getIdLong()) return lastMsg;
+			if (lastMsg.getCreationTime().toEpochSecond() > messageSentTimestamp && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && (lastMsg.getGuild() == null || lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong()) && lastMsg.getChannel().getIdLong() == channel.getIdLong()) return lastMsg;
 			else if (System.currentTimeMillis()-currentMillis >= timeoutMillis) return null;
 			try {
 				Thread.sleep(5);
@@ -930,7 +939,6 @@ public class Main {
 
 		return result;
 	}
-
 
 	public static char flipChar(char c) {
 		switch (c) {
@@ -1537,6 +1545,18 @@ public class Main {
 		case "commands": return commandsExecutor;
 		default: return null;
 		}
+	}
+
+	public static Guild getGuildByName(String name) {
+		for (Guild guild : getGuilds())
+			if (guild.getName().equalsIgnoreCase(name)) return guild;
+		return null;
+	}
+
+	public static List<Permission> getDefaultPermissions() {
+		List<Permission> permissions = new ArrayList();
+		Collections.addAll(permissions, new Permission[] {Permission.CREATE_INSTANT_INVITE, Permission.NICKNAME_CHANGE, Permission.VOICE_CONNECT, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_ATTACH_FILES, Permission.MESSAGE_HISTORY, Permission.MESSAGE_EXT_EMOJI, Permission.MESSAGE_ADD_REACTION, Permission.VOICE_SPEAK, Permission.VOICE_USE_VAD});
+		return permissions;
 	}
 
 	private static final class SystemOutPrintStream extends PrintStream {

@@ -16,6 +16,7 @@ import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.Role;
+import net.dv8tion.jda.core.exceptions.HierarchyException;
 
 public class Marriage {
 
@@ -35,7 +36,7 @@ public class Marriage {
 	public static void coupleCount(CommandEvent event) {
 		List<Role> marriageRoles = new ArrayList<>();
 		for (Role role : event.getGuild().getRoles())
-			if (role.getName().contains("❤") && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRoles.add(role);
+			if (role.getName().contains("❤") && role.getColor() != null && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRoles.add(role);
 		event.reply("There are currently " + marriageRoles.size() + " married couples in this server.");
 	}
 
@@ -48,7 +49,12 @@ public class Marriage {
 			Role marriageRole = event.getGuild().getRoleById(event.getArgs().split(" ")[0]);
 			if (marriageRole == null) event.reply("That divorce id could not be found.");
 			else {
-				marriageRole.delete().queue();
+				try {
+					marriageRole.delete().queue();
+				} catch (HierarchyException e) {
+					event.reply("I cannot remove the marriage role as it is higher than my highest role.");
+					return;
+				}
 				event.reply("You're now divorced.");
 				marriageChannel.sendMessageFormat("%s divorced id `%s`.", event.getAuthor().getName(), marriageRole.getId()).queue();
 			}
@@ -71,7 +77,12 @@ public class Marriage {
 				}
 			for (Role role : event.getGuild().getRoles())
 				if (role.getName().contains(members.get(0).getUser().getName()) && role.getName().contains(heart) && role.getName().contains(members.get(1).getUser().getName())) {
-					role.delete().queue();
+					try {
+						role.delete().queue();
+					} catch (HierarchyException e) {
+						event.reply("I cannot remove the marriage role as it is higher than my highest role.");
+						return;
+					}
 					event.reply("Successfully deleted the marriage role between %s and %s.", members.get(0).getAsMention(), members.get(1).getAsMention());
 					marriageChannel.sendMessageFormat("%s was forced to divorce %s.", members.get(0).getAsMention(), members.get(1).getAsMention()).queue();
 					return;
@@ -80,9 +91,22 @@ public class Marriage {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Marriage", help = "Forcible marry 2 members, you pervert. \nExample: [p]forcemarry @Homie #1 @Homie #36", name = "forcemarry", userPermissions = {Permission.MANAGE_ROLES}, botPermissions = {Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE}, arguments = "<user1> <user2>", guildOnly = true)
+	@Command(category = "Marriage", help = "Forcible marry 2 members, you pervert. \nExample: [p]forcemarry @Homie #1 @Homie #36", name = "forcemarry", userPermissions = {
+			Permission.MANAGE_ROLES,
+			Permission.MANAGE_CHANNEL,
+			Permission.CREATE_INSTANT_INVITE,
+			Permission.NICKNAME_CHANGE,
+			Permission.VOICE_CONNECT,
+			Permission.MESSAGE_READ,
+			Permission.MESSAGE_WRITE,
+			Permission.MESSAGE_ATTACH_FILES,
+			Permission.MESSAGE_HISTORY,
+			Permission.MESSAGE_EXT_EMOJI,
+			Permission.VOICE_SPEAK,
+			Permission.VOICE_USE_VAD
+	}, botPermissions = {Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE}, arguments = "<user1> <user2>", guildOnly = true)
 	public static void forceMarry(CommandEvent event) {
-		if (!event.getArgs().isEmpty() || event.getMessage().getMentionedUsers().size() < 2) {
+		if (!event.getArgs().isEmpty() && event.getMessage().getMentionedUsers().size() < 2) {
 			Member mem1 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
 			Member mem2 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(1));
 			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
@@ -116,7 +140,20 @@ public class Marriage {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Marriage", help = "Marry your crush.", name = "marry", arguments = "<crush>", botPermissions = {Permission.MANAGE_ROLES}, cooldown = 60, guildOnly = true)
+	@Command(category = "Marriage", help = "Marry your crush.", name = "marry", arguments = "<crush>", botPermissions = {
+			Permission.MANAGE_ROLES,
+			Permission.MANAGE_CHANNEL,
+			Permission.CREATE_INSTANT_INVITE,
+			Permission.NICKNAME_CHANGE,
+			Permission.VOICE_CONNECT,
+			Permission.MESSAGE_READ,
+			Permission.MESSAGE_WRITE,
+			Permission.MESSAGE_ATTACH_FILES,
+			Permission.MESSAGE_HISTORY,
+			Permission.MESSAGE_EXT_EMOJI,
+			Permission.VOICE_SPEAK,
+			Permission.VOICE_USE_VAD
+	}, cooldown = 60, guildOnly = true)
 	public static void marry(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			try {
@@ -130,11 +167,7 @@ public class Marriage {
 			else {
 				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
 				int marryLimit = -1;
-				try {
-					marryLimit = (Integer) ((Map) settings.get(event.getGuild().getId())).get("marryLimit") + 1;
-				} catch (ClassCastException e) {
-					marryLimit = ((Double) ((Map) settings.get(event.getGuild().getId())).get("marryLimit")).intValue() + 1;
-				}
+				marryLimit = Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("marryLimit")) + 1;
 				List<Role> marriageRolesOfAuthor = new ArrayList<>();
 				List<Role> marriageRolesOfCrush = new ArrayList<>();
 				for (Role role : event.getMember().getRoles())

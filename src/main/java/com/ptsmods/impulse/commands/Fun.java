@@ -324,7 +324,7 @@ public class Fun {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Fun", help = "Play that old game called Battleship with the bot!", name = "battleship", cooldown = 300)
+	@Command(category = "Fun", help = "Play that old game called Battleship with the bot!", name = "battleship", cooldown = 300, guildOnly = true)
 	public static void battleship(CommandEvent event) {
 		Message status = event.getChannel().sendMessage("Generating my sea...").complete();
 		List<String> botSea = new ArrayList<>();
@@ -723,7 +723,7 @@ public class Fun {
 		if (Economy.hasAccount(event.getMember())) {
 			if (garden.containsKey(event.getGuild().getId())) {
 				if (garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) {
-					Map items = (Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items");
+					Map items = new HashMap((Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items"));
 					if (!items.isEmpty()) {
 						int value = 0;
 						for (Object item :  items.keySet())
