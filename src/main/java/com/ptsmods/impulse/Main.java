@@ -1573,6 +1573,16 @@ public class Main {
 		return categories;
 	}
 
+	public static boolean startsWith(String string, String[] args) {
+		for (String arg : args)
+			if (string.startsWith(arg)) return true;
+		return false;
+	}
+
+	public static boolean startsWith(String string, List<String> args) {
+		return startsWith(string, args.toArray(new String[0]));
+	}
+
 	private static final class SystemOutPrintStream extends PrintStream {
 
 		private static final PrintStream originalOut = System.out;

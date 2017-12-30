@@ -52,6 +52,7 @@ import net.dv8tion.jda.core.utils.PermissionUtil;
 
 public class Moderation {
 
+	private static Map blacklist;
 	private static Map settings;
 	private static Map filters;
 	private static Map givemeSettings;
@@ -80,6 +81,7 @@ public class Moderation {
 		}
 		// this has to be final, smh.
 		final Map blacklist = DataIO.loadJsonOrDefaultQuietly("data/mod/blacklist.json", Map.class, new HashMap());
+		Moderation.blacklist = new HashMap(blacklist);
 		Main.addCommandHook((event) -> {
 			if (event.getGuild() != null && blacklist.containsKey(event.getGuild().getId()) && ((List) blacklist.get(event.getGuild().getId())).contains(event.getAuthor().getId())) throw new CommandPermissionException("You're blacklisted in this server.");
 			else if (blacklist.containsKey("global") && ((List) blacklist.get("global")).contains(event.getAuthor().getId())) throw new CommandPermissionException("You're globally blacklisted.");
@@ -236,7 +238,7 @@ public class Moderation {
 				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), new ArrayList<>());
 				((List) settings.get(event.getGuild().getId())).add(member.getUser().getId());
 				try {
-					DataIO.saveJson(settings, "data/mod/blacklist.json");
+					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
 					throw new CommandException("An unknown error occurred while saving the data file.", e);
 				}
@@ -255,7 +257,7 @@ public class Moderation {
 			else {
 				((List) settings.get(event.getGuild().getId())).remove(member.getUser().getId());
 				try {
-					DataIO.saveJson(settings, "data/mod/blacklist.json");
+					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
 					throw new CommandException("An unknown error occurred while saving the data file.", e);
 				}
@@ -278,7 +280,7 @@ public class Moderation {
 				if (!settings.containsKey("global")) settings.put("global", new ArrayList<>());
 				((List) settings.get("global")).add(member.getUser().getId());
 				try {
-					DataIO.saveJson(settings, "data/mod/blacklist.json");
+					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
 					throw new CommandException("An unknown error occurred while saving the data file.", e);
 				}
@@ -297,7 +299,7 @@ public class Moderation {
 			else {
 				((List) settings.get("global")).remove(member.getUser().getId());
 				try {
-					DataIO.saveJson(settings, "data/mod/blacklist.json");
+					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
 					throw new CommandException("An unknown error occurred while saving the data file.", e);
 				}

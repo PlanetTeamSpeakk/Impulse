@@ -311,8 +311,9 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
+	@Command(category = "Owner", help = "Tells you the current version of this bot.", name = "version")
 	public static void version(CommandEvent event) {
-		event.reply("This bot is running Impulse %s.", Main.version);
+		event.reply("This bot is running Impulse %s and JDA %s.", Main.version);
 	}
 
 }

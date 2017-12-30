@@ -113,8 +113,8 @@ public class MathHelper {
 	}
 
 	public static class Percentage extends Number {
-		public static final Percentage MAX_VALUE = new Percentage(100);
-		public static final Percentage MIN_VALUE = new Percentage(0);
+		public static final Percentage MAX_VALUE = new Percentage(100F);
+		public static final Percentage MIN_VALUE = new Percentage(0F);
 		private static final long serialVersionUID = 2937645220837168877L;
 		private float value;
 
@@ -149,8 +149,8 @@ public class MathHelper {
 		}
 
 		public void add(float arg1) {
-			if (arg1+value < 100 && arg1+value > 0) value += arg1;
-			else if (arg1+value > 100) value = 100F;
+			if (value+arg1 < 100 && value+arg1 > 0) value += arg1;
+			else if (value+arg1 > 100) value = 100F;
 			else value = 0F;
 		}
 
@@ -159,8 +159,8 @@ public class MathHelper {
 		}
 
 		public void subtract(float arg1) {
-			if (arg1-value < 100 && arg1-value > 0) value -= arg1;
-			else if (arg1-value > 100) value = 100F;
+			if (value-arg1 < 100 && value-arg1 > 0) value -= arg1;
+			else if (value-arg1 > 100) value = 100F;
 			else value = 0F;
 		}
 

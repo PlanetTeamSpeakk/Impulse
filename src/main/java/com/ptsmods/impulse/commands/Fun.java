@@ -723,17 +723,18 @@ public class Fun {
 		if (Economy.hasAccount(event.getMember())) {
 			if (garden.containsKey(event.getGuild().getId())) {
 				if (garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) {
-					Map items = new HashMap((Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items"));
+					Map items = (Map) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items");
+					Map items1 = new HashMap(items); // avoiding ConcurrentModificationExceptions.
 					if (!items.isEmpty()) {
 						int value = 0;
 						for (Object item :  items.keySet())
 							for (Map plant : plants.values())
 								if (plant.get("item").toString().equals(item.toString())) {
 									value += (int) plant.get("value");
-									items.remove(item);
+									items1.remove(item);
 									break;
 								}
-						garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).put("items", items);
+						garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).put("items", items1);
 						try {
 							DataIO.saveJson(garden, "data/fun/garden.json");
 						} catch (IOException e) {

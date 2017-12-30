@@ -127,16 +127,16 @@ public class Random {
 		return choices.get(randInt(choices.size()));
 	}
 
-	public static <T> List<T> scramble(List<T> list) {
-		List<T> newList = new ArrayList();
+	public static <T> void scramble(List<T> list) {
+		List<T> listCopy = new ArrayList(list);
+		list.clear();
 		List<T> passed = new ArrayList();
-		for (int x = 0; x < list.size(); x++) {
-			T chosenOne = choice(list);
-			while (passed.contains(chosenOne)) chosenOne = choice(list);
-			newList.add(chosenOne);
+		for (int x = 0; x < listCopy.size(); x++) {
+			T chosenOne = choice(listCopy);
+			while (passed.contains(chosenOne)) chosenOne = choice(listCopy);
+			list.add(chosenOne);
 			passed.add(chosenOne);
 		}
-		return newList;
 	}
 
 	public static String genKey(int length) {

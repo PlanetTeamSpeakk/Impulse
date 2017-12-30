@@ -32,7 +32,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Yandere.", name = "yandere")
 	public static void yandere(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document yandere;
 			try {
 				yandere = Jsoup.connect("https://yande.re/post/random").get();
@@ -45,7 +45,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Konachan.", name = "konachan")
 	public static void konachan(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document konachan;
 			try {
 				konachan = Jsoup.connect("https://konachan.com/post/random").get();
@@ -58,7 +58,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from e621.", name = "e621")
 	public static void e621(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document e621;
 			try {
 				e621 = Jsoup.connect("https://e621.net/post/random").get();
@@ -71,15 +71,16 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image or one matching your tags from Rule34.", name = "rule34", arguments = "[tags]")
 	public static void rule34(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			List<String> urls = new ArrayList();
 			if (!event.argsEmpty()) {
-				String query = "http://rule34.xxx/index.php?page=post&s=list&tags=" + event.getArgs().replaceAll(" ", "+");
+				String query = "http://rule34.xxx/index.php?page=post&s=list&tags=" + event.getArgs().toLowerCase().replaceAll(" ", "+");
 				Document rule34 = null;
 				try {
 					rule34 = Jsoup.connect(query).get();
 				} catch (IOException e) {
 					event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+					e.printStackTrace();
 					return;
 				}
 				Elements elements = rule34.getElementsByTag("a");
@@ -95,18 +96,24 @@ public class Lewd {
 				Document rule34 = null;
 				try {
 					rule34 = Jsoup.connect("http://rule34.xxx/" + Random.choice(urls)).get();
+					int attempts = 0;
+					while (rule34.getElementById("image") == null && attempts < 5) {
+						rule34 = Jsoup.connect("http://rule34.xxx/" + Random.choice(urls)).get();
+						attempts += 1;
+					}
 				} catch (IOException e) {
-					event.reply("An unknown error occurred while getting your lewds.");
+					event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+					e.printStackTrace();
 					return;
 				}
-				event.reply("http:" + rule34.getElementById("image").attr("src"));
+				event.reply(rule34.getElementById("image").attr("src"));
 			}
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
 	@Command(category = "Lewd", help = "Shows you a random image from Danbooru.", name = "danbooru")
 	public static void danbooru(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document danbooru;
 			try {
 				danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/random").get();
@@ -119,7 +126,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Gelbooru.", name = "gelbooru")
 	public static void gelbooru(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document gelbooru;
 			try {
 				gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=random").get();
@@ -132,7 +139,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from TBib.", name = "tbib")
 	public static void tbib(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document tbib;
 			try {
 				tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=random").get();
@@ -145,7 +152,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Xbooru.", name = "xbooru")
 	public static void xbooru(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document xbooru;
 			try {
 				xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=random").get();
@@ -158,7 +165,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Furrybooru.", name = "furrybooru")
 	public static void furrybooru(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document furrybooru;
 			try {
 				furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=random").get();
@@ -171,7 +178,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Drunkenpumken.", name = "drunkenpumken")
 	public static void drunkenpumken(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document drunkenpumken;
 			try {
 				drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=random").get();
@@ -184,7 +191,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Lolibooru.", name = "lolibooru")
 	public static void lolibooru(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document lolibooru;
 			try {
 				lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
@@ -197,7 +204,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Oboobs.", name = "boobs")
 	public static void boobs(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Map boobs;
 			try {
 				boobs = (Map) new Gson().fromJson(Main.getHTML("http://api.oboobs.ru/boobs/" + Random.randInt(oboobsLewds)), List.class).get(0);
@@ -214,7 +221,7 @@ public class Lewd {
 
 	@Command(category = "Lewd", help = "Shows you a random image from Obutts.", name = "ass")
 	public static void ass(CommandEvent event) throws CommandException {
-		if (event.getTextChannel().isNSFW()) {
+		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Map ass;
 			try {
 				ass = (Map) new Gson().fromJson(Main.getHTML("http://api.obutts.ru/butts/" + Random.randInt(obuttsLewds)), List.class).get(0);

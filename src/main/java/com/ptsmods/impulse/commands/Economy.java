@@ -230,6 +230,7 @@ public class Economy {
 
 	public static void setBalance(Member member, int balance) {
 		if (!hasAccount(member)) throw new UserHasNoBankAccountException();
+		if (balance < 0) balance = 0;
 		((Map) bank.get(member.getGuild().getId())).put(member.getUser().getId(), balance);
 		saveBank();
 	}

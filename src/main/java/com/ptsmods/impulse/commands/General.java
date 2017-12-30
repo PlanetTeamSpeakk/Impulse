@@ -77,15 +77,16 @@ public class General {
 	public static void avatar(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
-			event.reply(user.getAvatarUrl() == null ? user.getDefaultAvatarUrl() : user.getAvatarUrl());
+			if (user == null) event.reply("The given user could not be found.");
+			else event.reply(user.getAvatarUrl() == null ? user.getDefaultAvatarUrl() : user.getAvatarUrl());
 		} else Main.sendCommandHelp(event);
 	}
 
 	@Command(category = "General", help = "Answers the hardest questions life can give you.", name = "8ball", arguments = "<question>")
 	public static void eightBall(CommandEvent event) {
-		if (!event.getArgs().endsWith("?") || event.getArgs().length() == 0)
-			event.reply("That does not look like a question.");
-		else event.reply(answers[Random.randInt(answers.length)] + ".");
+		if (!event.getArgs().endsWith("?") || event.argsEmpty() || !Main.startsWith(event.getArgs().toLowerCase(), new String[] {"are", "may", "should", "is", "will", "have", "shall", "could", "can", "might", "did", "would", "am"}))
+			event.reply("That does not look like a closed question. (Closed questions can only be answered with yes or no and end with a question mark.)");
+		else event.reply(Random.choice(answers) + ".");
 	}
 
 	@Command(category = "General", help = "Flips text.", name = "flip", arguments = "<text>")
@@ -563,7 +564,7 @@ public class General {
 						data1.get("total_kills_headshot").toString().split("\\.")[0],
 						data1.get("total_shots_fired").toString().split("\\.")[0],
 						data1.get("total_shots_hit").toString().split("\\.")[0],
-						MathHelper.percentage(Double.parseDouble(data1.get("total_shots_fired")), Double.parseDouble(data1.get("total_shots_hit"))),
+						MathHelper.percentage(Double.parseDouble(data1.get("total_shots_fired")), Double.parseDouble(data1.get("total_shots_hit"))).floatValue(),
 						data1.get("total_rounds_played").toString().split("\\.")[0]);
 			}
 		} else Main.sendCommandHelp(event);
