@@ -78,18 +78,11 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Owner", help = "Clears the console.", name = "clearconsole", ownerCommand = true)
-	public static void clearConsole(CommandEvent event) {
-		for (int i : Main.range(20000)) System.out.println();
-		event.reply("The console was cleared.");
-	}
-
 	@Command(category = "Owner", help = "Contact the owner.", name = "contact", cooldown = 60)
 	public static void contact(CommandEvent event) {
 		if (event.getArgs().length() != 0) {
-			Main.sendPrivateMessage(Main.getOwner(), String.format("**%s#%s** (%s) has sent you a message from **%s** (%s):\n\n",
-					event.getAuthor().getName(),
-					event.getAuthor().getDiscriminator(),
+			Main.sendPrivateMessage(Main.getOwner(), String.format("**%s** (%s) has sent you a message from **%s** (%s):\n\n",
+					Main.str(event.getAuthor()),
 					event.getAuthor().getId(),
 					event.getGuild().getName(),
 					event.getGuild().getId()) + event.getArgs());

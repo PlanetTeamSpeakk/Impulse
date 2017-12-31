@@ -94,7 +94,7 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 
 public class Main {
 
-	public static final String version = "v1.1.6-stable";
+	public static final String version = "1.1.7-stable";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();

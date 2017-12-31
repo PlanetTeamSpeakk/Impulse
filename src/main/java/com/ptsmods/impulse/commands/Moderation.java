@@ -2,6 +2,7 @@ package com.ptsmods.impulse.commands;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,9 +81,9 @@ public class Moderation {
 			throw new RuntimeException("An unknown error occurred while loading the filters.json file.", e);
 		}
 		// this has to be final, smh.
-		final Map blacklist = DataIO.loadJsonOrDefaultQuietly("data/mod/blacklist.json", Map.class, new HashMap());
-		Moderation.blacklist = new HashMap(blacklist);
+		blacklist = DataIO.loadJsonOrDefaultQuietly("data/mod/blacklist.json", Map.class, new HashMap());
 		Main.addCommandHook((event) -> {
+			Map blacklist = Moderation.getBlacklist();
 			if (event.getGuild() != null && blacklist.containsKey(event.getGuild().getId()) && ((List) blacklist.get(event.getGuild().getId())).contains(event.getAuthor().getId())) throw new CommandPermissionException("You're blacklisted in this server.");
 			else if (blacklist.containsKey("global") && ((List) blacklist.get("global")).contains(event.getAuthor().getId())) throw new CommandPermissionException("You're globally blacklisted.");
 		});
@@ -235,8 +236,8 @@ public class Moderation {
 			Member member = Main.getMemberFromInput(event.getMessage());
 			if (member == null) event.reply("That user could not be found.");
 			else {
-				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), new ArrayList<>());
-				((List) settings.get(event.getGuild().getId())).add(member.getUser().getId());
+				if (!blacklist.containsKey(event.getGuild().getId())) blacklist.put(event.getGuild().getId(), new ArrayList<>());
+				((List) blacklist.get(event.getGuild().getId())).add(member.getUser().getId());
 				try {
 					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
@@ -252,10 +253,10 @@ public class Moderation {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
 			if (member == null) event.reply("That user could not be found.");
-			else if (!settings.containsKey(event.getGuild().getId())) event.reply("No one in this server is currently blacklisted.");
-			else if (!((List) settings.get(event.getGuild().getId())).contains(member.getUser().getId())) event.reply("That user isn't blacklisted.");
+			else if (!blacklist.containsKey(event.getGuild().getId())) event.reply("No one in this server is currently blacklisted.");
+			else if (!((List) blacklist.get(event.getGuild().getId())).contains(member.getUser().getId())) event.reply("That user isn't blacklisted.");
 			else {
-				((List) settings.get(event.getGuild().getId())).remove(member.getUser().getId());
+				((List) blacklist.get(event.getGuild().getId())).remove(member.getUser().getId());
 				try {
 					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
@@ -277,8 +278,8 @@ public class Moderation {
 			Member member = Main.getMemberFromInput(event.getMessage());
 			if (member == null) event.reply("That user could not be found.");
 			else {
-				if (!settings.containsKey("global")) settings.put("global", new ArrayList<>());
-				((List) settings.get("global")).add(member.getUser().getId());
+				if (!blacklist.containsKey("global")) blacklist.put("global", new ArrayList<>());
+				((List) blacklist.get("global")).add(member.getUser().getId());
 				try {
 					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
@@ -294,10 +295,10 @@ public class Moderation {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
 			if (member == null) event.reply("That user could not be found.");
-			else if (!settings.containsKey("global")) event.reply("No one is currently globally blacklisted.");
-			else if (!((List) settings.get("global")).contains(member.getUser().getId())) event.reply("That user isn't blacklisted.");
+			else if (!blacklist.containsKey("global")) event.reply("No one is currently globally blacklisted.");
+			else if (!((List) blacklist.get("global")).contains(member.getUser().getId())) event.reply("That user isn't blacklisted.");
 			else {
-				((List) settings.get("global")).remove(member.getUser().getId());
+				((List) blacklist.get("global")).remove(member.getUser().getId());
 				try {
 					DataIO.saveJson(blacklist, "data/mod/blacklist.json");
 				} catch (IOException e) {
@@ -354,10 +355,10 @@ public class Moderation {
 	@Command(category = "Moderation", help = "Give yourself roles.", name = "giveme", guildOnly = true, botPermissions = {Permission.MANAGE_ROLES}, arguments = "<giveme>")
 	public static void giveme(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
-			if (!settings.containsKey(event.getGuild().getId())) event.reply("This server has no givemes yet.");
-			else if (!((Map) settings.get(event.getGuild().getId())).containsKey(event.getArgs())) event.reply("That givemes could not be found.");
+			if (!givemeSettings.containsKey(event.getGuild().getId())) event.reply("This server has no givemes yet.");
+			else if (!((Map) givemeSettings.get(event.getGuild().getId())).containsKey(event.getArgs())) event.reply("That givemes could not be found.");
 			else {
-				Role giveme = event.getGuild().getRoleById((String) ((Map) settings.get(event.getGuild().getId())).get(event.getArgs()));
+				Role giveme = event.getGuild().getRoleById((String) ((Map) givemeSettings.get(event.getGuild().getId())).get(event.getArgs()));
 				if (giveme == null) event.reply("The givemes was found, but the connected role was deleted.");
 				else if (!PermissionUtil.canInteract(event.getSelfMember(), giveme)) event.reply("I cannot give you that role, as it is higher in the hierarchy than my highest role.");
 				else {
@@ -1053,6 +1054,10 @@ public class Moderation {
 	public static void onUserNameUpdate(UserNameUpdateEvent event) {
 		if (!pastNames.containsKey(event.getUser().getId())) pastNicks.put(event.getUser().getId(), Lists.newArrayList(event.getOldName()));
 		else ((List) pastNames.get(event.getUser().getId())).add(event.getOldName());
+	}
+
+	public static Map getBlacklist() {
+		return Collections.unmodifiableMap(blacklist);
 	}
 
 	private static void saveFiles() {
