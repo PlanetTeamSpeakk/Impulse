@@ -20,6 +20,7 @@ import com.ptsmods.impulse.utils.LaughingMao;
 import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.EmbedBuilder;
+import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
@@ -710,8 +711,8 @@ public class Fun {
 					EmbedBuilder builder = new EmbedBuilder()
 							.setColor(Color.GREEN)
 							.setTitle("Your items");
-					for (String item : ((Map<String, Double>) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).keySet())
-						builder.addField(Main.pascalCase(item), "" + ((Map<String, Double>) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).get(item).intValue(), true);
+					for (String item : ((Map<String, Object>) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).keySet())
+						builder.addField(Main.pascalCase(item), "" + Main.getIntFromPossibleDouble(((Map<String, Object>) garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).get("items")).get(item)), true);
 					event.reply(builder.build());
 				} else event.reply("You have no items.");
 			} else event.reply("You haven't planted anything yet.");
@@ -785,6 +786,59 @@ public class Fun {
 		}
 		easterEgg.put(event.getAuthor().getId(), easterEgg.get(event.getAuthor().getId())+1);
 		event.reply(output);
+	}
+
+	@Command(category = "General", help = "Spin the revolver's chamber and then *PANG*. \nThe given bet will be removed from your balance if you lose or doubled if you win, if the given bet is 0 or not given there's nothing to lose.", name = "russianroulette", cooldown = 30, arguments = "[bet] [bullets]")
+	public static void russianRoulette(CommandEvent event) throws IOException {
+		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0]) && Integer.parseInt(event.getArgs().split(" ")[0]) != 0) {
+			int bet = Integer.parseInt(event.getArgs().split(" ")[0]);
+			if (!Economy.hasAccount(event.getMember()))
+				event.reply("You cannot bet without having a bank account, you can make one with %sbank register.", Main.getPrefix(event.getGuild()));
+			else if (!Economy.hasEnoughBalance(event.getMember(), bet)) event.reply("You do not have enough balance to bid that high.");
+			else {
+				int bullets = Random.randInt(1, 5);
+				if (event.getArgs().split(" ").length > 1 && Main.isInteger(event.getArgs().split(" ")[1]) && Integer.parseInt(event.getArgs().split(" ")[1]) > 0 && Integer.parseInt(event.getArgs().split(" ")[1]) < 6) bullets = Integer.parseInt(event.getArgs().split(" ")[1]);
+				if (bet > 0) {
+					Map<Integer, Integer> maxBets = Main.newHashMap(new Integer[] {1, 2, 3, 4, 5}, new Integer[] {500, 1500, 4500, 13500, 40500});
+					if (bet > maxBets.get(bullets)) {
+						event.reply("You can only bid a maximum of %s credits with %s bullet%s.", maxBets.get(bullets), bullets, bullets == 1 ? "" : "s");
+						return;
+					}
+				}
+				boolean shot = rrPlay(event, bullets, event.getChannel().sendMessageFormat("You've made a bet for %s credits that you'll survive with %s bullets in the barrel. You load up %s bullets and start spinning the barrel...", bet, bullets, bullets).complete());
+				int oldBalance = Economy.getBalance(event.getMember());
+				if (shot)
+					Economy.removeBalance(event.getMember(), bet);
+				else
+					Economy.addBalance(event.getMember(), bet);
+				event.reply("%s credits have been %s %s your bank account, old balance: **%s** credits, new balance: **%s** credits.", bet, shot ? "removed" : "added", shot ? "from" : "to", oldBalance, Economy.getBalance(event.getMember()));
+			}
+		} else {
+			int bullets = Random.randInt(1, 5);
+			if (event.getArgs().split(" ").length > 1 && Main.isInteger(event.getArgs().split(" ")[1]) && Integer.parseInt(event.getArgs().split(" ")[1]) > 0 && Integer.parseInt(event.getArgs().split(" ")[1]) < 6) bullets = Integer.parseInt(event.getArgs().split(" ")[1]);
+			rrPlay(event, bullets, null);
+		}
+	}
+
+	private static boolean rrPlay(CommandEvent event, int bullets, Message message) {
+		if (message == null) message = event.getChannel().sendMessage(new MessageBuilder().append("You load up ").append(bullets).append(" bullets and start spinning the barrel...").build()).complete();
+		try {
+			Thread.sleep(4000);
+		} catch (InterruptedException e) {}
+		message.editMessage("You put the gun against your head and work up the courage to pull the trigger.").queue();
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e) {}
+		boolean shot = false;
+		Boolean[] choices = new Boolean[6];
+		for (int x : Main.range(bullets))
+			choices[x] = true;
+		for (int x = 0; x < choices.length; x++)
+			if (choices[x] == null) choices[x] = false;
+		shot = Random.choice(choices);
+		if (shot) message.editMessage("*PANG* sadly, one of the bullets hit you and now you're dead.").queue();
+		else message.editMessage("*click* nothing happened, you've survived!").queue();
+		return shot;
 	}
 
 	@SubscribeEvent

@@ -998,7 +998,7 @@ public class Moderation {
 		for (Channel channel : Main.getAllChannels(member.getGuild())) {
 			if (channel.getPermissionOverride(member) != null) perms.put(channel, channel.getPermissionOverride(member).getAllowedRaw());
 			else perms.put(channel, null);
-			channel.createPermissionOverride(member).complete().getManagerUpdatable().deny(Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION, Permission.VOICE_SPEAK).update().queue();
+			Main.getPermissionOverride(member, channel).getManagerUpdatable().deny(Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION, Permission.VOICE_SPEAK).update().queue();
 		}
 		Main.runAsynchronously(() -> {
 			try {
@@ -1016,20 +1016,27 @@ public class Moderation {
 		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()}));
 		if (event.getGuild() == null) return;
 		if (filters.containsKey(event.getGuild().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE))
-			for (String part : event.getMessage().getContent().split(" "))
-				if (((List) ((Map) filters.get(event.getGuild().getId())).get("filtered")).contains(part)) {
-					try {
-						event.getMessage().delete().complete();
-					} catch (Throwable e) {
-						return;
-					}
-					Message msg = event.getChannel().sendMessageFormat("%s you're not allowed to say that!", event.getAuthor().getAsMention()).complete();
-					try {
-						Thread.sleep(5000);
-					} catch (InterruptedException e) {}
-					msg.delete().queue();
+			if (Main.contains(event.getMessage().getContent(), (List<String>) ((Map) filters.get(event.getGuild().getId())).get("filtered"))) {
+				try {
+					event.getMessage().delete().complete();
+				} catch (Throwable e) {
 					return;
 				}
+				Message msg = event.getChannel().sendMessageFormat("%s you're not allowed to say that!", event.getAuthor().getAsMention()).complete();
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {}
+				msg.delete().queue();
+				return;
+			}
+		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
+			try {
+				event.getMessage().delete().complete();
+			} catch (Throwable e) {
+				return;
+			}
+			event.getChannel().sendMessage(event.getAuthor().getAsMention() + " don't advertise other Discord servers!").queue();
+		}
 		if (settings.containsKey(event.getGuild().getId()))
 			if ((boolean) ((Map) settings.get(event.getGuild().getId())).get("banMentionSpam") && event.getMessage().getMentionedUsers().size() > 10) event.getGuild().getController().ban(event.getAuthor(), 1).queue();
 		messages.put(event.getAuthor().getId(), Main.add(messages.getOrDefault(event.getAuthor().getId(), new ArrayList<Message>()), event.getMessage()));

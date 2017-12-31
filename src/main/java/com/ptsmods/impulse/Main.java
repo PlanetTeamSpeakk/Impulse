@@ -94,7 +94,7 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 
 public class Main {
 
-	public static final String version = "v1.1.4-beta";
+	public static final String version = "v1.1.6-stable";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
@@ -826,7 +826,7 @@ public class Main {
 
 	public static void mute(Member member) {
 		for (Channel channel : Main.getAllChannels(member.getGuild()))
-			channel.createPermissionOverride(member).complete().getManagerUpdatable().deny(Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION, Permission.VOICE_SPEAK).update().queue();
+			Main.getPermissionOverride(member, channel).getManagerUpdatable().deny(Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION, Permission.VOICE_SPEAK).update().queue();
 	}
 
 	@Nullable
@@ -1184,13 +1184,13 @@ public class Main {
 
 	public static OnlineStatus getStatusFromString(String string) {
 		switch (string.toUpperCase()) {
-		case "OFFLINE": {return OnlineStatus.OFFLINE;}
-		case "INVISIBLE": {return OnlineStatus.INVISIBLE;}
-		case "DND": {return OnlineStatus.DO_NOT_DISTURB;}
-		case "DO_NOT_DISTURB": {return OnlineStatus.DO_NOT_DISTURB;}
-		case "IDLE": {return OnlineStatus.IDLE;}
-		case "ONLINE": {return OnlineStatus.ONLINE;}
-		default: {return OnlineStatus.UNKNOWN;}
+		case "OFFLINE": 		{return OnlineStatus.OFFLINE;}
+		case "INVISIBLE": 		{return OnlineStatus.INVISIBLE;}
+		case "DND": 			{return OnlineStatus.DO_NOT_DISTURB;}
+		case "DO_NOT_DISTURB": 	{return OnlineStatus.DO_NOT_DISTURB;}
+		case "IDLE": 			{return OnlineStatus.IDLE;}
+		case "ONLINE": 			{return OnlineStatus.ONLINE;}
+		default: 				{return OnlineStatus.UNKNOWN;}
 		}
 	}
 
@@ -1202,11 +1202,11 @@ public class Main {
 		try {
 			Map settings = DataIO.loadJsonOrDefault("data/mod/settings.json", Map.class, new HashMap());
 			String serverPrefix = Config.get("prefix");
-			try {
-				if (settings.containsKey(guild.getId())) serverPrefix = (String) ((Map) settings.get(guild.getId())).get("serverPrefix");
-			} catch (NullPointerException e) { }
-			return serverPrefix == null || serverPrefix.isEmpty() ? Config.get("prefix") : serverPrefix;
-		} catch (IOException | NullPointerException e) { // IOException is thrown when there's an error while reading the file, NullPointerException is thrown when guild is null (dms most likely).
+			if (guild != null && settings.containsKey(guild.getId())) {
+				serverPrefix = ((Map) settings.get(guild.getId())).get("serverPrefix").toString();
+				return serverPrefix == null || serverPrefix.isEmpty() ? Config.get("prefix") : serverPrefix;
+			} else return serverPrefix;
+		} catch (Exception e) {
 			return Config.get("prefix");
 		}
 	}
@@ -1581,6 +1581,16 @@ public class Main {
 
 	public static boolean startsWith(String string, List<String> args) {
 		return startsWith(string, args.toArray(new String[0]));
+	}
+
+	public static boolean contains(String string, String[] args) {
+		for (String arg : args)
+			if (string.contains(arg)) return true;
+		return false;
+	}
+
+	public static boolean contains(String string, List<String> args) {
+		return contains(string, args.toArray(new String[0]));
 	}
 
 	private static final class SystemOutPrintStream extends PrintStream {

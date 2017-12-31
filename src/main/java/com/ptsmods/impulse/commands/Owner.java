@@ -25,6 +25,7 @@ import com.ptsmods.impulse.miscellaneous.CommandPermissionException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
 
+import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
@@ -276,7 +277,7 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Owner", help = "Sent a message to either a user, a channel, or a guild.", name = "whisper", arguments = "<id> <message>")
+	@Command(category = "Owner", help = "Sent a message to either a user, a channel, or a guild.", name = "whisper", arguments = "<id> <message>", ownerCommand = true)
 	public static void whisper(CommandEvent event) {
 		if (!event.argsEmpty() && event.getArgs().split(" ").length > 1 && Main.isLong(event.getArgs().split(" ")[0])) {
 			String id = event.getArgs().split(" ")[0];
@@ -313,7 +314,7 @@ public class Owner {
 
 	@Command(category = "Owner", help = "Tells you the current version of this bot.", name = "version")
 	public static void version(CommandEvent event) {
-		event.reply("This bot is running Impulse %s and JDA %s.", Main.version);
+		event.reply("This bot is running Impulse **%s**, JDA **%s**, and Java **%s**.", Main.version, JDAInfo.VERSION, System.getProperty("java.version"));
 	}
 
 }
