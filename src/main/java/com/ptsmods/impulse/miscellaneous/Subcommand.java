@@ -26,6 +26,7 @@ public @interface Subcommand {
 	public Permission[] botPermissions() default {};
 	public Permission[] userPermissions() default {};
 	public double cooldown() default 1D;
+	public boolean serverOwnerCommand() default false;
 	public boolean ownerCommand() default false;
 	public String requiredRole() default "";
 }

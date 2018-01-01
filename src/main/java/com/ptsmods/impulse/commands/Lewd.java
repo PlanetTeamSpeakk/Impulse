@@ -101,9 +101,11 @@ public class Lewd {
 						rule34 = Jsoup.connect("http://rule34.xxx/" + Random.choice(urls)).get();
 						attempts += 1;
 					}
-				} catch (IOException e) {
+					if (rule34.getElementById("image") == null)
+						throw new CommandException("No lewds found.");
+				} catch (Exception e) {
 					event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
-					e.printStackTrace();
+					if (!(e instanceof CommandException)) e.printStackTrace();
 					return;
 				}
 				event.reply(rule34.getElementById("image").attr("src"));

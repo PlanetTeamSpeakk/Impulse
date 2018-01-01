@@ -355,10 +355,16 @@ public class Moderation {
 	@Command(category = "Moderation", help = "Give yourself roles.", name = "giveme", guildOnly = true, botPermissions = {Permission.MANAGE_ROLES}, arguments = "<giveme>")
 	public static void giveme(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
+			String givemeName = "";
+			for (String giveme : ((Map<String, Object>) givemeSettings.get(event.getGuild().getId())).keySet())
+				if (giveme.equalsIgnoreCase(event.getArgs())) {
+					givemeName = giveme;
+					break;
+				}
 			if (!givemeSettings.containsKey(event.getGuild().getId())) event.reply("This server has no givemes yet.");
-			else if (!((Map) givemeSettings.get(event.getGuild().getId())).containsKey(event.getArgs())) event.reply("That givemes could not be found.");
+			else if (!((Map) givemeSettings.get(event.getGuild().getId())).containsKey(givemeName)) event.reply("That giveme could not be found.");
 			else {
-				Role giveme = event.getGuild().getRoleById((String) ((Map) givemeSettings.get(event.getGuild().getId())).get(event.getArgs()));
+				Role giveme = event.getGuild().getRoleById((String) ((Map) givemeSettings.get(event.getGuild().getId())).get(givemeName));
 				if (giveme == null) event.reply("The givemes was found, but the connected role was deleted.");
 				else if (!PermissionUtil.canInteract(event.getSelfMember(), giveme)) event.reply("I cannot give you that role, as it is higher in the hierarchy than my highest role.");
 				else {

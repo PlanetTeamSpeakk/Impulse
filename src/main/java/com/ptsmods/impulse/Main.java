@@ -86,7 +86,9 @@ import net.dv8tion.jda.core.entities.impl.TextChannelImpl;
 import net.dv8tion.jda.core.entities.impl.UserImpl;
 import net.dv8tion.jda.core.entities.impl.VoiceChannelImpl;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
+import net.dv8tion.jda.core.requests.RestAction;
 import net.dv8tion.jda.core.requests.SessionReconnectQueue;
 import net.swisstech.bitly.BitlyClient;
 import net.swisstech.bitly.model.Response;
@@ -94,22 +96,22 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 
 public class Main {
 
-	public static final String version = "1.1.7-stable";
+	public static final String version = "1.1.8-stable";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
 	public static final Thread mainThread = Thread.currentThread();
 	public static final List<Permission> defaultPermissions = Collections.unmodifiableList(getDefaultPermissions());
 	public static final Permission[] defaultPermissionsArray = defaultPermissions.toArray(new Permission[0]);
-	private static final String osName = System.getProperty("os.name");
 	private static final BitlyClient bitlyClient = new BitlyClient(Main.apiKeys.get("bitly"));
 	private static boolean done = false;
 	private static final ThreadPoolExecutor commandsExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 	private static final ThreadPoolExecutor miscellaneousExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
-	private static final boolean isWindows;
-	private static final boolean isMac;
-	private static final boolean isUnix;
-	private static final boolean isSolaris;
+	private static final String osName = System.getProperty("os.name");
+	private static final boolean isWindows = osName.toLowerCase().contains("windows");
+	private static final boolean isMac = osName.toLowerCase().contains("mac");
+	private static final boolean isUnix = osName.toLowerCase().contains("nix") || osName.toLowerCase().contains("nux") || osName.toLowerCase().contains("aix");
+	private static final boolean isSolaris = osName.toLowerCase().contains("sunos");
 	private static Map<String, Integer> commandIndex = new HashMap();
 	private static List<CommandExecutionHook> commandHooks = new ArrayList<>();
 	private static List<JDA> shards = new ArrayList<>();
@@ -131,10 +133,6 @@ public class Main {
 		} catch (FileNotFoundException e) {}
 		miscellaneousExecutor.allowCoreThreadTimeOut(true);
 		apiKeys.put("bitly", "dd800abec74d5b12906b754c630cdf1451aea9e0");
-		isWindows = osName.toLowerCase().contains("windows");
-		isMac = osName.toLowerCase().contains("mac");
-		isUnix = osName.toLowerCase().contains("nix") || osName.toLowerCase().contains("nux") || osName.toLowerCase().contains("aix");
-		isSolaris = osName.toLowerCase().contains("sunos");
 	}
 
 	public static void main(String[] args) {
@@ -593,6 +591,7 @@ public class Main {
 							Permission[] permissions = {};
 							Permission[] botPermissions = {};
 							boolean guildOnly = false;
+							boolean serverOwnerCommand = false;
 							boolean ownerCommand = false;
 							boolean sendTyping = true;
 							double cooldown = 1D;
@@ -602,6 +601,7 @@ public class Main {
 								permissions = annotation.userPermissions();
 								botPermissions = annotation.botPermissions();
 								guildOnly = annotation.guildOnly();
+								serverOwnerCommand = annotation.serverOwnerCommand();
 								ownerCommand = annotation.ownerCommand();
 								cooldown = annotation.cooldown();
 								sendTyping = annotation.sendTyping();
@@ -611,56 +611,62 @@ public class Main {
 								permissions = annotation.userPermissions();
 								botPermissions = annotation.botPermissions();
 								guildOnly = annotation.guildOnly();
+								serverOwnerCommand = annotation.serverOwnerCommand();
 								ownerCommand = annotation.ownerCommand();
 								cooldown = annotation.cooldown();
 								sendTyping = annotation.sendTyping();
 							}
+							String errorMsg = "";
 							if (!event.getAuthor().getId().equals(Main.getOwner().getId()))
-								if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown*1000) {
-									event.getChannel().sendMessage("You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".").queue();
-									return;
-								} else if (event.getGuild() == null && guildOnly) {
-									event.getChannel().sendMessage("That command cannot be used in direct messages.").queue();
-									return;
-								} else if (ownerCommand) {
-									event.getChannel().sendMessage("That command can only be used by my owner.").queue();
-									return;
-								} else if (event.getMember() != null && !event.getMember().hasPermission(permissions)) {
+								if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown*1000)
+									errorMsg = "You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".";
+								else if (event.getGuild() == null && guildOnly)
+									errorMsg = "That command cannot be used in direct messages.";
+								else if (serverOwnerCommand && event.getGuild() != null && event.getAuthor().getId().equals(event.getGuild().getOwner().getUser().getId()))
+									errorMsg = "That command can only be used by this server's owner.";
+								else if (ownerCommand)
+									errorMsg = "That command can only be used by my owner.";
+								else if (event.getMember() != null && !event.getMember().hasPermission(permissions)) {
 									List<String> nonPresentPerms = new ArrayList();
 									for (Permission perm : permissions)
 										if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
-									event.getChannel().sendMessage("You need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to use that.").queue();
-									return;
+									errorMsg = "You need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to use that.";
 								} else if (event.getGuild() != null && !event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(botPermissions)) {
 									List<String> nonPresentPerms = new ArrayList();
 									for (Permission perm : permissions)
 										if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
-									event.getChannel().sendMessage("I need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to do that.").queue();
-									return;
+									errorMsg = "I need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to do that.";
 								}
-							if (sendTyping) event.getChannel().sendTyping().complete();
-							CommandEvent cevent = new CommandEvent(event, args, command);
-							for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, logging, etc.
+							if (!errorMsg.isEmpty())
+								event.getChannel().sendMessage(errorMsg).queue(RestAction.DEFAULT_SUCCESS, t -> {
+									if (t instanceof InsufficientPermissionException) sendPrivateMessage(event.getAuthor(), "I cannot parse the command as I don't have permissions to talk in the channel you ran the command in.");
+									else t.printStackTrace();
+								});
+							else {
+								if (sendTyping) event.getChannel().sendTyping().complete();
+								CommandEvent cevent = new CommandEvent(event, args, command);
+								for (CommandExecutionHook hook : Main.getCommandHooks()) // these are useful for e.g., permissions, blacklists, logging, etc.
+									try {
+										hook.run(cevent);
+									} catch (CommandPermissionException e) {
+										if (e.getMessage() != null && !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage()).queue();
+										return;
+									}
+								Object obj = null;
 								try {
-									hook.run(cevent);
-								} catch (CommandPermissionException e) {
-									if (e.getMessage() != null && !e.getMessage().isEmpty()) event.getChannel().sendMessage(e.getMessage()).queue();
-									return;
+									obj = command.getDeclaringClass().newInstance(); // so commands that aren't static still work.
+								} catch (Throwable e) {}
+								command.setAccessible(true);
+								try {
+									command.invoke(obj, cevent);
+									if (!Main.getOwner().getId().equals(event.getAuthor().getId())) {
+										Map userCooldowns = cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap());
+										userCooldowns.put(command.toString(), System.currentTimeMillis());
+										cooldowns.put(event.getAuthor().getId(), userCooldowns);
+									}
+								} catch (InvocationTargetException e) {
+									sendStackTrace(e.getCause(), event);
 								}
-							Object obj = null;
-							try {
-								obj = command.getDeclaringClass().newInstance(); // so commands that aren't static still work.
-							} catch (Throwable e) {}
-							command.setAccessible(true);
-							try {
-								command.invoke(obj, cevent);
-								if (!Main.getOwner().getId().equals(event.getAuthor().getId())) {
-									Map userCooldowns = cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap());
-									userCooldowns.put(command.toString(), System.currentTimeMillis());
-									cooldowns.put(event.getAuthor().getId(), userCooldowns);
-								}
-							} catch (InvocationTargetException e) {
-								sendStackTrace(e.getCause(), event);
 							}
 						}
 					}
