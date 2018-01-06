@@ -12,6 +12,7 @@ import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.utils.DataIO;
 
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
@@ -250,7 +251,7 @@ public class Marriage {
 
 	@Command(category = "Marriage", help = "Toggles whether members can marry each other in this server.", name = "togglemarriages", userPermissions = {Permission.ADMINISTRATOR})
 	public static void toggleMarriages(CommandEvent event) {
-		if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
+		if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
 		boolean disabled = (boolean) ((Map) settings.get(event.getGuild().getId())).get("disabled");
 		((Map) settings.get(event.getGuild().getId())).put("disabled", !disabled);
 		try {
@@ -261,6 +262,11 @@ public class Marriage {
 			return;
 		}
 		event.reply("Marriages in this server are now " + (disabled ? "enabled" : "disabled") + ".");
+	}
+
+	public static int getMarryLimit(Guild guild) {
+		if (settings.containsKey(guild.getId())) return Main.getIntFromPossibleDouble(((Map) settings.get(guild.getId())).get("marryLimit"));
+		else return 0;
 	}
 
 }

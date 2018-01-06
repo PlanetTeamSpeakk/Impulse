@@ -72,7 +72,7 @@ public class Config {
 		addComment(lines.size()+1, comment);
 	}
 
-	public static void addComment(int line, String comment) {
+	private static void addComment(int line, String comment) {
 		if (line > lines.size()+1) throw new StringIndexOutOfBoundsException("The given integer line was bigger than it's current maximum (" + (lines.size()+1) + ").");
 		for (String part : comment.split("\n"))
 			lines.put(lines.size()+1, "// " + part);

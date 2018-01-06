@@ -34,10 +34,19 @@ public class Lewd {
 	public static void yandere(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document yandere;
+			int attempts = 0;
 			try {
 				yandere = Jsoup.connect("https://yande.re/post/random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (yandere.getElementById("image") == null && attempts < 5) {
+					yandere = Jsoup.connect("https://yande.re/post/random").get();
+					attempts += 1;
+				}
+				if (yandere.getElementById("highres") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply(yandere.getElementById("highres").attr("href"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -47,10 +56,19 @@ public class Lewd {
 	public static void konachan(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document konachan;
+			int attempts = 0;
 			try {
 				konachan = Jsoup.connect("https://konachan.com/post/random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (konachan.getElementById("image") == null && attempts < 5) {
+					konachan = Jsoup.connect("https://konachan.com/post/random").get();
+					attempts += 1;
+				}
+				if (konachan.getElementById("highres") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply("https:" + konachan.getElementById("highres").attr("href"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -60,10 +78,19 @@ public class Lewd {
 	public static void e621(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document e621;
+			int attempts = 0;
 			try {
 				e621 = Jsoup.connect("https://e621.net/post/random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (e621.getElementById("image") == null && attempts < 5) {
+					e621 = Jsoup.connect("https://e621.net/post/random").get();
+					attempts += 1;
+				}
+				if (e621.getElementById("highres") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply(e621.getElementById("highres").attr("href"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -117,10 +144,19 @@ public class Lewd {
 	public static void danbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document danbooru;
+			int attempts = 0;
 			try {
 				danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (danbooru.getElementById("image") == null && attempts < 5) {
+					danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/random").get();
+					attempts += 1;
+				}
+				if (danbooru.getElementById("image") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply("http://danbooru.donmai.us" + danbooru.getElementById("image").attr("src"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -130,10 +166,19 @@ public class Lewd {
 	public static void gelbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document gelbooru;
+			int attempts = 0;
 			try {
 				gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (gelbooru.getElementById("image") == null && attempts < 5) {
+					gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=random").get();
+					attempts += 1;
+				}
+				if (gelbooru.getElementById("image") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply(gelbooru.getElementById("image").attr("src"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -143,10 +188,19 @@ public class Lewd {
 	public static void tbib(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document tbib;
+			int attempts = 0;
 			try {
 				tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (tbib.getElementById("image") == null && attempts < 5) {
+					tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=random").get();
+					attempts += 1;
+				}
+				if (tbib.getElementById("image") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply("http:" + tbib.getElementById("image").attr("src"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -156,10 +210,19 @@ public class Lewd {
 	public static void xbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document xbooru;
+			int attempts = 0;
 			try {
 				xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (xbooru.getElementById("image") == null && attempts < 5) {
+					xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=random").get();
+					attempts += 1;
+				}
+				if (xbooru.getElementById("image") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply(xbooru.getElementById("image").attr("src"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -169,10 +232,19 @@ public class Lewd {
 	public static void furrybooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document furrybooru;
+			int attempts = 0;
 			try {
 				furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (furrybooru.getElementById("image") == null && attempts < 5) {
+					furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=random").get();
+					attempts += 1;
+				}
+				if (furrybooru.getElementById("image") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply(furrybooru.getElementById("image").attr("src"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -182,10 +254,19 @@ public class Lewd {
 	public static void drunkenpumken(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document drunkenpumken;
+			int attempts = 0;
 			try {
 				drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=random").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (drunkenpumken.getElementById("image") == null && attempts < 5) {
+					drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=random").get();
+					attempts += 1;
+				}
+				if (drunkenpumken.getElementById("image") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply(drunkenpumken.getElementById("image").attr("src"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
@@ -195,10 +276,19 @@ public class Lewd {
 	public static void lolibooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document lolibooru;
+			int attempts = 0;
 			try {
 				lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
-			} catch (IOException e) {
-				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
+				while (lolibooru.getElementById("image") == null && attempts < 5) {
+					lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
+					attempts += 1;
+				}
+				if (lolibooru.getElementById("image") == null)
+					throw new CommandException("No lewds found.");
+			} catch (Exception e) {
+				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
+				if (!(e instanceof CommandException)) e.printStackTrace();
+				return;
 			}
 			event.reply(lolibooru.getElementById("image").attr("src").replaceAll(" ", "%20"));
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");

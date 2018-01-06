@@ -17,6 +17,8 @@ import com.ptsmods.impulse.miscellaneous.CommandPermissionException;
 import com.ptsmods.impulse.miscellaneous.SilentCommandEvent;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
+import com.ptsmods.impulse.utils.Config;
+import com.ptsmods.impulse.utils.Dashboard;
 import com.ptsmods.impulse.utils.DataIO;
 
 import net.dv8tion.jda.core.Permission;
@@ -144,7 +146,6 @@ public class Moderation {
 			else {
 				event.getGuild().getController().ban(member.getUser(), 1).queue();
 				event.reply("Successfully banned " + member.getEffectiveName() + ".");
-				logModAction(member.getUser(), event.getAuthor(), member.getGuild(), "Ban", "hammer");
 			}
 		} else Main.sendCommandHelp(event);
 	}
@@ -173,6 +174,21 @@ public class Moderation {
 				Main.mute(member);
 				event.reply("Successfully muted " + member.getEffectiveName() + ".");
 				logModAction(member.getUser(), event.getAuthor(), event.getGuild(), "Mute", "mute");
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Moderation", help = "Mute someone.", name = "mute", botPermissions = {Permission.MANAGE_ROLES}, userPermissions = {Permission.MANAGE_ROLES}, guildOnly = true, arguments = "<user>")
+	public static void unmute(CommandEvent event) {
+		if (!event.getArgs().isEmpty()) {
+			Member member = Main.getMemberFromInput(event.getMessage());
+			if (member == null) event.reply("The given user could not be found.");
+			else if (!settings.containsKey(event.getGuild().getId()) || !((List) ((Map) settings.get(event.getGuild().getId())).get("mutes")).contains(member.getUser().getId())) event.reply("That user has not been muted using this bot.");
+			else if (!PermissionUtil.canInteract(event.getGuild().getSelfMember(), member)) event.reply("I cannot unmute that user as they're higher in the hierarchy than I am.");
+			else {
+				Main.unmute(member);
+				event.reply("Successfully unmuted " + member.getEffectiveName() + ".");
+				logModAction(member.getUser(), event.getAuthor(), event.getGuild(), "Unmute", "speaker");
 			}
 		} else Main.sendCommandHelp(event);
 	}
@@ -355,21 +371,23 @@ public class Moderation {
 	@Command(category = "Moderation", help = "Give yourself roles.", name = "giveme", guildOnly = true, botPermissions = {Permission.MANAGE_ROLES}, arguments = "<giveme>")
 	public static void giveme(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
-			String givemeName = "";
-			for (String giveme : ((Map<String, Object>) givemeSettings.get(event.getGuild().getId())).keySet())
-				if (giveme.equalsIgnoreCase(event.getArgs())) {
-					givemeName = giveme;
-					break;
-				}
 			if (!givemeSettings.containsKey(event.getGuild().getId())) event.reply("This server has no givemes yet.");
-			else if (!((Map) givemeSettings.get(event.getGuild().getId())).containsKey(givemeName)) event.reply("That giveme could not be found.");
 			else {
-				Role giveme = event.getGuild().getRoleById((String) ((Map) givemeSettings.get(event.getGuild().getId())).get(givemeName));
-				if (giveme == null) event.reply("The givemes was found, but the connected role was deleted.");
-				else if (!PermissionUtil.canInteract(event.getSelfMember(), giveme)) event.reply("I cannot give you that role, as it is higher in the hierarchy than my highest role.");
+				String givemeName = "";
+				for (String giveme : ((Map<String, Object>) givemeSettings.get(event.getGuild().getId())).keySet())
+					if (giveme.equalsIgnoreCase(event.getArgs())) {
+						givemeName = giveme;
+						break;
+					}
+				if (!((Map) givemeSettings.get(event.getGuild().getId())).containsKey(givemeName)) event.reply("That giveme could not be found.");
 				else {
-					event.getGuild().getController().addSingleRoleToMember(event.getMember(), giveme).queue();
-					event.reply("The role has been added, you're welcome.");
+					Role giveme = event.getGuild().getRoleById((String) ((Map) givemeSettings.get(event.getGuild().getId())).get(givemeName));
+					if (giveme == null) event.reply("The givemes was found, but the connected role was deleted.");
+					else if (!PermissionUtil.canInteract(event.getSelfMember(), giveme)) event.reply("I cannot give you that role, as it is higher in the hierarchy than my highest role.");
+					else {
+						event.getGuild().getController().addSingleRoleToMember(event.getMember(), giveme).queue();
+						event.reply("The role has been added, you're welcome.");
+					}
 				}
 			}
 		} else
@@ -378,7 +396,7 @@ public class Moderation {
 
 	@Subcommand(help = "Add givemes, divide the roles with a semi-colon (;).", name = "add", parent = "com.ptsmods.impulse.commands.Moderation.giveme", guildOnly = true, userPermissions = {Permission.MANAGE_ROLES}, arguments = "<roles>")
 	public static void givemeAdd(CommandEvent event) {
-		if (event.getArgs().length() != 0) {
+		if (!event.argsEmpty()) {
 			List<Role> roles = new ArrayList<>();
 			for (String roleName : event.getArgs().split(event.getArgs().contains("; ") ? "; " : ";"))
 				if (event.getGuild().getRolesByName(roleName, true).size() == 0) {event.reply("The role '%s' could not be found.", roleName); return;}
@@ -407,7 +425,7 @@ public class Moderation {
 
 	@Subcommand(help = "Remove a giveme.", name = "remove", parent = "com.ptsmods.impulse.commands.Moderation.giveme", guildOnly = true, arguments = "<giveme>")
 	public static void givemeRemove(CommandEvent event) {
-		if (event.getArgs().length() != 0) {
+		if (!event.argsEmpty()) {
 			if (!givemeSettings.containsKey(event.getGuild().getId())) event.reply("This server has no givemes.");
 			else {
 				int counter = 0;
@@ -434,15 +452,23 @@ public class Moderation {
 	public static void givemeGetoff(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			if (!givemeSettings.containsKey(event.getGuild().getId())) event.reply("This server has no givemes yet.");
-			else if (!((Map) givemeSettings.get(event.getGuild().getId())).containsKey(event.getArgs())) event.reply("That giveme could not be found.");
 			else {
-				Role giveme = event.getGuild().getRoleById((String) ((Map) givemeSettings.get(event.getGuild().getId())).get(event.getArgs()));
-				if (giveme == null) event.reply("The giveme was found, but the connected role was deleted.");
-				else if (!PermissionUtil.canInteract(event.getSelfMember(), giveme)) event.reply("I cannot remove that role from you, as it is higher in the hierarchy than my highest role.");
-				else if (!event.getMember().getRoles().contains(giveme)) event.reply("You do not have that giveme on you.");
+				String givemeName = "";
+				for (String giveme : ((Map<String, Object>) givemeSettings.get(event.getGuild().getId())).keySet())
+					if (giveme.equalsIgnoreCase(event.getArgs())) {
+						givemeName = giveme;
+						break;
+					}
+				if (!((Map) givemeSettings.get(event.getGuild().getId())).containsKey(givemeName)) event.reply("That giveme could not be found.");
 				else {
-					event.getGuild().getController().removeSingleRoleFromMember(event.getMember(), giveme).queue();
-					event.reply("The role has been removed, you're welcome.");
+					Role giveme = event.getGuild().getRoleById((String) ((Map) givemeSettings.get(event.getGuild().getId())).get(event.getArgs()));
+					if (giveme == null) event.reply("The giveme was found, but the connected role was deleted.");
+					else if (!PermissionUtil.canInteract(event.getSelfMember(), giveme)) event.reply("I cannot remove that role from you, as it is higher in the hierarchy than my highest role.");
+					else if (!event.getMember().getRoles().contains(giveme)) event.reply("You do not have that giveme on you.");
+					else {
+						event.getGuild().getController().removeSingleRoleFromMember(event.getMember(), giveme).queue();
+						event.reply("The role has been removed, you're welcome.");
+					}
 				}
 			}
 		} else Main.sendCommandHelp(event);
@@ -668,7 +694,7 @@ public class Moderation {
 
 	@Command(category = "Moderation", help = "Shows you the past names of a user.", name = "pastnames", arguments = "<user>")
 	public static void pastNames(CommandEvent event) {
-		if (event.getArgs().length() != 0) {
+		if (!event.argsEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
 			if (user == null) event.reply("That user could not be found.");
 			else if (!pastNames.containsKey(user.getId())) event.reply("No data could be found for that user.");
@@ -678,7 +704,7 @@ public class Moderation {
 
 	@Command(category = "Moderation", help = "Shows you the past names of a user.", name = "pastnicks", arguments = "<user>")
 	public static void pastNicks(CommandEvent event) {
-		if (event.getArgs().length() != 0) {
+		if (!event.argsEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
 			if (user == null) event.reply("That user could not be found.");
 			else if (!pastNicks.containsKey(user.getId())) event.reply("No data could be found for that user.");
@@ -706,7 +732,7 @@ public class Moderation {
 
 	@Command(category = "Moderation", help = "Reset the warnings of a user.", name = "resetwarns", arguments = "<user>", userPermissions = {Permission.KICK_MEMBERS})
 	public static void resetWarns(CommandEvent event) {
-		if (event.getArgs().length() != 0) {
+		if (!event.argsEmpty()) {
 			String guildId = event.getGuild().getId();
 			String userId = Main.getUserFromInput(event.getMessage()).getId();
 			Member member = event.getGuild().getMemberById(userId);
@@ -732,7 +758,7 @@ public class Moderation {
 
 	@Command(category = "Moderation", help = "Warn a user for their behavior.", name = "warn", userPermissions = {Permission.KICK_MEMBERS}, botPermissions = {Permission.MANAGE_PERMISSIONS, Permission.KICK_MEMBERS, Permission.BAN_MEMBERS}, arguments = "<user>")
 	public static void warn(CommandEvent event) {
-		if (event.getArgs().length() != 0) {
+		if (!event.argsEmpty()) {
 			String guildId = event.getGuild().getId();
 			String userId = Main.getUserFromInput(event.getMessage()).getId();
 			Member member = event.getGuild().getMemberById(userId);
@@ -785,7 +811,7 @@ public class Moderation {
 
 	@Command(category = "Moderation", help = "Tells you how many warnings a user has.", name = "warns", arguments = "<user>")
 	public static void warns(CommandEvent event) throws CommandException {
-		if (event.getArgs().length() != 0) {
+		if (!event.argsEmpty()) {
 			String guildId = event.getGuild().getId();
 			String userId = Main.getUserFromInput(event.getMessage()).getId();
 			Member member = event.getGuild().getMemberById(userId);
@@ -841,6 +867,26 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
+	@Command(category = "Moderation", help = "Manage your dashboard settings.", name = "dashboard", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR})
+	public static void dashboard(CommandEvent event) {
+		Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Create a key to use on <https://dashboard.impulsebot.com>.", name = "getkey", parent = "com.ptsmods.impulse.commands.Moderation.dashboard", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR})
+	public static void dashboardGetKey(CommandEvent event) throws CommandException {
+		if (!Dashboard.hasKey(event.getMember())) {
+			try {
+				event.replyInDM("Your dashboard key is %s, hop on on https://dashboard.impulsebot.com to log in.", Dashboard.createKey(event.getMember()));
+			} catch (IOException e) {
+				throw new CommandException("An unknown error occurred while creating your dashboard key.", e);
+			}
+			event.reply("Your dashboard key has been sent to you in your DMs.");
+		} else {
+			event.replyInDM("Your dashboard key is %s, hop on on https://dashboard.impulsebot.com to log in.", Dashboard.getKey(event.getMember()));
+			event.reply("You already have a dashboard key, in case you lost it, it has been sent to you in your DMs.");
+		}
+	}
+
 	private static void log(Guild guild, String emote, String name, String content, Object... formatArgs) {
 		if (modlogSettings.containsKey(guild.getId()) && (boolean) modlogSettings.get(guild.getId()).get("enabled")) {
 			TextChannel channel = guild.getTextChannelById(modlogSettings.get(guild.getId()).get("channel").toString());
@@ -878,11 +924,7 @@ public class Moderation {
 
 	@SubscribeEvent
 	public static void onGuildBan(GuildBanEvent event) {
-		if (settings.containsKey(event.getGuild().getId())) {
-			Map<String, Map<String, String>> cases = (Map) ((Map) settings.get(event.getGuild().getId())).get("cases");
-			if (cases.size() == 0 || !cases.get("" + cases.size()).get("user").equals(event.getUser().getId()))
-				logModAction(event.getUser(), null, event.getGuild(), "Ban", "hammer");
-		}
+		logModAction(event.getUser(), null, event.getGuild(), "Ban", "hammer");
 		log(event.getGuild(), "hammer", "Member Ban", "Member banned: %s.", Main.str(event.getUser()));
 	}
 
@@ -1064,6 +1106,38 @@ public class Moderation {
 
 	public static Map getBlacklist() {
 		return Collections.unmodifiableMap(blacklist);
+	}
+
+	public static Map getSettings(Guild guild) {
+		return (Map) settings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"}, new Object[] {"", "", true, false, Config.get("prefix"), new HashMap(), new ArrayList()}) : (Map) settings.get(guild.getId());
+	}
+
+	public static Map getGivemeSettings(Guild guild) {
+		return (Map) givemeSettings.get(guild.getId()) == null ? new HashMap() : (Map) givemeSettings.get(guild.getId());
+	}
+
+	public static Map<String, Object> getModlogSettings(Guild guild) {
+		return modlogSettings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"enabled", "channel"}, new Object[] {true, ""}) : modlogSettings.get(guild.getId());
+	}
+
+	public static void putSettings(Guild guild, Map settings) throws IOException {
+		if (Main.getCallerClass() == Dashboard.DefaultHttpHandler.class) {
+			Map modlogSettings = new HashMap();
+			modlogSettings.put("enabled", settings.get("enableLogging"));
+			modlogSettings.put("channel", guild.getTextChannelsByName(settings.get("logChannel").toString(), true).isEmpty() ? "" : guild.getTextChannelsByName(settings.get("logChannel").toString(), true).get(0).getId());
+			Moderation.modlogSettings.put(guild.getId(), modlogSettings);
+			DataIO.saveJson(Moderation.modlogSettings, "data/mod/modlog.json");
+			settings = Main.removeKeys(settings, new String[] {"enableLogging", "logChannel"});
+			String[] givemes = settings.get("givemes").toString().split(";");
+			Map<String, String> givemeIds = new HashMap();
+			for (String giveme : givemes)
+				if (!guild.getRolesByName(giveme.trim(), true).isEmpty()) givemeIds.put(giveme.trim(), guild.getRolesByName(giveme.trim(), true).get(0).getId());
+			givemeSettings.put(guild.getId(), givemeIds);
+			DataIO.saveJson(givemeSettings, "data/mod/givemeSettings.json");
+			settings.remove("givemes");
+			Moderation.settings.put(guild.getId(), settings);
+			DataIO.saveJson(modlogSettings, "data/mod/settings.json");
+		}
 	}
 
 	private static void saveFiles() {

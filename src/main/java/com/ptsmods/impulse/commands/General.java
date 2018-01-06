@@ -6,10 +6,12 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -717,7 +719,7 @@ public class General {
 				}
 				if (data1.get("status").toString().equals("OK"))
 					event.reply("**%s**\n\t%s (%s)",
-							new SimpleDateFormat("EEEE d MMM y HH:mm:ss").format(new Date(System.currentTimeMillis() + Main.getIntFromPossibleDouble(data1.get("dstOffset"))*1000 + Main.getIntFromPossibleDouble(data1.get("rawOffset"))*1000 - 3600000)),
+							new SimpleDateFormat("EEEE d MMM y HH:mm:ss").format(new Date(Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis() + Main.getIntFromPossibleDouble(data1.get("dstOffset"))*1000 + Main.getIntFromPossibleDouble(data1.get("rawOffset"))*1000)),
 							address,
 							data1.get("timeZoneName"));
 				else event.reply("An unknown error occurred while getting the time and timezone from the Google API.");

@@ -9,21 +9,23 @@ import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
+import com.ptsmods.impulse.utils.Dashboard;
 import com.ptsmods.impulse.utils.DataIO;
 
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 
 public class Economy {
 
 	private static Map bank;
-	private static Map settings;
+	private static Map<String, Map<String, Integer>> settings;
 	private static Map cooldowns = new HashMap();
 
 	static {
 		try {
-			settings = DataIO.loadJson("data/economy/bank.json", Map.class);
+			settings = DataIO.loadJson("data/economy/settings.json", Map.class);
 			settings = settings == null ? new HashMap() : settings;
 		} catch (IOException e) {
 			RuntimeException e1 = new RuntimeException("An unknown error occurred while loading the data file.");
@@ -192,7 +194,7 @@ public class Economy {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "paydaycredits", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
+	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "russianroulettecooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void economySetRussianRouletteCooldown(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
 			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, Integer.parseInt(event.getArgs().split(" ")[0])}));
@@ -264,6 +266,19 @@ public class Economy {
 			((Map) bank.get(from.getGuild().getId())).put(from.getUser().getId(), getBalance(from) - balance);
 			((Map) bank.get(from.getGuild().getId())).put(to.getUser().getId(), getBalance(to) + balance);
 			saveBank();
+		}
+	}
+
+	public static Map<String, Integer> getSettings(Guild guild) {
+		return settings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, 300}) : settings.get(guild.getId());
+	}
+
+	public static void putSettings(Guild guild, Map settings) throws CommandException {
+		if (Main.getCallerClass() == Dashboard.DefaultHttpHandler.class) {
+			for (Object key : settings.keySet())
+				if (!(settings.get(key) instanceof Integer)) settings.put(key, 0);
+			Economy.settings.put(guild.getId(), settings);
+			saveSettings();
 		}
 	}
 

@@ -54,6 +54,7 @@ import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
 import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.ConsoleColors;
+import com.ptsmods.impulse.utils.Dashboard;
 import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.Downloader;
 import com.ptsmods.impulse.utils.EventListenerManager;
@@ -93,10 +94,11 @@ import net.dv8tion.jda.core.requests.SessionReconnectQueue;
 import net.swisstech.bitly.BitlyClient;
 import net.swisstech.bitly.model.Response;
 import net.swisstech.bitly.model.v3.ShortenResponse;
+import sun.reflect.Reflection;
 
 public class Main {
 
-	public static final String version = "1.1.9-stable";
+	public static final String version = "1.2-stable";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
@@ -105,8 +107,8 @@ public class Main {
 	public static final Permission[] defaultPermissionsArray = defaultPermissions.toArray(new Permission[0]);
 	private static final BitlyClient bitlyClient = new BitlyClient(Main.apiKeys.get("bitly"));
 	private static boolean done = false;
-	private static final ThreadPoolExecutor commandsExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
-	private static final ThreadPoolExecutor miscellaneousExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+	private static final ThreadPoolExecutor commandsExecutor = newTPE();
+	private static final ThreadPoolExecutor miscellaneousExecutor = newTPE();
 	private static final String osName = System.getProperty("os.name");
 	private static final boolean isWindows = osName.toLowerCase().contains("windows");
 	private static final boolean isMac = osName.toLowerCase().contains("mac");
@@ -160,6 +162,11 @@ public class Main {
 			} catch (IllegalAccessException e1) {
 				print(LogType.DEBUG, "Could not initialize the Main GUI, it seems to have already been initialized.");
 			}
+		try {
+			Dashboard.initialize();
+		} catch (IOException e) {
+			print(LogType.ERROR, "The webserver could not be initialized.");
+		}
 		if (!MainGUI.isThief()) { // user tried to steal Impulse Java Edition as their own idea.
 			Locale.setDefault(Locale.US);
 			System.setSecurityManager(new ImpulseSM());
@@ -341,6 +348,10 @@ public class Main {
 		return joinCustomChar(":", "" + (LocalDateTime.now().getHour() < 10 ? "0" : "") + LocalDateTime.now().getHour(),
 				"" + (LocalDateTime.now().getMinute() < 10 ? "0" : "") + LocalDateTime.now().getMinute(),
 				"" + (LocalDateTime.now().getSecond() < 10 ? "0" : "") + LocalDateTime.now().getSecond());
+	}
+
+	public static String getFormattedDate() {
+		return joinCustomChar("-", LocalDateTime.now().getDayOfMonth(), LocalDateTime.now().getMonthValue(), LocalDateTime.now().getYear());
 	}
 
 	public static <T> boolean print(LogType logType, T... message) {
@@ -765,8 +776,8 @@ public class Main {
 		return (UserImpl) owner;
 	}
 
-	public static void sendPrivateMessage(User user, String msg) {
-		user.openPrivateChannel().complete().sendMessage(msg).queue();
+	public static void sendPrivateMessage(User user, String msg, Object... args) {
+		user.openPrivateChannel().complete().sendMessageFormat(msg, args).queue();
 	}
 
 	public static <T> T[] removeArg(T[] args, int arg) {
@@ -833,6 +844,11 @@ public class Main {
 	public static void mute(Member member) {
 		for (Channel channel : Main.getAllChannels(member.getGuild()))
 			Main.getPermissionOverride(member, channel).getManagerUpdatable().deny(Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION, Permission.VOICE_SPEAK).update().queue();
+	}
+
+	public static void unmute(Member member) {
+		for (Channel channel : Main.getAllChannels(member.getGuild()))
+			if (channel.getPermissionOverride(member) != null) channel.getPermissionOverride(member).delete().queue();
 	}
 
 	@Nullable
@@ -1597,6 +1613,42 @@ public class Main {
 
 	public static boolean contains(String string, List<String> args) {
 		return contains(string, args.toArray(new String[0]));
+	}
+
+	public static <K, V> boolean containsKeys(Map<K, V> map, K... keys) {
+		for (K key : keys)
+			if (!map.containsKey(key)) return false;
+		return true;
+	}
+
+	public static ThreadPoolExecutor newTPE() {
+		return new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+	}
+
+	public static Class getCallerClass() {
+		try {
+			return Class.forName(new Exception().getStackTrace()[3].getClassName(), false, ClassLoader.getSystemClassLoader());
+		} catch (ClassNotFoundException ignored) { // should not be possible
+			return null;
+		}
+	}
+
+	@Deprecated
+	public static Class getCallerClassQuickly() {
+		return Reflection.getCallerClass(3);
+	}
+
+	public static <K, V> Map<K, V> removeKeys(Map<K, V> map, K... keys) {
+		for (K key : keys)
+			map.remove(key);
+		return map;
+	}
+
+	public static String trim(String string) {
+		if (string == null) return null;
+		while (string.startsWith(" ")) string = string.substring(1, string.length());
+		while (string.endsWith(" ")) string = string.substring(0, string.length()-1);
+		return string;
 	}
 
 	private static final class SystemOutPrintStream extends PrintStream {
