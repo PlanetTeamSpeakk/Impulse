@@ -106,13 +106,11 @@ public class EventHandler extends ListenerAdapter {
 			client.newCall(builder.build()).enqueue(new Callback() {
 				@Override
 				public void onResponse(Call call, Response response) throws IOException {
-					Main.print(LogType.INFO, "Joined a server and successfully updated the stats on carbonitex.net");
 					response.close();
 				}
 
 				@Override
 				public void onFailure(Call call, IOException e) {
-					Main.print(LogType.WARN, "Joined a server, but could not update the stats on carbonitex.net");
 					e.printStackTrace();
 				}
 			});
@@ -133,13 +131,11 @@ public class EventHandler extends ListenerAdapter {
 			client.newCall(builder.build()).enqueue(new Callback() {
 				@Override
 				public void onResponse(Call call, Response response) throws IOException {
-					Main.print(LogType.INFO, "Joined a server and successfully updated the stats on discordbots.org");
 					response.close();
 				}
 
 				@Override
 				public void onFailure(Call call, IOException e) {
-					Main.print(LogType.WARN, "Joined a server, but could not update the stats on discordbots.org");
 					e.printStackTrace();
 				}
 			});
@@ -160,13 +156,11 @@ public class EventHandler extends ListenerAdapter {
 			client.newCall(builder.build()).enqueue(new Callback() {
 				@Override
 				public void onResponse(Call call, Response response) throws IOException {
-					Main.print(LogType.INFO, "Joined a server and successfully updated the stats on bots.discord.pw");
 					response.close();
 				}
 
 				@Override
 				public void onFailure(Call call, IOException e) {
-					Main.print(LogType.WARN, "Joined a server, but could not update the stats on bots.discord.pw");
 					e.printStackTrace();
 				}
 			});

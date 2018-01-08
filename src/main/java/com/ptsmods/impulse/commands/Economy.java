@@ -147,7 +147,7 @@ public class Economy {
 	public static void bankReset(CommandEvent event) throws IOException {
 		if (bank.containsKey(event.getGuild().getId())) {
 			event.reply("Are you sure you want to unregister %s users? (yes/no)", ((Map) bank.get(event.getGuild().getId())).size());
-			Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000, event.getMessage().getCreationTime().toEpochSecond());
+			Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000);
 			if (response == null) event.reply("No response gotten, guess not.");
 			else if (!response.getContent().startsWith("ye")) event.reply("Kk, then not.");
 			else {

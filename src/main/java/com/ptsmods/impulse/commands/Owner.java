@@ -241,16 +241,16 @@ public class Owner {
 			} catch (IOException e) {
 				throw new CommandException("An error occurred while parsing the given command.", e);
 			}
-			StringBuilder output = new StringBuilder();
+			String output = "";
 			BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			String line = null;
 			try {
 				while ((line = input.readLine()) != null)
-					output.append(line);
+					output += line + "\n";
 			} catch (IOException e) {
 				throw new CommandException("An error occurred while parsing the given command.", e);
 			}
-			msg.editMessage("Input:\n```\n" + event.getOriginalArgs() + "```\nOutput:\n```\n" + output + "```").queue();
+			msg.editMessage("Input:\n```\n" + event.getOriginalArgs() + "```\nOutput:\n```\n" + output.trim() + "```").queue();
 		} else Main.sendCommandHelp(event);
 	}
 

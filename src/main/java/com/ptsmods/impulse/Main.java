@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
@@ -98,7 +100,7 @@ import sun.reflect.Reflection;
 
 public class Main {
 
-	public static final String version = "1.2-stable";
+	public static final String version = "1.2.1-stable";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
@@ -165,7 +167,7 @@ public class Main {
 		try {
 			Dashboard.initialize();
 		} catch (IOException e) {
-			print(LogType.ERROR, "The webserver could not be initialized.");
+			print(LogType.ERROR, "The webserver could not be initialized, are you sure port 61192 is free?");
 		}
 		if (!MainGUI.isThief()) { // user tried to steal Impulse Java Edition as their own idea.
 			Locale.setDefault(Locale.US);
@@ -257,13 +259,7 @@ public class Main {
 							else print(LogType.DEBUG, "Found a command that requires more than only a CommandEvent.", method.toString());
 				}
 				for (Method subcommand : subcommands) {
-					Method parentCommand;
-					try {
-						parentCommand = getParentCommand(subcommand.getAnnotation(Subcommand.class));
-					} catch (ClassNotFoundException | NoSuchMethodException e) {
-						print(LogType.DEBUG, "The parent command of", subcommand, "could not be found.", subcommand.getAnnotation(Subcommand.class).parent());
-						continue;
-					}
+					Method parentCommand = getParentCommand(subcommand.getAnnotation(Subcommand.class));
 					if (!linkedSubcommands.containsKey(parentCommand.toString())) linkedSubcommands.put(parentCommand.toString(), Lists.newArrayList(subcommand));
 					else ((List) linkedSubcommands.get(parentCommand.toString())).add(subcommand);
 				}
@@ -495,18 +491,14 @@ public class Main {
 					}
 				cmdSubcommands = cmdSubcommands.trim();
 			}
-			try {
-				while (getParentCommand(command) != null)
-					if (getParentCommand(command).isAnnotationPresent(Command.class)) {
-						cmdName = getParentCommand(command).getAnnotation(Command.class).name() + " " + cmdName;
-						break;
-					} else {
-						command = getParentCommand(command).getAnnotation(Subcommand.class);
-						cmdName = command.name() + " " + cmdName;
-					}
-			} catch (ClassNotFoundException | NoSuchMethodException e) {
-				return null;
-			}
+			while (getParentCommand(command) != null)
+				if (getParentCommand(command).isAnnotationPresent(Command.class)) {
+					cmdName = getParentCommand(command).getAnnotation(Command.class).name() + " " + cmdName;
+					break;
+				} else {
+					command = getParentCommand(command).getAnnotation(Subcommand.class);
+					cmdName = command.name() + " " + cmdName;
+				}
 			return channel.sendMessage(String.format("**%s**%s%s%s",
 					Config.get("prefix") + cmdName,
 					cmdHelp.isEmpty() ? "" : ":\n\n" + cmdHelp,
@@ -558,14 +550,23 @@ public class Main {
 		return sendCommandHelp(channel, event, event.getCommand(), extraMsg);
 	}
 
-	@Nullable
-	public static Method getParentCommand(Subcommand child) throws ClassNotFoundException, NoSuchMethodException {
-		// format should be : package.class.method
-		String parent = child.parent();
-		String methodName = parent.split("\\.")[parent.split("\\.").length-1];
-		// this should make com.ptsmods.impulse.commands.Economy from com.ptsmods.impulse.commands.Economy.bank
-		Class clazz = Class.forName(joinCustomChar(".", removeArg(parent.split("\\."), parent.split("\\.").length-1)), false, ClassLoader.getSystemClassLoader());
-		return clazz.getMethod(methodName, CommandEvent.class);
+	public static Method getParentCommand(Subcommand child) {
+		try {
+			// format should be : package.class.method
+			String parent = child.parent();
+			String methodName = parent.split("\\.")[parent.split("\\.").length-1];
+			// this should make com.ptsmods.impulse.commands.Economy from com.ptsmods.impulse.commands.Economy.bank
+			Class clazz = Class.forName(joinCustomChar(".", removeArg(parent.split("\\."), parent.split("\\.").length-1)), false, ClassLoader.getSystemClassLoader());
+			return clazz.getMethod(methodName, CommandEvent.class);
+		} catch (Exception e) { // should not be possible as it's already checked in Main#main(String[] args).
+			return null;
+		}
+	}
+
+	public static Method getAbsoluteParentCommand(Subcommand child) {
+		while (getParentCommand(child) != null && getParentCommand(child).isAnnotationPresent(Subcommand.class))
+			child = getParentCommand(child).getAnnotation(Subcommand.class);
+		return getParentCommand(child);
 	}
 
 	public static Role getRoleByName(Guild guild, String name, boolean ignoreCase) {
@@ -852,12 +853,28 @@ public class Main {
 	}
 
 	@Nullable
-	public static Message waitForInput(Member author, MessageChannel channel, int timeoutMillis, long messageSentTimestamp) {
+	public static Message waitForInput(Member author, MessageChannel channel, int timeoutMillis) {
 		long currentMillis = System.currentTimeMillis();
+		long currentSeconds = currentMillis / 1000;
 		while (true) {
 			if (messages.isEmpty()) continue;
 			Message lastMsg = messages.get(messages.size()-1);
-			if (lastMsg.getCreationTime().toEpochSecond() > messageSentTimestamp && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && (lastMsg.getGuild() == null || lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong()) && lastMsg.getChannel().getIdLong() == channel.getIdLong()) return lastMsg;
+			if (lastMsg.getCreationTime().toEpochSecond() > currentSeconds && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && (lastMsg.getGuild() == null || lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong()) && lastMsg.getChannel().getIdLong() == channel.getIdLong()) return lastMsg;
+			else if (System.currentTimeMillis()-currentMillis >= timeoutMillis) return null;
+			try {
+				Thread.sleep(5);
+			} catch (InterruptedException e) {}
+		}
+	}
+
+	@Nullable
+	public static Message waitForInput(MessageChannel channel, int timeoutMillis) {
+		long currentMillis = System.currentTimeMillis();
+		long currentSeconds = currentMillis / 1000;
+		while (true) {
+			if (messages.isEmpty()) continue;
+			Message lastMsg = messages.get(messages.size()-1);
+			if (lastMsg.getCreationTime().toEpochSecond() > currentSeconds && lastMsg.getChannel().getId().equals(channel.getId())) return lastMsg;
 			else if (System.currentTimeMillis()-currentMillis >= timeoutMillis) return null;
 			try {
 				Thread.sleep(5);
@@ -1151,6 +1168,10 @@ public class Main {
 	public static boolean isAlphanumeric(char ch) {
 		ch = Character.toLowerCase(ch);
 		return ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9';
+	}
+
+	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
+		return map.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 	}
 
 	public static <T extends Comparable<? super T>> List<T> sort(List<T> list) {

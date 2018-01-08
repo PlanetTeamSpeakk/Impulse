@@ -253,7 +253,20 @@ public class Dashboard {
 		data.put("modules", enabledModules.get(guild.getId()));
 		data.put("modSettings", Main.newHashMap(
 				new String[] {"serverPrefix", "autorole", "autoroleEnabled", "banMentionSpam", "channel", "welcomeChannel", "greeting", "farewell", "dm", "disabled", "givemes", "logChannel", "enableLogging"},
-				new Object[] {Main.getPrefix(guild), modSettings.get("autorole").toString(), (boolean) modSettings.get("autoroleEnabled"), (boolean) modSettings.get("banMentionSpam"), modSettings.get("channel").toString(), modSettings.get("welcomeChannel").toString(), modSettings.get("greeting").toString(), modSettings.get("farewell").toString(), (boolean) modSettings.get("dm"), modSettings.get("welcomeChannel").toString().isEmpty(), new ArrayList(Moderation.getGivemeSettings(guild).keySet()), modlogSettings.get("channel").toString(), (boolean) modlogSettings.get("enabled")}
+				new Object[] {
+						Main.getPrefix(guild) == null ? Config.get("prefix") : Main.getPrefix(guild),
+								modSettings.get("autorole") == null ? "" : modSettings.get("autorole").toString(),
+										modSettings.get("autoroleEnabled") == null ? false : (boolean) modSettings.get("autoroleEnabled"),
+												modSettings.get("banMentionSpam") == null ? false : (boolean) modSettings.get("banMentionSpam"),
+														modSettings.get("channel") == null ? "" : modSettings.get("channel").toString(),
+																modSettings.get("welcomeChannel") == null ? "" : modSettings.get("welcomeChannel").toString(),
+																		modSettings.get("greeting") == null ? "" : modSettings.get("greeting").toString(),
+																				modSettings.get("farewell") == null ? "" : modSettings.get("farewell").toString(),
+																						modSettings.get("dm") == null ? false : (boolean) modSettings.get("dm"),
+																								modSettings.get("welcomeChannel") == null || modSettings.get("welcomeChannel").toString().isEmpty(),
+																								new ArrayList(Moderation.getGivemeSettings(guild).keySet()),
+																								modlogSettings.get("channel") == null ? "" : modlogSettings.get("channel").toString(),
+																										modlogSettings.get("enabled") == null ? false : (boolean) modlogSettings.get("enabled")}
 				));
 		data.put("economySettings", economySettings);
 		data.put("marriageSettings", Main.newHashMap(new String[] {"marryLimit"}, new Integer[] {Marriage.getMarryLimit(guild)}));
@@ -261,7 +274,7 @@ public class Dashboard {
 	}
 
 	public static List<String> getEnabledModules(Guild guild) {
-		return enabledModules.get(guild.getId());
+		return enabledModules.get(guild.getId()) == null ? Lists.newArrayList("economy", "fun", "general", "lewd", "marriage", "miscellaneous", "moderation", "owner") : enabledModules.get(guild.getId());
 	}
 
 	public static Map<String, String> parseQuery(String queryArgs) {
@@ -277,6 +290,11 @@ public class Dashboard {
 		return args;
 	}
 
+	/**
+	 * Supports JavaScript CORS requests by default and logs any traffic gotten.
+	 * @author PlanetTeamSpeak
+	 *
+	 */
 	public static abstract class DefaultHttpHandler implements HttpHandler {
 
 		@Override

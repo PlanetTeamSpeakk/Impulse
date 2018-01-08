@@ -15,6 +15,8 @@ import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
+import com.ptsmods.impulse.miscellaneous.Trivia;
+import com.ptsmods.impulse.miscellaneous.Trivia.TriviaResult;
 import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.LaughingMao;
 import com.ptsmods.impulse.utils.Random;
@@ -30,6 +32,7 @@ import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 public class Fun {
 
 	private static Map memes;
+	private static Map<String, Trivia> triviaSessions = new HashMap();
 	private static final String[] ears = {"q%sp", "ʢ%sʡ", "⸮%s?", "ʕ%sʔ", "ᖗ%sᖘ", "ᕦ%sᕥ", "ᕦ(%s)ᕥ", "ᕙ(%s)ᕗ", "ᘳ%sᘰ", "ᕮ%sᕭ", "ᕳ%sᕲ", "(%s)", "[%s]", "¯\\_%s_/¯", "୧%s୨", "୨%s୧", "⤜(%s)⤏", "☞%s☞", "ᑫ%sᑷ", "ᑴ%sᑷ", "ヽ(%s)ﾉ", "\\(%s)/", "乁(%s)ㄏ", "└[%s]┘", "(づ%s)づ", "(ง%s)ง", "|%s|"};
 	private static final String[] eyes = {"⌐■%s■", " ͠°%s °", "⇀%s↼", "´• %s •`", "´%s`", "`%s´", "ó%sò", "ò%só", ">%s<", "Ƹ̵̡ %sƷ", "ᗒ%sᗕ", "⪧%s⪦", "⪦%s⪧", "⪩%s⪨", "⪨%s⪩", "⪰%s⪯", "⫑%s⫒", "⨴%s⨵", "⩿%s⪀", "⩾%s⩽", "⩺%s⩹", "⩹%s⩺", "◥▶%s◀◤", "≋%s≋", "૦ઁ%s૦ઁ", "  ͯ%s  ͯ", "  ̿%s  ̿", "  ͌%s  ͌", "ළ%sළ", "◉%s◉", "☉%s☉", "・%s・", "▰%s▰", "ᵔ%sᵔ", "□%s□", "☼%s☼", "*%s*", "⚆%s⚆", "⊜%s⊜", ">%s>", "❍%s❍", "￣%s￣", "─%s─", "✿%s✿", "•%s•", "T%sT", "^%s^", "ⱺ%sⱺ", "@%s@", "ȍ%sȍ", "x%sx", "-%s-", "$%s$", "Ȍ%sȌ", "ʘ%sʘ", "Ꝋ%sꝊ", "๏%s๏", "■%s■", "◕%s◕", "◔%s◔", "✧%s✧", "♥%s♥", " ͡°%s ͡°", "¬%s¬", " º %s º ", "⍜%s⍜", "⍤%s⍤", "ᴗ%sᴗ", "ಠ%sಠ", "σ%sσ"};
 	private static final String[] mouth = {"v", "ᴥ", "ᗝ", "Ѡ", "ᗜ", "Ꮂ", "ヮ", "╭͜ʖ╮", " ͟ل͜", " ͜ʖ", " ͟ʖ", " ʖ̯", "ω", "³", " ε ", "﹏", "ل͜", "╭╮", "‿‿", "▾", "‸", "Д", "∀", "!", "人", ".", "ロ", "_", "෴", "ѽ", "ഌ", "⏏", "ツ", "益"};
@@ -381,7 +384,7 @@ public class Fun {
 					} catch (InterruptedException e) {}
 					status.editMessage("I missed, your turn.").complete();
 				}
-				Message bombm = Main.waitForInput(event.getMember(), event.getChannel(), 30000, event.getMessage().getCreationTime().getSecond());
+				Message bombm = Main.waitForInput(event.getMember(), event.getChannel(), 30000);
 				if (bombm == null || bombm.getContent().toUpperCase().equals("STOP")) {
 					status.editMessage(String.format("K then, I'll stop. I had **%s** left (%s ships).", Main.joinCustomChar("**, **", botSea.toArray(new String[0])), botSea.size())).complete();
 					try {
@@ -432,7 +435,7 @@ public class Fun {
 		} else {
 			status = event.getChannel().sendMessage("You go first.").complete();
 			while (true) {
-				Message bombm = Main.waitForInput(event.getMember(), event.getChannel(), 30000, event.getMessage().getCreationTime().getSecond());
+				Message bombm = Main.waitForInput(event.getMember(), event.getChannel(), 30000);
 				if (bombm == null || bombm.getContent().toUpperCase().equals("STOP")) {
 					status.editMessage(String.format("K then, I'll stop. I had **%s** left (%s ships).", Main.joinCustomChar("**, **", botSea.toArray(new String[0])), botSea.size())).complete();
 					try {
@@ -609,7 +612,7 @@ public class Fun {
 			else {
 				event.reply("Are you sure you want to plant **a %s** for **%s credits**? It will take %s to grow. (yes/no)",
 						event.getArgs(), (int) plants.get(event.getArgs()).get("price"), Main.formatMillis((int) plants.get(event.getArgs()).get("growthtime") * 1000));
-				Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000, event.getMessage().getCreationTime().toEpochSecond());
+				Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000);
 				if (response == null || !response.getContent().startsWith("y")) event.reply("Kk, then not.");
 				else {
 					Economy.removeBalance(event.getMember(), (int) plants.get(event.getArgs()).get("price"));
@@ -818,6 +821,27 @@ public class Fun {
 			if (event.getArgs().split(" ").length > 1 && Main.isInteger(event.getArgs().split(" ")[1]) && Integer.parseInt(event.getArgs().split(" ")[1]) > 0 && Integer.parseInt(event.getArgs().split(" ")[1]) < 6) bullets = Integer.parseInt(event.getArgs().split(" ")[1]);
 			rrPlay(event, bullets, null);
 		}
+	}
+
+	@Command(category = "Fun", help = "Play trivia.", name = "trivia")
+	public static void trivia(CommandEvent event) {
+		Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "List all trivias available.", name = "list", parent = "com.ptsmods.impulse.commands.Fun.trivia")
+	public static void triviaList(CommandEvent event) {
+		event.reply("You can currently play the following trivias:\n" + Main.joinNiceString(Trivia.getCategories()));
+	}
+
+	@Subcommand(help = "Start a trivia of your choice.", name = "start", parent = "com.ptsmods.impulse.commands.Fun.trivia")
+	public static void triviaStart(CommandEvent event) {
+		if (!event.argsEmpty()) {
+			if (!Trivia.isValidCategory(event.getArgs())) event.reply("The given category could not be found, you can get a list of possible categories using %strivia list.", Main.getPrefix(event.getGuild()));
+			else {
+				TriviaResult result = Trivia.getInstance(event.getArgs()).start(event.getChannel());
+				event.reply(String.valueOf(result));
+			}
+		} else Main.sendCommandHelp(event);
 	}
 
 	private static boolean rrPlay(CommandEvent event, int bullets, Message message) {

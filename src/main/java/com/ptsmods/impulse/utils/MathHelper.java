@@ -123,6 +123,10 @@ public class MathHelper {
 			this.value = value;
 		}
 
+		public Percentage(double value) {
+			this((float) value);
+		}
+
 		@Override
 		public int intValue() {
 			return (int) value;

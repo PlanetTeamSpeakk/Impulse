@@ -191,7 +191,7 @@ public class Marriage {
 				else if (member.equals(event.getSelfMember()) && !event.getMember().getUser().equals(Main.getOwner())) event.reply("I'd only marry my owner.");
 				else {
 					event.reply("%s, do you take %s as your husband/wife? (yes/no)", member.getAsMention(), event.getAuthor().getAsMention());
-					Message response = Main.waitForInput(member, event.getChannel(), 60000, event.getMessage().getCreationTime().toEpochSecond());
+					Message response = Main.waitForInput(member, event.getChannel(), 60000);
 					if (response == null) event.reply("%s, the user you tried to marry did not respond, I'm sorry.", event.getAuthor().getAsMention());
 					else if (!response.getContent().startsWith("ye")) event.reply("%s, the user you tried to marry did not say yes, I'm sorry.", event.getAuthor().getAsMention());
 					else {

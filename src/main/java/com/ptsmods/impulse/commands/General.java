@@ -555,7 +555,7 @@ public class General {
 					String msg = "Found multiple results, please pick 1:\n";
 					for (int i : Main.range(users.size())) msg += i+1 + ". " + users.get(i).get("username") + "\n";
 					event.reply(msg.trim());
-					Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000, event.getMessage().getCreationTime().toEpochSecond());
+					Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000);
 					if (response == null) {
 						event.reply("No response gotten.");
 						return;

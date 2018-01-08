@@ -29,4 +29,5 @@ public @interface Subcommand {
 	public boolean serverOwnerCommand() default false;
 	public boolean ownerCommand() default false;
 	public String requiredRole() default "";
+	public boolean obeyDashboard() default true;
 }
