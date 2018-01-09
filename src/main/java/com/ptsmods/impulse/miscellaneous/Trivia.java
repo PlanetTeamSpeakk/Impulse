@@ -18,7 +18,7 @@ import com.ptsmods.impulse.utils.Random;
 import com.ptsmods.impulse.utils.Zipper;
 
 import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 
 public class Trivia {
@@ -108,7 +108,7 @@ public class Trivia {
 		return passedQuestions.size() != questionsAmount;
 	}
 
-	public TriviaResult start(MessageChannel channel) {
+	public TriviaResult start(TextChannel channel) {
 		channel.sendMessage("Trivia starting, you can always say 'stop trivia' to stop.").queue();
 		Map<User, Integer> appendees = new HashMap();
 		int counter = 0;
@@ -117,21 +117,23 @@ public class Trivia {
 			if (question == null) return new TriviaResult(appendees, false); // just in case.
 			counter += 1;
 			channel.sendMessageFormat("**Question %s of %s**\n%s", counter, getQuestions().size(), question.getQuestion()).complete();
+			int wrongAnswers = 0;
 			Message response = Main.waitForInput(channel, 10000);
 			if (response == null) return new TriviaResult(appendees, true);
 			else if (response.getContent().equalsIgnoreCase("stop trivia")) return new TriviaResult(appendees, false);
 			while (!isCorrect(question, response.getContent())) {
+				wrongAnswers += 1;
 				response = Main.waitForInput(channel, 10000);
-				if (response == null) {
+				if (response == null || wrongAnswers == 5) {
 					channel.sendMessageFormat("It was **%s**, of course.", question.getAnswers().get(0)).queue();
 					break;
 				}
 				else if (response.getContent().equalsIgnoreCase("stop trivia")) return new TriviaResult(appendees, false);
 			}
-			if (response.getAuthor() != null) {
+			if (response != null) {
 				User appendee = response.getAuthor();
 				appendees.put(appendee, appendees.getOrDefault(appendee, 1));
-				channel.sendMessageFormat("You got it, %s! **+1** to you. (%s total points)", appendee.getAsMention(), appendees.get(appendee)).queue();
+				channel.sendMessageFormat("You got it, %s! **+1** to you. (%s total points)", channel.getGuild().getMember(appendee).getEffectiveName(), appendees.get(appendee)).queue();
 			}
 		}
 		return new TriviaResult(appendees, false);

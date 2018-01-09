@@ -838,7 +838,7 @@ public class Fun {
 		if (!event.argsEmpty()) {
 			if (!Trivia.isValidCategory(event.getArgs())) event.reply("The given category could not be found, you can get a list of possible categories using %strivia list.", Main.getPrefix(event.getGuild()));
 			else {
-				TriviaResult result = Trivia.getInstance(event.getArgs()).start(event.getChannel());
+				TriviaResult result = Trivia.getInstance(event.getArgs()).start(event.getTextChannel());
 				event.reply(String.valueOf(result));
 			}
 		} else Main.sendCommandHelp(event);

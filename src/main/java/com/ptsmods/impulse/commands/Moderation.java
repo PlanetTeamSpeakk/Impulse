@@ -902,6 +902,16 @@ public class Moderation {
 		}
 	}
 
+	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 100.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
+	public static void purge(CommandEvent event) {
+		if (!event.argsEmpty() && Main.isInteger(event.getArgs()) && Integer.parseInt(event.getArgs()) < 100 && Integer.parseInt(event.getArgs()) > 0) {
+			List<String> ids = new ArrayList();
+			event.getTextChannel().getHistory().retrievePast(Integer.parseInt(event.getArgs()) + 1).complete().forEach(m -> ids.add(m.getId()));
+			event.getTextChannel().deleteMessagesByIds(ids).queue();
+			event.reply("Successfully deleted %s messages.", ids.size()-1);
+		} else Main.sendCommandHelp(event);
+	}
+
 	private static void log(Guild guild, String emote, String name, String content, Object... formatArgs) {
 		if (modlogSettings.containsKey(guild.getId()) && (boolean) modlogSettings.get(guild.getId()).get("enabled") && !modlogSettings.get(guild.getId()).get("channel").toString().isEmpty()) {
 			TextChannel channel = guild.getTextChannelById(modlogSettings.get(guild.getId()).get("channel").toString());
