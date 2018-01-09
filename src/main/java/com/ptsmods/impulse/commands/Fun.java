@@ -838,10 +838,18 @@ public class Fun {
 		if (!event.argsEmpty()) {
 			if (!Trivia.isValidCategory(event.getArgs())) event.reply("The given category could not be found, you can get a list of possible categories using %strivia list.", Main.getPrefix(event.getGuild()));
 			else {
-				TriviaResult result = Trivia.getInstance(event.getArgs()).start(event.getTextChannel());
+				TriviaResult result = Trivia.getInstance(event.getArgs()).start(event.getChannel(), event.getGuild());
 				event.reply(String.valueOf(result));
 			}
 		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "4row", help = "Play four in a row.", name = "4row")
+	public static void fourRow(CommandEvent event) {
+		String userToken = "full_moon";
+		String botToken = "new_moon";
+		event.reply("Your token: %s\nMy token: %s", userToken, botToken);
+
 	}
 
 	private static boolean rrPlay(CommandEvent event, int bullets, Message message) {

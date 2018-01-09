@@ -17,8 +17,9 @@ import com.ptsmods.impulse.utils.Downloader;
 import com.ptsmods.impulse.utils.Random;
 import com.ptsmods.impulse.utils.Zipper;
 
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
 
 public class Trivia {
@@ -108,7 +109,7 @@ public class Trivia {
 		return passedQuestions.size() != questionsAmount;
 	}
 
-	public TriviaResult start(TextChannel channel) {
+	public TriviaResult start(MessageChannel channel, Guild guild) {
 		channel.sendMessage("Trivia starting, you can always say 'stop trivia' to stop.").queue();
 		Map<User, Integer> appendees = new HashMap();
 		int counter = 0;
@@ -133,7 +134,7 @@ public class Trivia {
 			if (response != null) {
 				User appendee = response.getAuthor();
 				appendees.put(appendee, appendees.getOrDefault(appendee, 1));
-				channel.sendMessageFormat("You got it, %s! **+1** to you. (%s total points)", channel.getGuild().getMember(appendee).getEffectiveName(), appendees.get(appendee)).queue();
+				channel.sendMessageFormat("You got it, %s! **+1** to you. (%s total points)", guild == null ? appendee.getName() : guild.getMember(appendee).getEffectiveName(), appendees.get(appendee)).queue();
 			}
 		}
 		return new TriviaResult(appendees, false);
