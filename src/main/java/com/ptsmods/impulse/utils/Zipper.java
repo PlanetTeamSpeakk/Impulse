@@ -13,8 +13,6 @@ import java.util.zip.ZipFile;
 
 import org.apache.commons.io.IOUtils;
 
-import com.ptsmods.impulse.Main.LogType;
-
 public class Zipper {
 
 	private Zipper() {}
@@ -32,7 +30,6 @@ public class Zipper {
 				new File(outputFolder + "/" + entry.getName()).mkdirs();
 		for (ZipEntry entry : entries)
 			if (!entry.isDirectory()) {
-				Main.print(LogType.DEBUG, entry.getName());
 				InputStream stream = zipFile.getInputStream(entry);
 				Files.copy(stream, Paths.get(outputFolder, entry.getName()));
 				IOUtils.closeQuietly(stream);

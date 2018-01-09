@@ -42,7 +42,7 @@ public class Trivia {
 				Downloader.downloadFile("https://github.com/Cog-Creators/Red-DiscordBot/archive/develop.zip", "data/tmp/red.zip");
 				Zipper.unzip("data/tmp/red.zip", "data/tmp/red");
 				for (File file : new File("data/tmp/red/Red-DiscordBot-develop/data/trivia/").listFiles()) {
-					Files.copy(file.toPath(), Paths.get("data/fun/trivias/" + file.getPath().substring(file.getPath().indexOf("data\\trivia\\") + 12, file.getPath().length())));
+					Files.copy(file.toPath(), Paths.get("data/fun/trivias/" + file.getPath().substring(file.getPath().indexOf("data" + File.separator + "trivia" + File.separator) + 12, file.getPath().length())));
 					file.delete();
 				}
 				new File("data/tmp/red/").delete();

@@ -25,6 +25,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
@@ -69,7 +70,7 @@ public class Dashboard {
 				try {
 					Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
 					if (args.containsKey("key") && args.get("key") != null) {
-						boolean isValid = dashboardData.containsKey(args.get("key")) && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")) != null;
+						boolean isValid = dashboardData.containsKey(args.get("key")) && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")).hasPermission(Permission.ADMINISTRATOR);
 						writeString(he, "{\"success\": true, \"isValid\": %s}", isValid);
 						if (!isValid && dashboardData.containsKey(args.get("key"))) {
 							dashboardData.remove(args.get("key"));
