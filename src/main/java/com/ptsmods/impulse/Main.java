@@ -100,7 +100,7 @@ import sun.reflect.Reflection;
 
 public class Main {
 
-	public static final String version = "1.3.4-stable";
+	public static final String version = "1.3.5-stable";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();

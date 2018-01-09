@@ -70,7 +70,7 @@ public class Dashboard {
 				try {
 					Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
 					if (args.containsKey("key") && args.get("key") != null) {
-						boolean isValid = dashboardData.containsKey(args.get("key")) && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")).hasPermission(Permission.ADMINISTRATOR);
+						boolean isValid = dashboardData.containsKey(args.get("key")) && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")) != null && (Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")).hasPermission(Permission.ADMINISTRATOR) || dashboardData.get(args.get("key")).get("user").toString().equals(Config.get("ownerId")));
 						writeString(he, "{\"success\": true, \"isValid\": %s}", isValid);
 						if (!isValid && dashboardData.containsKey(args.get("key"))) {
 							dashboardData.remove(args.get("key"));

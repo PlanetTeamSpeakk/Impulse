@@ -844,14 +844,6 @@ public class Fun {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "4row", help = "Play four in a row.", name = "4row")
-	public static void fourRow(CommandEvent event) {
-		String userToken = "full_moon";
-		String botToken = "new_moon";
-		event.reply("Your token: %s\nMy token: %s", userToken, botToken);
-
-	}
-
 	private static boolean rrPlay(CommandEvent event, int bullets, Message message) {
 		if (message == null) message = event.getChannel().sendMessage(new MessageBuilder().append("You load up ").append(bullets).append(" bullets and start spinning the barrel...").build()).complete();
 		try {

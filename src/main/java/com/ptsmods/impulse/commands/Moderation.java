@@ -1136,8 +1136,10 @@ public class Moderation {
 	public static Map getSettings(Guild guild) {
 		Map settings = (Map) Moderation.settings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "cases", "mutes"},
 				new Object[] {"", "", true, false, Config.get("prefix"), "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, new HashMap(), new ArrayList()}) : (Map) Moderation.settings.get(guild.getId());
-		settings.put("welcomeChannel", settings.get("welcomeChannel").toString().isEmpty() ? "" : guild.getTextChannelById(settings.get("welcomeChannel").toString()) == null ? "" : guild.getTextChannelById(settings.get("welcomeChannel").toString()).getName());
-		settings.put("channel", settings.get("channel").toString().isEmpty() ? "" : guild.getTextChannelById(settings.get("channel").toString()) == null ? "" : guild.getTextChannelById(settings.get("channel").toString()).getName());
+		try {
+			settings.put("welcomeChannel", settings.get("welcomeChannel").toString().isEmpty() ? "" : guild.getTextChannelById(settings.get("welcomeChannel").toString()) == null ? "" : guild.getTextChannelById(settings.get("welcomeChannel").toString()).getName());
+			settings.put("channel", settings.get("channel").toString().isEmpty() ? "" : guild.getTextChannelById(settings.get("channel").toString()) == null ? "" : guild.getTextChannelById(settings.get("channel").toString()).getName());
+		} catch (Exception ignored) {} // there used to be a bug in the dashboard that didn't convert channel names to their IDs.
 		return settings;
 	}
 
@@ -1164,6 +1166,8 @@ public class Moderation {
 			givemeSettings.put(guild.getId(), givemeIds);
 			DataIO.saveJson(givemeSettings, "data/mod/givemeSettings.json");
 			settings.remove("givemes");
+			settings.put("welcomeChannel", settings.get("welcomeChannel").toString().isEmpty() ? "" : guild.getTextChannelsByName(settings.get("welcomeChannel").toString(), true).isEmpty() ? "" : guild.getTextChannelsByName(settings.get("welcomeChannel").toString(), true).get(0).getName());
+			settings.put("channel", settings.get("channel").toString().isEmpty() ? "" : guild.getTextChannelsByName(settings.get("channel").toString(), true).isEmpty() ? "" : guild.getTextChannelsByName(settings.get("channel").toString(), true).get(0).getName());
 			Moderation.settings.put(guild.getId(), settings);
 			DataIO.saveJson(modlogSettings, "data/mod/settings.json");
 		}
