@@ -131,7 +131,7 @@ public class Trivia {
 				}
 				else if (response.getContent().equalsIgnoreCase("stop trivia")) return new TriviaResult(appendees, false);
 			}
-			if (response != null) {
+			if (response != null && isCorrect(question, response.getContent())) {
 				User appendee = response.getAuthor();
 				appendees.put(appendee, appendees.getOrDefault(appendee, 1));
 				channel.sendMessageFormat("You got it, %s! **+1** to you. (%s total points)", guild == null ? appendee.getName() : guild.getMember(appendee).getEffectiveName(), appendees.get(appendee)).queue();
