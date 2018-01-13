@@ -100,7 +100,7 @@ import sun.reflect.Reflection;
 
 public class Main {
 
-	public static final String version = "1.3.5-stable";
+	public static final String version = "1.3.6-stable";
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
@@ -642,16 +642,19 @@ public class Main {
 									List<String> nonPresentPerms = new ArrayList();
 									for (Permission perm : permissions)
 										if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
-									errorMsg = "You need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to use that.";
-								} else if (event.getGuild() != null && !event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(botPermissions)) {
-									List<String> nonPresentPerms = new ArrayList();
-									for (Permission perm : permissions)
-										if (!event.getMember().hasPermission(perm)) nonPresentPerms.add(perm.getName());
-									errorMsg = "I need the " + Main.joinCustomChar(", ", nonPresentPerms) + " permissions to do that.";
+									errorMsg = "You need the " + joinNiceString(nonPresentPerms) + " permissions to use that.";
 								}
+							if (event.getGuild() != null && !event.getGuild().getSelfMember().hasPermission(botPermissions)) {
+								List<String> nonPresentPerms = new ArrayList();
+								for (Permission perm : botPermissions)
+									if (!event.getGuild().getMember(Main.getSelfUser()).hasPermission(perm)) nonPresentPerms.add(perm.getName());
+								errorMsg = "I need the " + joinNiceString(nonPresentPerms) + " permissions to do that.";
+							}
 							if (!errorMsg.isEmpty())
 								event.getChannel().sendMessage(errorMsg).queue(RestAction.DEFAULT_SUCCESS, t -> {
-									if (t instanceof InsufficientPermissionException) sendPrivateMessage(event.getAuthor(), "I cannot parse the command as I don't have permissions to talk in the channel you ran the command in.");
+									if (t instanceof InsufficientPermissionException) try {
+										sendPrivateMessage(event.getAuthor(), "I cannot parse the command as I don't have permissions to talk in the channel you ran the command in.");
+									} catch (Exception e) {}
 									else t.printStackTrace();
 								});
 							else {

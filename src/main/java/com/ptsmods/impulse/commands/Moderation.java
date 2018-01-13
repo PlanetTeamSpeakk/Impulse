@@ -193,7 +193,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Mute someone.", name = "mute", botPermissions = {Permission.MANAGE_ROLES}, userPermissions = {Permission.MANAGE_ROLES}, guildOnly = true, arguments = "<user>")
+	@Command(category = "Moderation", help = "Unmute someone.", name = "unmute", botPermissions = {Permission.MANAGE_ROLES}, userPermissions = {Permission.MANAGE_ROLES}, guildOnly = true, arguments = "<user>")
 	public static void unmute(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
@@ -902,11 +902,12 @@ public class Moderation {
 		}
 	}
 
-	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 100.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
+	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 99.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
 	public static void purge(CommandEvent event) {
 		if (!event.argsEmpty() && Main.isInteger(event.getArgs()) && Integer.parseInt(event.getArgs()) < 100 && Integer.parseInt(event.getArgs()) > 0) {
+			long minEpoch = System.currentTimeMillis() / 1000 - 86400 * 14; // current time - 2 weeks
 			List<String> ids = new ArrayList();
-			event.getTextChannel().getHistory().retrievePast(Integer.parseInt(event.getArgs()) + 1).complete().forEach(m -> ids.add(m.getId()));
+			event.getTextChannel().getHistory().retrievePast(Integer.parseInt(event.getArgs()) + 1).complete().forEach(m -> {if (m.getCreationTime().toEpochSecond() > minEpoch) ids.add(m.getId());});
 			event.getTextChannel().deleteMessagesByIds(ids).queue();
 			event.reply("Successfully deleted %s messages.", ids.size()-1);
 		} else Main.sendCommandHelp(event);

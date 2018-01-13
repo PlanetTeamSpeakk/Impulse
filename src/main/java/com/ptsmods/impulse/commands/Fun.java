@@ -515,7 +515,7 @@ public class Fun {
 	@Command(category = "Fun", help = "Memes are the only thing that keep PlanetTeamSpeak alive.", name = "meme")
 	public static void meme(CommandEvent event) {
 		List<String> serverMemes = (List) memes.get("global");
-		if (memes.containsKey(event.getGuild().getId())) serverMemes.addAll((List) memes.get(event.getGuild().getId()));
+		if (event.getGuild() != null && memes.containsKey(event.getGuild().getId())) serverMemes.addAll((List) memes.get(event.getGuild().getId()));
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setColor(new Color(Random.randInt(256*256*256)));
 		embed.setImage(Random.choice(serverMemes));

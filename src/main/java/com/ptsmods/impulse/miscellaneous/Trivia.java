@@ -52,15 +52,21 @@ public class Trivia {
 				throw new RuntimeException("An error occurred while extracting the default trivia questions from Red.");
 			}
 		}
+		class Parser {
+			private void parse(String line, List<TriviaQuestion> questions) {
+				List<String> answers = Lists.newArrayList(Main.removeArg(line.split("`"), 0));
+				if (!answers.isEmpty()) questions.add(new TriviaQuestion(line.split("`")[0], answers));
+			}
+		}
 		for (File file : new File("data/fun/trivias/").listFiles()) {
 			List<TriviaQuestion> questions = new ArrayList();
 			try {
 				for (String line : Files.readAllLines(file.toPath()))
-					questions.add(new TriviaQuestion(line.split("`")[0], Lists.newArrayList(Main.removeArg(line.split("`"), 0))));
+					new Parser().parse(line, questions);
 			} catch (MalformedInputException e) {
 				try {
 					for (String line : Files.readAllLines(file.toPath(), Charset.forName("CP1252"))) // reading as ANSI since some trivias from Red are encoded in ANSI.
-						questions.add(new TriviaQuestion(line.split("`")[0], Lists.newArrayList(Main.removeArg(line.split("`"), 0))));
+						new Parser().parse(line, questions);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 					continue;

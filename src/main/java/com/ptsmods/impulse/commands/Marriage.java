@@ -37,7 +37,7 @@ public class Marriage {
 	public static void coupleCount(CommandEvent event) {
 		List<Role> marriageRoles = new ArrayList<>();
 		for (Role role : event.getGuild().getRoles())
-			if (role.getName().contains("❤") && role.getColor() != null && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRoles.add(role);
+			if (role.getName().contains(heart) && role.getColor() != null && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRoles.add(role);
 		event.reply("There are currently " + marriageRoles.size() + " married couples in this server.");
 	}
 
@@ -227,10 +227,17 @@ public class Marriage {
 	public static void massDivorce(CommandEvent event) {
 		List<Role> marriageRoles = new ArrayList<>();
 		for (Role role : event.getGuild().getRoles())
-			if (role.getName().contains("❤") && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRoles.add(role);
+			if (role.getName().contains(heart) && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRoles.add(role);
+		int success = 0;
+		int failed = 0;
 		for (Role role : marriageRoles)
-			role.delete().queue();
-		event.reply("Successfully deleted " + marriageRoles.size() + " marriage roles in this server.");
+			try {
+				role.delete().queue();
+				success += 1;
+			} catch (Exception e) {
+				failed += 1;
+			}
+		event.reply("Successfully deleted %s marriage roles and failed to delete %s marriage roles in this server.", success, failed);
 	}
 
 	@Command(category = "Marriage", help = "Sets this server's marry limit.", name = "setmarrylimit", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
