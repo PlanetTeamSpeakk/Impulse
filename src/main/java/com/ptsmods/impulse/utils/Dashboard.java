@@ -67,79 +67,63 @@ public class Dashboard {
 		server.createContext("/isValidKey", new DefaultHttpHandler() {
 			@Override
 			public void handle0(HttpExchange he) throws IOException {
-				try {
-					Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
-					if (args.containsKey("key") && args.get("key") != null) {
-						boolean isValid = dashboardData.containsKey(args.get("key")) && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")) != null && (Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")).hasPermission(Permission.ADMINISTRATOR) || dashboardData.get(args.get("key")).get("user").toString().equals(Config.get("ownerId")));
-						writeString(he, "{\"success\": true, \"isValid\": %s}", isValid);
-						if (!isValid && dashboardData.containsKey(args.get("key"))) {
-							dashboardData.remove(args.get("key"));
-							DataIO.saveJson(dashboardData, "data/dashboard/data.json");
-						}
-					} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' not present.\"}");
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
+				if (args.containsKey("key") && args.get("key") != null) {
+					boolean isValid = dashboardData.containsKey(args.get("key")) && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")) != null && Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")) != null && (Main.getGuildById(dashboardData.get(args.get("key")).get("guild")).getMemberById(dashboardData.get(args.get("key")).get("user")).hasPermission(Permission.ADMINISTRATOR) || dashboardData.get(args.get("key")).get("user").toString().equals(Config.get("ownerId")));
+					writeString(he, "{\"success\": true, \"isValid\": %s}", isValid);
+					if (!isValid && dashboardData.containsKey(args.get("key"))) {
+						dashboardData.remove(args.get("key"));
+						DataIO.saveJson(dashboardData, "data/dashboard/data.json");
+					}
+				} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' not present.\"}");
 			}
 		});
 		server.createContext("/getRoles", new DefaultHttpHandler() {
 			@Override
 			public void handle0(HttpExchange he) throws IOException {
-				try {
-					Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
-					if (args.containsKey("key")) {
-						if (args.get("key") != null && dashboardData.containsKey(args.get("key"))) {
-							if (Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()) != null) {
-								String roles = "";
-								for (Role role : Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()).getRoles())
-									roles += "\"" + role.getName() + "\", ";
-								writeString(he, "{\"success\": true, \"roles\": [%s], \"guild\": \"%s\", \"key\": \"%s\"}", roles.substring(0, roles.length()-2), dashboardData.get(args.get("key")).get("guild"), args.get("key"));
-							} else writeString(he, "{\"success\": false, \"errorMsg\": \"The guild attached to this key could not be found.\"}");
-						} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not valid, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
-					} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not present, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
+				if (args.containsKey("key")) {
+					if (args.get("key") != null && dashboardData.containsKey(args.get("key"))) {
+						if (Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()) != null) {
+							String roles = "";
+							for (Role role : Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()).getRoles())
+								roles += "\"" + role.getName() + "\", ";
+							writeString(he, "{\"success\": true, \"roles\": [%s], \"guild\": \"%s\", \"key\": \"%s\"}", roles.substring(0, roles.length()-2), dashboardData.get(args.get("key")).get("guild"), args.get("key"));
+						} else writeString(he, "{\"success\": false, \"errorMsg\": \"The guild attached to this key could not be found.\"}");
+					} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not valid, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
+				} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not present, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
 			}
 		});
 		server.createContext("/getTextChannels", new DefaultHttpHandler() {
 			@Override
 			public void handle0(HttpExchange he) throws IOException {
-				try {
-					Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
-					if (args.containsKey("key")) {
-						if (args.get("key") != null && dashboardData.containsKey(args.get("key"))) {
-							if (Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()) != null) {
-								String channels = "";
-								for (TextChannel channel : Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()).getTextChannels())
-									channels += "\"" + channel.getName() + "\", ";
-								writeString(he, "{\"success\": true, \"textchannels\": [%s], \"guild\": \"%s\", \"key\": \"%s\"}", channels.substring(0, channels.length()-2), dashboardData.get(args.get("key")).get("guild"), args.get("key"));
-							} else writeString(he, "{\"success\": false, \"errorMsg\": \"The guild attached to this key could not be found.\"}");
-						} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not valid, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
-					} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not present, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
+				if (args.containsKey("key")) {
+					if (args.get("key") != null && dashboardData.containsKey(args.get("key"))) {
+						if (Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()) != null) {
+							String channels = "";
+							for (TextChannel channel : Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()).getTextChannels())
+								channels += "\"" + channel.getName() + "\", ";
+							writeString(he, "{\"success\": true, \"textchannels\": [%s], \"guild\": \"%s\", \"key\": \"%s\"}", channels.substring(0, channels.length()-2), dashboardData.get(args.get("key")).get("guild"), args.get("key"));
+						} else writeString(he, "{\"success\": false, \"errorMsg\": \"The guild attached to this key could not be found.\"}");
+					} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not valid, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
+				} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not present, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
 			}
 		});
 		server.createContext("/getVoiceChannels", new DefaultHttpHandler() {
 			@Override
 			public void handle0(HttpExchange he) throws IOException {
-				try {
-					Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
-					if (args.containsKey("key")) {
-						if (args.get("key") != null && dashboardData.containsKey(args.get("key"))) {
-							if (Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()) != null) {
-								String channels = "";
-								for (VoiceChannel channel : Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()).getVoiceChannels())
-									channels += "\"" + channel.getName() + "\", ";
-								writeString(he, "{\"success\": true, \"voicechannels\": [%s], \"guild\": \"%s\", \"key\": \"%s\"}", channels.substring(0, channels.length()-2), dashboardData.get(args.get("key")).get("guild"), args.get("key"));
-							} else writeString(he, "{\"success\": false, \"errorMsg\": \"The guild attached to this key could not be found.\"}");
-						} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not valid, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
-					} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not present, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				Map<String, String> args = parseQuery(he.getRequestURI().getQuery());
+				if (args.containsKey("key")) {
+					if (args.get("key") != null && dashboardData.containsKey(args.get("key"))) {
+						if (Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()) != null) {
+							String channels = "";
+							for (VoiceChannel channel : Main.getGuildById(dashboardData.get(args.get("key")).get("guild").toString()).getVoiceChannels())
+								channels += "\"" + channel.getName() + "\", ";
+							writeString(he, "{\"success\": true, \"voicechannels\": [%s], \"guild\": \"%s\", \"key\": \"%s\"}", channels.substring(0, channels.length()-2), dashboardData.get(args.get("key")).get("guild"), args.get("key"));
+						} else writeString(he, "{\"success\": false, \"errorMsg\": \"The guild attached to this key could not be found.\"}");
+					} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not valid, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
+				} else writeString(he, "{\"success\": false, \"errorMsg\": \"Argument 'key' is not present, this must be a key gotten using %sdashboard getkey.\"}", Config.get("prefix"));
 			}
 		});
 		server.createContext("/getData", new DefaultHttpHandler() {
@@ -203,9 +187,7 @@ public class Dashboard {
 				} else writeString(he, "{\"success\": false, \"errorMsg\": \"The request method was %s while only POST requests are allowed on this URL.\"}", he.getRequestMethod());
 			}
 		});
-		server.setExecutor(r -> { // if I ever want to log something this'll make it easier, but I could just set Dashboard.executor as the executor.
-			executor.execute(r);
-		});
+		server.setExecutor(executor);
 		server.start();
 		Main.print(LogType.INFO, "Successfully started the server on port", server.getAddress().getPort() + ", you can browse to it using http://localhost:" + server.getAddress().getPort() + ".");
 	}
@@ -268,6 +250,7 @@ public class Dashboard {
 																								new ArrayList(Moderation.getGivemeSettings(guild).keySet()),
 																								modlogSettings.get("channel") == null ? "" : modlogSettings.get("channel").toString(),
 																										modlogSettings.get("enabled") == null ? false : (boolean) modlogSettings.get("enabled")}
+				// that's just Eclipse being weird, alright.
 				));
 		data.put("economySettings", economySettings);
 		data.put("marriageSettings", Main.newHashMap(new String[] {"marryLimit"}, new Integer[] {Marriage.getMarryLimit(guild)}));
@@ -294,13 +277,12 @@ public class Dashboard {
 	/**
 	 * Supports JavaScript CORS requests by default and logs any traffic gotten.
 	 * @author PlanetTeamSpeak
-	 *
 	 */
 	public static abstract class DefaultHttpHandler implements HttpHandler {
 
 		@Override
 		public final void handle(HttpExchange he) throws IOException {
-			he.getResponseHeaders().add("Access-Control-Allow-Origin", "*"); // support for JavaScript CORS requests.
+			he.getResponseHeaders().add("Access-Control-Allow-Origin", "*"); // support for JavaScript CORS requests, if you'd remove or comment out this line the entire dashboard wouldn't work anymore.
 			try (PrintWriter writer = new PrintWriter(new FileWriter("webserver.log", true))) {
 				writer.println(String.format("[%s %s] [INFO] Request gotten on %s from %s.", Main.getFormattedDate(), Main.getFormattedTime(), he.getRequestURI().getPath(), he.getRemoteAddress().getHostName().equals("0:0:0:0:0:0:0:1") ? "127.0.0.1" : he.getRemoteAddress().getHostName()));
 			}
@@ -308,6 +290,7 @@ public class Dashboard {
 				handle0(he);
 			} catch (Throwable t) {
 				t.printStackTrace();
+				Main.sendPrivateMessage(Main.getOwner(), "A `%s` exception was thrown on line %s in %s while parsing a %s request on %s. ```java\n%s```", t.getClass().getName(), t.getStackTrace()[0].getLineNumber(), t.getStackTrace()[0].getFileName(), he.getRequestMethod(), he.getRequestURI().getPath(), Main.generateStackTrace(t));
 			}
 		}
 

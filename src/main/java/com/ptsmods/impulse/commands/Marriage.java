@@ -45,8 +45,10 @@ public class Marriage {
 	public static void divorce(CommandEvent event) {
 		if (!event.getArgs().isEmpty() && Main.isLong(event.getArgs().split(" ")[0])) {
 			MessageChannel marriageChannel = null;
-			if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());
-			if (marriageChannel == null) marriageChannel = event.getGuild().getTextChannelsByName("marriage", true).get(0);
+			try {
+				if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) try {marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());} catch (Exception e) {}
+				if (marriageChannel == null) marriageChannel = Main.getOrDefault(event.getGuild().getTextChannelsByName("marriage", true), 0, null);
+			} catch (Exception e) {}
 			Role marriageRole = event.getGuild().getRoleById(event.getArgs().split(" ")[0]);
 			if (marriageRole == null) event.reply("That divorce id could not be found.");
 			else {
@@ -57,7 +59,7 @@ public class Marriage {
 					return;
 				}
 				event.reply("You're now divorced.");
-				marriageChannel.sendMessageFormat("%s divorced id `%s`.", event.getAuthor().getName(), marriageRole.getId()).queue();
+				if (marriageChannel != null) if (marriageChannel != null) marriageChannel.sendMessageFormat("%s divorced id `%s`.", event.getAuthor().getName(), marriageRole.getId()).queue();
 			}
 		} else Main.sendCommandHelp(event);
 	}
@@ -68,8 +70,8 @@ public class Marriage {
 			String[] usernames = event.getArgs().contains("; ") ? event.getArgs().split("; ") : event.getArgs().split(";");
 			List<Member> members = new ArrayList<>();
 			MessageChannel marriageChannel = null;
-			if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());
-			if (marriageChannel == null) marriageChannel = event.getGuild().getTextChannelsByName("marriage", true).get(0);
+			if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) try {marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());} catch (Exception e) {}
+			if (marriageChannel == null) marriageChannel = Main.getOrDefault(event.getGuild().getTextChannelsByName("marriage", true), 0, null);
 			for (String username : usernames)
 				if (!event.getGuild().getMembersByName(username, true).isEmpty()) members.add(event.getGuild().getMembersByName(username, true).get(0));
 				else {
@@ -85,7 +87,7 @@ public class Marriage {
 						return;
 					}
 					event.reply("Successfully deleted the marriage role between %s and %s.", members.get(0).getAsMention(), members.get(1).getAsMention());
-					marriageChannel.sendMessageFormat("%s was forced to divorce %s.", members.get(0).getAsMention(), members.get(1).getAsMention()).queue();
+					if (marriageChannel != null) marriageChannel.sendMessageFormat("%s was forced to divorce %s.", members.get(0).getAsMention(), members.get(1).getAsMention()).queue();
 					return;
 				}
 			event.reply("A marriage role between those 2 members could not be found.");
@@ -113,8 +115,8 @@ public class Marriage {
 			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
 			MessageChannel marriageChannel = null;
 			boolean isMarriedToMember = false;
-			if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());
-			if (marriageChannel == null) marriageChannel = event.getGuild().getTextChannelsByName("marriage", true).get(0);
+			if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) try {marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());} catch (Exception e) {}
+			if (marriageChannel == null) marriageChannel = Main.getOrDefault(event.getGuild().getTextChannelsByName("marriage", true), 0, null);
 			if (mem1.equals(mem2)) event.reply("People can't marry themselves, that would be weird wouldn't it?");
 			else if ((boolean) ((Map) settings.get(event.getGuild().getId())).get("disabled")) event.reply("Marriages are currently disabled on this server.");
 			else if (isMarriedToMember) event.reply("They're already married.");
@@ -123,7 +125,7 @@ public class Marriage {
 				Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", mem1.getUser().getName(), mem2.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions().complete();
 				event.getGuild().getController().addSingleRoleToMember(mem1, role).queue();
 				event.getGuild().getController().addSingleRoleToMember(mem2, role).queue();
-				marriageChannel.sendMessageFormat("%s was forced to marry %s.", mem2.getAsMention(), mem1.getAsMention()).queue();
+				if (marriageChannel != null) marriageChannel.sendMessageFormat("%s was forced to marry %s.", mem2.getAsMention(), mem1.getAsMention()).queue();
 				try {
 					Main.sendPrivateMessage(mem1.getUser(), String.format("**%s#%s** forced you to marry **%s#%s** in **%s**.\nYour divorce id is `%s`.\nTo divorce type `%sdivorce %s` in %s.",
 							event.getAuthor().getName(), event.getAuthor().getDiscriminator(), mem2.getUser().getName(), mem2.getUser().getDiscriminator(), event.getGuild().getName(), role.getId(), Main.getPrefix(event.getGuild()), role.getId(), event.getGuild().getName()));
@@ -181,8 +183,8 @@ public class Marriage {
 					if (role.getName().contains(member.getUser().getName())) isMarriedToMember = true;
 				for (Role role : marriageRolesOfCrush)
 					if (role.getName().contains(event.getAuthor().getName())) isMarriedToMember = true;
-				if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());
-				if (marriageChannel == null) marriageChannel = event.getGuild().getTextChannelsByName("marriage", true).get(0);
+				if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) try {marriageChannel = event.getGuild().getTextChannelById(event.getGuild().getController().createTextChannel("marriage").complete().getId());} catch (Exception e) {}
+				if (marriageChannel == null) marriageChannel = Main.getOrDefault(event.getGuild().getTextChannelsByName("marriage", true), 0, null);
 				if (event.getMember().equals(member)) event.reply("You can't marry yourself, that would be weird wouldn't it?");
 				else if ((boolean) ((Map) settings.get(event.getGuild().getId())).get("disabled")) event.reply("Marriages are currently disabled in this server.");
 				else if (marryLimit > 0 && marriageRolesOfAuthor.size() >= marryLimit) event.reply("You have reached this server's marry limit. (" + marryLimit + ")");
@@ -198,7 +200,7 @@ public class Marriage {
 						Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", event.getAuthor().getName(), member.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions(Main.defaultPermissionsArray).complete();
 						event.getGuild().getController().addSingleRoleToMember(event.getMember(), role).queue();
 						event.getGuild().getController().addSingleRoleToMember(member, role).queue();
-						marriageChannel.sendMessageFormat("%s married %s, congratulations!", event.getAuthor().getAsMention(), member.getAsMention()).queue();
+						if (marriageChannel != null) marriageChannel.sendMessageFormat("%s married %s, congratulations!", event.getAuthor().getAsMention(), member.getAsMention()).queue();
 						try {
 							Main.sendPrivateMessage(event.getAuthor(), String.format("You married **%s#%s** in **%s**.\nYour divorce id is `%s`.\nTo divorce type `%sdivorce %s` in %s.",
 									member.getUser().getName(), member.getUser().getDiscriminator(), event.getGuild().getName(), role.getId(), Main.getPrefix(event.getGuild()), role.getId(), event.getGuild().getName()));

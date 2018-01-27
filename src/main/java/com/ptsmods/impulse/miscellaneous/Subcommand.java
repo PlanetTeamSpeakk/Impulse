@@ -19,6 +19,7 @@ public @interface Subcommand {
 	 */
 	public String parent();
 	public boolean guildOnly() default false;
+	public boolean dmOnly() default false;
 	public boolean hidden() default false;
 	public boolean sendTyping() default true;
 	public String[] aliases() default {};

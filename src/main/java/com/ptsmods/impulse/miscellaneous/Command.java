@@ -16,6 +16,7 @@ public @interface Command {
 	public String help();
 	public String category();
 	public boolean guildOnly() default false;
+	public boolean dmOnly() default false;
 	public boolean hidden() default false;
 	public boolean sendTyping() default true;
 	public String arguments() default "";

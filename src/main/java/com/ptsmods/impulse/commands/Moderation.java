@@ -30,7 +30,6 @@ import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.entities.VoiceChannel;
-import net.dv8tion.jda.core.entities.impl.MessageImpl;
 import net.dv8tion.jda.core.events.channel.text.TextChannelCreateEvent;
 import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.core.events.channel.text.update.GenericTextChannelUpdateEvent;
@@ -104,6 +103,7 @@ public class Moderation {
 						throw new CommandPermissionException("That command can not be used as its category, %s, isn't enabled.", Main.getAbsoluteParentCommand(command).getAnnotation(Command.class).category());
 				}
 		});
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> saveFiles()));
 		try {
 			pastNicks = DataIO.loadJsonOrDefault("data/mod/pastNicks.json", Map.class, new HashMap());
 		} catch (IOException e) {
@@ -157,7 +157,8 @@ public class Moderation {
 	public static void ban(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
-			if (!PermissionUtil.canInteract(event.getGuild().getSelfMember(), member)) event.reply("I cannot ban that user as they're higher in the hierarchy than I am.");
+			if (member == null) event.reply("The given user could not be found.");
+			else if (!PermissionUtil.canInteract(event.getGuild().getSelfMember(), member)) event.reply("I cannot ban that user as they're higher in the hierarchy than I am.");
 			else {
 				event.getGuild().getController().ban(member.getUser(), 1).queue();
 				event.reply("Successfully banned " + member.getEffectiveName() + ".");
@@ -363,7 +364,7 @@ public class Moderation {
 	public static void filterRemove(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			if (!filters.containsKey(event.getGuild().getId())) event.reply("Nothing is being filtered in this server.");
-			else if (!((List) filters.get(event.getGuild().getId())).contains(event.getArgs())) event.reply("The given message is currently not being filtered.");
+			else if (!((List) ((Map) filters.get(event.getGuild().getId())).get("filtered")).contains(event.getArgs())) event.reply("The given message is currently not being filtered.");
 			else {
 				((List) ((Map) filters.get(event.getGuild().getId())).get("filtered")).remove(event.getArgs());
 				try {
@@ -707,7 +708,7 @@ public class Moderation {
 		event.reply("Successfully disabled the welcome system, to enable it again type %smodset welcomechannel <channel>.", Main.getPrefix(event.getGuild()));
 	}
 
-	@Command(category = "Moderation", help = "Shows you the past names of a user.", name = "pastnames", arguments = "<user>")
+	@Command(category = "Moderation", help = "Shows you the past names of a user.", name = "pastnames", arguments = "<user>", guildOnly = true)
 	public static void pastNames(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
@@ -717,7 +718,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Shows you the past names of a user.", name = "pastnicks", arguments = "<user>")
+	@Command(category = "Moderation", help = "Shows you the past names of a user.", name = "pastnicks", arguments = "<user>", guildOnly = true)
 	public static void pastNicks(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
@@ -727,7 +728,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Renames a user.", name = "rename", arguments = "<user> <newName>")
+	@Command(category = "Moderation", help = "Renames a user.", name = "rename", arguments = "<user> <newName>", guildOnly = true)
 	public static void rename(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
@@ -745,7 +746,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Reset the warnings of a user.", name = "resetwarns", arguments = "<user>", userPermissions = {Permission.KICK_MEMBERS})
+	@Command(category = "Moderation", help = "Reset the warnings of a user.", name = "resetwarns", arguments = "<user>", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void resetWarns(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			String guildId = event.getGuild().getId();
@@ -771,7 +772,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Warn a user for their behavior.", name = "warn", userPermissions = {Permission.KICK_MEMBERS}, botPermissions = {Permission.MANAGE_PERMISSIONS, Permission.KICK_MEMBERS, Permission.BAN_MEMBERS}, arguments = "<user>")
+	@Command(category = "Moderation", help = "Warn a user for their behavior.", name = "warn", userPermissions = {Permission.KICK_MEMBERS}, botPermissions = {Permission.MANAGE_PERMISSIONS, Permission.KICK_MEMBERS, Permission.BAN_MEMBERS}, arguments = "<user>", guildOnly = true)
 	public static void warn(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			String guildId = event.getGuild().getId();
@@ -824,7 +825,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Tells you how many warnings a user has.", name = "warns", arguments = "<user>")
+	@Command(category = "Moderation", help = "Tells you how many warnings a user has.", name = "warns", arguments = "<user>", guildOnly = true)
 	public static void warns(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
 			String guildId = event.getGuild().getId();
@@ -837,13 +838,13 @@ public class Moderation {
 			if (!warnerSettings.containsKey(guildId)) event.reply("No one in this server currently has any warnings.");
 			else if (!((Map) warnerSettings.get(guildId)).containsKey(userId)) event.reply("That user has no warnings.");
 			else {
-				int warns = ((Double) ((Map) warnerSettings.get(guildId)).get(userId)).intValue();
+				int warns = Main.getIntFromPossibleDouble(((Map) warnerSettings.get(guildId)).get(userId));
 				event.reply(event.getGuild().getMemberById(userId).getEffectiveName() + " has " + warns + " warning" + (warns != 1 ? "s" : "") + ".");
 			}
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Manage settings for the modlog.", name = "modlogset", userPermissions = {Permission.ADMINISTRATOR})
+	@Command(category = "Moderation", help = "Manage settings for the modlog.", name = "modlogset", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void modlogset(CommandEvent event) {
 		Main.sendCommandHelp(event);
 	}
@@ -924,7 +925,7 @@ public class Moderation {
 
 	@SubscribeEvent
 	public static void onGuildMemberJoin(GuildMemberJoinEvent event) {
-		if (settings.containsKey(event.getGuild().getId()) && ((List) ((Map) settings.get(event.getGuild().getId())).get("mutes")).contains(event.getUser().getId()))
+		if (settings.containsKey(event.getGuild().getId()) && ((Map) settings.get(event.getGuild().getId())).containsKey("mutes") && ((List) ((Map) settings.get(event.getGuild().getId())).get("mutes")).contains(event.getUser().getId()))
 			Main.mute(event.getGuild().getMember(event.getUser()));
 		if (settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).get("autorole").toString().isEmpty() && event.getGuild().getRoleById(((Map) settings.get(event.getGuild().getId())).get("autorole").toString()) != null)
 			try {
@@ -977,12 +978,7 @@ public class Moderation {
 
 	@SubscribeEvent
 	public static void onMessageDelete(MessageDeleteEvent event) {
-		if (loggedMessages.containsKey(event.getMessageId())) {
-			Message message = new MessageImpl(event.getMessageIdLong(), event.getChannel(), false)
-					.setAuthor(Main.getUserById(loggedMessages.get(event.getMessageId()).get("author").toString()))
-					.setContent(loggedMessages.get(event.getMessageId()).get("content").toString());
-			log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", Main.str(message.getAuthor()), event.getTextChannel().getName(), message.getContent());
-		}
+		log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : Main.getUserById(loggedMessages.get(event.getMessageId()).get("author").toString()), event.getTextChannel().getName(), !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : loggedMessages.get(event.getMessageId()).get("content").toString());
 	}
 
 	@SubscribeEvent
@@ -1090,8 +1086,10 @@ public class Moderation {
 	public static void onMessageReceived(MessageReceivedEvent event) {
 		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()}));
 		if (event.getGuild() == null) return;
-		if (filters.containsKey(event.getGuild().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE))
-			if (Main.contains(event.getMessage().getContent(), (List<String>) ((Map) filters.get(event.getGuild().getId())).get("filtered"))) {
+		if (filters.containsKey(event.getGuild().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
+			List<String> filters = new ArrayList<>((List<String>) ((Map) Moderation.filters.get(event.getGuild().getId())).get("filtered"));
+			Main.toLowerCase(filters);
+			if (Main.contains(event.getMessage().getRawContent().toLowerCase(), filters)) {
 				try {
 					event.getMessage().delete().complete();
 				} catch (Throwable e) {
@@ -1104,6 +1102,7 @@ public class Moderation {
 				msg.delete().queue();
 				return;
 			}
+		}
 		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
 			try {
 				event.getMessage().delete().complete();

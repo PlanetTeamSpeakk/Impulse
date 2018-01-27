@@ -52,21 +52,22 @@ public class Trivia {
 				throw new RuntimeException("An error occurred while extracting the default trivia questions from Red.");
 			}
 		}
-		class Parser {
-			private void parse(String line, List<TriviaQuestion> questions) {
+		final class Parser {
+			private final void parse(String line, List<TriviaQuestion> questions) {
 				List<String> answers = Lists.newArrayList(Main.removeArg(line.split("`"), 0));
 				if (!answers.isEmpty()) questions.add(new TriviaQuestion(line.split("`")[0], answers));
 			}
 		}
+		Parser parser = new Parser();
 		for (File file : new File("data/fun/trivias/").listFiles()) {
 			List<TriviaQuestion> questions = new ArrayList();
 			try {
 				for (String line : Files.readAllLines(file.toPath()))
-					new Parser().parse(line, questions);
+					parser.parse(line, questions);
 			} catch (MalformedInputException e) {
 				try {
 					for (String line : Files.readAllLines(file.toPath(), Charset.forName("CP1252"))) // reading as ANSI since some trivias from Red are encoded in ANSI.
-						new Parser().parse(line, questions);
+						parser.parse(line, questions);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 					continue;
@@ -139,7 +140,7 @@ public class Trivia {
 			}
 			if (response != null && isCorrect(question, response.getContent())) {
 				User appendee = response.getAuthor();
-				appendees.put(appendee, appendees.getOrDefault(appendee, 1));
+				appendees.put(appendee, appendees.getOrDefault(appendee, 0) + 1);
 				channel.sendMessageFormat("You got it, %s! **+1** to you. (%s total points)", guild == null ? appendee.getName() : guild.getMember(appendee).getEffectiveName(), appendees.get(appendee)).queue();
 			}
 		}

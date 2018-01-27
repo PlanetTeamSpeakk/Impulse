@@ -16,9 +16,12 @@ import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -35,7 +38,10 @@ import javax.swing.text.DefaultCaret;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import com.google.common.collect.Lists;
 import com.ptsmods.impulse.Main.LogType;
+import com.ptsmods.impulse.commands.Main;
+import com.ptsmods.impulse.miscellaneous.JGraphPanel;
 import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.MathHelper;
 
@@ -46,7 +52,7 @@ public class MainGUI {
 	private static JFrame mainFrame = new JFrame();
 	private static JTextArea LTA = new JTextArea(); // Log TextArea
 	private static Map<String, JTextField> configKeys = new HashMap();
-	private static final DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+	private static final DecimalFormat df = new DecimalFormat("#", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 	private static final String impulsePngMD5 = "f71c6df8e8f8b70a366c54d2f88e4b2d";
 	private static boolean hasPngChanged = true;
 	private static final JRadioButton devModeRBtn = new JRadioButton("Devmode");
@@ -57,7 +63,7 @@ public class MainGUI {
 	 */
 	public static void initialize() throws IllegalAccessException {
 		if (!initialized) {
-			// Just checking if the file has changed, if not set the icon and start normally, if it has don't and passive-aggressively ask the user to change it back.
+			// Just checking if the file has changed, if not, set the icon and start normally, if it has, don't and passive-aggressively ask the user to change it back.
 			// Because maybe they've changed the icon and are claiming they've made it.
 			String MD5 = null;
 			try {
@@ -153,8 +159,7 @@ public class MainGUI {
 					}
 				});
 				settings.add(gameTF1);
-				pos += 20;
-				pos += 8;
+				pos += 28;
 				JButton saveBtn = new JButton("Save");
 				saveBtn.setFont(sansSerif);
 				saveBtn.setBounds(5, pos, 48, 24);
@@ -255,6 +260,18 @@ public class MainGUI {
 				desc3.setBounds(2, 156, (int) desc3.getFont().getStringBounds(desc3.getText(), frc).getWidth(), 20);
 				calculator.add(desc3);
 				tabbedPane.addTab("Calculator", null, calculator, "Just a helpful little calculator.");
+				JGraphPanel ram = new JGraphPanel(new ArrayList(), "RAM usage in MB", "Seconds ago", true);
+				Main.runAsynchronously(() -> {
+					List<Double> scores = Lists.newArrayList(new Double[60]);
+					while (true) {
+						if (Main.isShuttingDown()) break;
+						scores.add(Main.formatFileSizeDoubleMb(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()));
+						if (scores.size() > 60) scores.remove(0);
+						ram.setScores(scores);
+						Main.sleep(1, TimeUnit.SECONDS);
+					}
+				});
+				tabbedPane.addTab("RAM usage", null, ram, "Shows you the RAM usage of the last 60 seconds.");
 				JPanel shutdown = new JPanel();
 				shutdown.setLayout(null);
 				JButton shutdownBtn = new JButton("Shutdown");

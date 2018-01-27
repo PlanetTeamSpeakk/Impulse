@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +34,8 @@ import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -42,9 +45,21 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.logging.LogFactory;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
+import org.w3c.css.sac.CSSException;
+import org.w3c.css.sac.CSSParseException;
+import org.w3c.css.sac.ErrorHandler;
 
+import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.IncorrectnessListener;
+import com.gargoylesoftware.htmlunit.ScriptException;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HTMLParserListener;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.javascript.JavaScriptErrorListener;
 import com.google.common.collect.Lists;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
@@ -100,7 +115,11 @@ import sun.reflect.Reflection;
 
 public class Main {
 
-	public static final String version = "1.3.6-stable";
+	public static final int major = 1;
+	public static final int minor = 4;
+	public static final int revision = 0;
+	public static final String type = "stable";
+	public static final String version = String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object nil = null; // fucking retarded name, imo.
 	public static final Date started = new Date();
 	public static final Map<String, String> apiKeys = new HashMap<>();
@@ -130,6 +149,7 @@ public class Main {
 	private static EventHandler eventHandler = new EventHandler();
 	private static Map<String, Map<String, Long>> cooldowns = new HashMap();
 	private static List<String> categories = new ArrayList();
+	private static boolean shutdown = false;
 
 	static {
 		try {
@@ -167,7 +187,7 @@ public class Main {
 		try {
 			Dashboard.initialize();
 		} catch (IOException e) {
-			print(LogType.ERROR, "The webserver could not be initialized, are you sure port 61192 is free?");
+			print(LogType.ERROR, "The webserver could not be initialized, are you sure port 61192 isn't used?");
 		}
 		if (!MainGUI.isThief()) { // user tried to steal Impulse Java Edition as their own idea.
 			Locale.setDefault(Locale.US);
@@ -378,16 +398,35 @@ public class Main {
 	}
 
 	public static void shutdown(int status) {
-		if (status != 2) {
+		if (status == 2) {
 			for (JDA shard : shards)
-				if (status == 0) shard.shutdown();
-				else shard.shutdownNow();
-			commandsExecutor.shutdown();
-			miscellaneousExecutor.shutdown();
+				shard.shutdownNow();
+			commandsExecutor.shutdownNow();
+			miscellaneousExecutor.shutdownNow();
 			System.exit(status);
-		} else
+		} else {
+			shutdown = true;
 			for (JDA shard : shards)
 				shard.shutdown();
+			commandsExecutor.shutdown();
+			miscellaneousExecutor.shutdown();
+			new Thread(() -> {
+				try {
+					Field field = getField(Class.forName("java.lang.ApplicationShutdownHooks"), "hooks", IdentityHashMap.class);
+					field.setAccessible(true);
+					IdentityHashMap<Thread, Thread> map = (IdentityHashMap) field.get(null);
+					print(LogType.DEBUG, map.size());
+					for (Thread thread : map.keySet()) {
+						thread.start();
+						thread.join();
+					}
+					field.set(null, new IdentityHashMap());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				System.exit(status);
+			}).start();
+		}
 	}
 
 	public static Integer[] range(int range) {
@@ -1060,8 +1099,12 @@ public class Main {
 		return getUserById(Long.toString(id));
 	}
 
-	public static String formatFileSize(float bytes) {
+	public static String formatFileSize(double bytes) {
 		return Downloader.formatFileSize(bytes);
+	}
+
+	public static double formatFileSizeDoubleMb(double bytes) {
+		return Downloader.formatFileSizeDoubleMb(bytes);
 	}
 
 	public static String getHTML(String url) throws IOException {
@@ -1212,6 +1255,22 @@ public class Main {
 				return null;
 			}
 		}.getMethod();
+	}
+
+	@Nullable
+	public static Field getField(Class clazz, String field, @Nullable Class type) {
+		return new Object() {
+			Field getField() {
+				if (getField(clazz.getFields()) != null) return getField(clazz.getFields());
+				else return getField(clazz.getDeclaredFields());
+			}
+			Field getField(Field[] fields) {
+				for (Field field1 : fields)
+					if (field1.getName().equals(field) && field1.getType() == type)
+						return field1;
+				return null;
+			}
+		}.getField();
 	}
 
 	public static void setOnlineStatus(OnlineStatus status) {
@@ -1398,9 +1457,18 @@ public class Main {
 	}
 
 	public static void sleep(long millis) {
-		long stop = System.currentTimeMillis() + millis;
-		while (System.currentTimeMillis() < stop) { }
-		return;
+		sleep(millis, TimeUnit.MILLISECONDS);
+	}
+
+	public static void sleep(long units, TimeUnit unit) {
+		long start = System.currentTimeMillis();
+		try {
+			unit.sleep(units);
+		} catch (InterruptedException e) {
+			// TimeUnit.sleep requires way less CPU, but this is only if the Thread was interrupted.
+			long stop = System.currentTimeMillis() - (start + unit.toMillis(units) - System.currentTimeMillis());
+			while (System.currentTimeMillis() < stop);
+		}
 	}
 
 	public static String colorToHex(Color color) {
@@ -1673,6 +1741,67 @@ public class Main {
 		while (string.startsWith(" ")) string = string.substring(1, string.length());
 		while (string.endsWith(" ")) string = string.substring(0, string.length()-1);
 		return string;
+	}
+
+	/**
+	 * HtmlUnit can be used to bypass APIs you have to pay for by for example just using their website, e.g. cleverbot has a paid API, but using HtmlUnit you can use their main website to still use cleverbot without paying for it.
+	 */
+	public static WebClient newSilentWebClient() {
+		WebClient client = new WebClient(BrowserVersion.BEST_SUPPORTED);
+		LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
+		Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(Level.OFF);
+		Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
+		client.setCssErrorHandler(new ErrorHandler() {
+			@Override public void error(CSSParseException arg0) throws CSSException {}
+			@Override public void fatalError(CSSParseException arg0) throws CSSException {}
+			@Override public void warning(CSSParseException arg0) throws CSSException {}
+		});
+		client.setJavaScriptErrorListener(new JavaScriptErrorListener() {
+			@Override public void scriptException(HtmlPage page, ScriptException scriptException) {}
+			@Override public void timeoutError(HtmlPage page, long allowedTime, long executionTime) {}
+			@Override public void malformedScriptURL(HtmlPage page, String url, MalformedURLException malformedURLException) {}
+			@Override public void loadScriptError(HtmlPage page, URL scriptUrl, Exception exception) {}
+		});
+		client.setIncorrectnessListener(new IncorrectnessListener() {
+			@Override public void notify(String message, Object origin) {}
+		});
+		client.setHTMLParserListener(new HTMLParserListener() {
+			@Override public void error(String message, URL url, String html, int line, int column, String key) {}
+			@Override public void warning(String message, URL url, String html, int line, int column, String key) {}
+		});
+		client.getOptions().setCssEnabled(false);
+		client.getOptions().setThrowExceptionOnScriptError(false);
+		client.getOptions().setThrowExceptionOnFailingStatusCode(false);
+		client.getOptions().setThrowExceptionOnScriptError(false);
+		return client;
+	}
+
+	public static void toLowerCase(List<String> strings) {
+		for (String string : new ArrayList<>(strings)) {
+			strings.remove(string);
+			strings.add(string.toLowerCase());
+		}
+	}
+
+	public static int getOpposite(int max, int current) {
+		if (current > max) throw new IllegalArgumentException("Argument 'current' cannot be greater than 'max'.");
+		if (max == current) return 0;
+		return reverse(range(max))[current] + 1;
+	}
+
+	public static <T> T[] reverse(T[] array) {
+		ArrayUtils.reverse(array);
+		return array;
+	}
+
+	public static <T> List<T> removeNulls(List<T> list) {
+		list = new ArrayList(list);
+		while (new ArrayList(list).contains(null)) list.remove(null);
+		return list;
+	}
+
+	public static boolean isShuttingDown() {
+		return shutdown;
 	}
 
 	private static final class SystemOutPrintStream extends PrintStream {

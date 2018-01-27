@@ -122,12 +122,16 @@ public class Downloader {
 		}
 	}
 
-	public static String formatFileSize(float bytes) {
+	public static String formatFileSize(double bytes) {
 		String output = "0 bytes";
 		if (bytes/1024F/1024F/1024F >= 1F) output = bytes/1024F/1024F/1024F + " gigabytes";
 		else if (bytes/1024F/1024F >= 1F) output = bytes/1024F/1024F + " megabytes";
 		else output = bytes/1024L + " kilobytes";
 		return output;
+	}
+
+	public static double formatFileSizeDoubleMb(double bytes) {
+		return bytes/1024F/1024F;
 	}
 
 	public static String lowerQuality(String quality) {

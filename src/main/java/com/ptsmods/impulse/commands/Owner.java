@@ -16,6 +16,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.ptsmods.impulse.Main;
 import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.Command;
@@ -84,8 +86,8 @@ public class Owner {
 			Main.sendPrivateMessage(Main.getOwner(), String.format("**%s** (%s) has sent you a message from **%s** (%s):\n\n",
 					Main.str(event.getAuthor()),
 					event.getAuthor().getId(),
-					event.getGuild().getName(),
-					event.getGuild().getId()) + event.getArgs());
+					event.getGuild() == null ? "direct messages" : event.getGuild().getName(),
+							event.getGuild() == null ? "null" : event.getGuild().getId()) + event.getArgs());
 			event.reply("Successfully sent your message to my owner!");
 		} else Main.sendCommandHelp(event);
 	}
@@ -308,6 +310,21 @@ public class Owner {
 	@Command(category = "Owner", help = "Tells you the current version of this bot.", name = "version")
 	public static void version(CommandEvent event) {
 		event.reply("This bot is running Impulse **%s**, JDA **%s**, and Java **%s**.", Main.version, JDAInfo.VERSION, System.getProperty("java.version"));
+	}
+
+	@Command(category = "Owner", help = "Checks if this version of Impulse is up-to-date.", name = "checkforupdate", ownerCommand = true)
+	public static void checkForUpdate(CommandEvent event) throws CommandException {
+		Map data;
+		try {
+			data = (Map) new Gson().fromJson(Main.getHTML("https://api.github.com/repos/PlanetTeamSpeakk/Impulse/releases"), List.class).get(0);
+		} catch (JsonSyntaxException | IOException e) {
+			throw new CommandException("An unknown error occurred while retreiving the latest releases.", e);
+		}
+		String version = data.get("tag_name").toString();
+		int major = Integer.parseInt(version.split("\\.")[0]);
+		int minor = Integer.parseInt(version.split("\\.")[1]);
+		int revision = Integer.parseInt(version.split("\\.")[2].split("-")[0]);
+		event.reply(major > Main.major || minor > Main.minor || revision > Main.revision ? String.format("This version of Impulse, **%s**, is outdated. The newest version is **%s**, you can download it here: %s.", Main.version, version, data.get("zipball_url")) : String.format("This version of Impulse, **%s**, is up-to-date.", Main.version));
 	}
 
 }

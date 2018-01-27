@@ -1,5 +1,6 @@
 package com.ptsmods.impulse.commands;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -7,11 +8,16 @@ import java.util.Map;
 
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
+import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.Main;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
+import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.DataIO;
+import com.ptsmods.impulse.utils.MailServer;
+import com.ptsmods.impulse.utils.Random;
 
+import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
@@ -81,6 +87,43 @@ public class Miscellaneous {
 				event.reply("Successfully added the custom command.");
 			}
 		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Miscellaneous", help = "Manage your email account", name = "email", dmOnly = true)
+	public static void email(CommandEvent event) {
+		Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Creates an email account.", name = "create", parent = "com.ptsmods.impulse.commands.Miscellaneous.email", dmOnly = true)
+	public static void emailCreate(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			if (MailServer.isEnabled()) {
+				boolean success;
+				try {
+					success = MailServer.createMailAddress(event.getAuthor().getId(), event.getArgs());
+				} catch (IOException e) {
+					throw new CommandException("An unknown error occurred while creating the email address.", e);
+				}
+				if (success) event.reply("Successfully made an email account, login info:\n\tEmail address: %s@%s\n\tPassword: %s\n\nTo see how to log in on any email client type %semail options", event.getAuthor().getId(), Config.get("mailBaseUrl"), event.getArgs(), Main.getPrefix(event.getGuild()));
+				else event.reply("An email address could not be created.");
+			} else event.reply("This feature has not been enabled by the owner of this bot.");
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Tells you the options to log in on any email client.", name = "options", parent = "com.ptsmods.impulse.commands.Miscellaneous.email")
+	public static void emailOptions(CommandEvent event) {
+		if (MailServer.isEnabled())
+			event.reply(new EmbedBuilder()
+					.setColor(new Color(Random.randInt(256*256*256)))
+					.addField("Type", Boolean.parseBoolean(Config.get("miabIMAP")) ? "IMAP" : "POP", true)
+					.addField("Server", Config.get("miabServer"), true)
+					.addField("Incoming port", Config.get("miabIncomingPort"), true)
+					.addField("Outgoing port", Config.get("miabOutgoingPort"), true)
+					.addField("Incoming security", Config.get("miabIncomingSecurity"), true)
+					.addField("Outgoing security", Config.get("miabOutgoingSecurity"), true)
+					.addField("SMTP always verify", Config.get("miabSmtpAlwaysVerify"), true)
+					.build());
+		else event.reply("This feature has not been enabled by the owner of this bot.");
 	}
 
 	@SubscribeEvent

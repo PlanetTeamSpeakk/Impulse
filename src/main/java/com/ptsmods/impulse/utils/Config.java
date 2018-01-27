@@ -99,4 +99,26 @@ public class Config {
 		}
 	}
 
+	public static class ConfigException extends RuntimeException {
+
+		private static final long serialVersionUID = 6886096769970779989L;
+
+		public ConfigException() {
+			super();
+		}
+
+		public ConfigException(String message) {
+			super(message);
+		}
+
+		public ConfigException(Throwable cause) {
+			super(cause);
+		}
+
+		public ConfigException(String message, Throwable cause) {
+			super(message, cause);
+		}
+
+	}
+
 }

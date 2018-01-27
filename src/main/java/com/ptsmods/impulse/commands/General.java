@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -68,7 +69,7 @@ public class General {
 	public static void calc(CommandEvent event) {
 		if (event.getArgs().length() != 0)
 			try {
-				event.reply("`%s` = `%s`", event.getArgs(), MathHelper.eval(event.getArgs()));
+				event.reply("`%s` = `%s`", event.getArgs(), new DecimalFormat("#").format(MathHelper.eval(event.getArgs())));
 			} catch (RuntimeException e) {
 				event.reply(e.getMessage());
 			}
