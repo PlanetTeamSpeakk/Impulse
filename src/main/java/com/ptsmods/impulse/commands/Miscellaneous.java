@@ -91,10 +91,11 @@ public class Miscellaneous {
 
 	@Command(category = "Miscellaneous", help = "Manage your email account", name = "email", dmOnly = true)
 	public static void email(CommandEvent event) {
-		Main.sendCommandHelp(event);
+		if (MailServer.isEnabled()) Main.sendCommandHelp(event);
+		else event.reply("This feature has not been enabled by the owner of this bot.");
 	}
 
-	@Subcommand(help = "Creates an email account.", name = "create", parent = "com.ptsmods.impulse.commands.Miscellaneous.email", dmOnly = true)
+	@Subcommand(help = "Creates an email account.", name = "create", parent = "com.ptsmods.impulse.commands.Miscellaneous.email", dmOnly = true, arguments = "<password>")
 	public static void emailCreate(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
 			if (MailServer.isEnabled()) {

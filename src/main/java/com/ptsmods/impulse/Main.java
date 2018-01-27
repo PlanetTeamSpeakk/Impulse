@@ -117,7 +117,7 @@ public class Main {
 
 	public static final int major = 1;
 	public static final int minor = 4;
-	public static final int revision = 0;
+	public static final int revision = 1;
 	public static final String type = "stable";
 	public static final String version = String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object nil = null; // fucking retarded name, imo.
@@ -642,6 +642,7 @@ public class Main {
 							Permission[] permissions = {};
 							Permission[] botPermissions = {};
 							boolean guildOnly = false;
+							boolean dmOnly = false;
 							boolean serverOwnerCommand = false;
 							boolean ownerCommand = false;
 							boolean sendTyping = true;
@@ -652,6 +653,7 @@ public class Main {
 								permissions = annotation.userPermissions();
 								botPermissions = annotation.botPermissions();
 								guildOnly = annotation.guildOnly();
+								dmOnly = annotation.dmOnly();
 								serverOwnerCommand = annotation.serverOwnerCommand();
 								ownerCommand = annotation.ownerCommand();
 								cooldown = annotation.cooldown();
@@ -662,6 +664,7 @@ public class Main {
 								permissions = annotation.userPermissions();
 								botPermissions = annotation.botPermissions();
 								guildOnly = annotation.guildOnly();
+								dmOnly = annotation.dmOnly();
 								serverOwnerCommand = annotation.serverOwnerCommand();
 								ownerCommand = annotation.ownerCommand();
 								cooldown = annotation.cooldown();
@@ -673,6 +676,8 @@ public class Main {
 									errorMsg = "You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".";
 								else if (event.getGuild() == null && guildOnly)
 									errorMsg = "That command cannot be used in direct messages.";
+								else if (event.getGuild() != null && dmOnly)
+									errorMsg = "That command can only be used in DMs.";
 								else if (serverOwnerCommand && event.getGuild() != null && event.getAuthor().getId().equals(event.getGuild().getOwner().getUser().getId()))
 									errorMsg = "That command can only be used by this server's owner.";
 								else if (ownerCommand)
