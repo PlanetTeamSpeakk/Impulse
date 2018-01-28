@@ -160,14 +160,20 @@ public class Downloader {
 
 	public static class DownloadResult {
 
+		private final File file;
 		private final String fileLocation;
 		private final long fileSize;
 		private final boolean success;
 
 		private DownloadResult(String fileLocation, long fileSize, boolean success) {
+			file = new File(fileLocation);
 			this.fileLocation = success ? fileLocation : null;
 			this.fileSize = fileSize;
 			this.success = success;
+		}
+
+		public File getFile() {
+			return file;
 		}
 
 		public String getFileLocation() {

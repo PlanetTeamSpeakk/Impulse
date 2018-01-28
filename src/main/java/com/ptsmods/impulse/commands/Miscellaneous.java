@@ -1,7 +1,10 @@
 package com.ptsmods.impulse.commands;
 
 import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +19,12 @@ import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.MailServer;
 import com.ptsmods.impulse.utils.Random;
+import com.ptsmods.impulse.utils.Url2Png;
 
 import net.dv8tion.jda.core.EmbedBuilder;
+import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class Miscellaneous {
@@ -125,6 +131,33 @@ public class Miscellaneous {
 					.addField("SMTP always verify", Config.get("miabSmtpAlwaysVerify"), true)
 					.build());
 		else event.reply("This feature has not been enabled by the owner of this bot.");
+	}
+
+	@Command(category = "Miscellaneous", help = "Captures a screenshot of a website.", name = "capture", arguments = "<url>", cooldown = 120)
+	public static void capture(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty()) {
+			if (event.getArgs().startsWith("<") && event.getArgs().endsWith(">")) event.setArgs(event.getArgs().substring(1, event.getArgs().length()-1));
+			try {
+				new URL(event.getArgs());
+			} catch (MalformedURLException e) {
+				event.reply("The given URL is not valid, please make sure it starts with either http:// or https://.");
+				return;
+			}
+			long current = System.nanoTime();
+			Message msg = event.getChannel().sendMessageFormat("Capturing a screenshot of <%s>, please wait...", event.getArgs()).complete();
+			try {
+				File capture = Url2Png.capture(event.getArgs());
+				event.getChannel().sendFile(capture, new MessageBuilder().appendFormat("Done capturing <%s>, took **%s milliseconds**.", event.getArgs(), (System.nanoTime()-current) / 1000000D).build()).complete();
+				msg.delete().queue();
+				capture.delete();
+			} catch (IllegalArgumentException e) {
+				msg.editMessage("The captured screenshot was too big to be sent.").queue();
+			} catch (IOException e) {
+				if (e.getMessage() != null && e.getMessage().contains("403")) msg.editMessage("That URL is not allowed.").queue();
+				else if (e.getMessage() != null && e.getMessage().contains("Server returned HTTP response code")) msg.editMessageFormat("The server returned a **%s error**.", e.getMessage().substring(36, 39)).queue();
+				else throw new CommandException("An unknown error occurred while capturing the website.", e);
+			}
+		} else Main.sendCommandHelp(event);
 	}
 
 	@SubscribeEvent

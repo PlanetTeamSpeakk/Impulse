@@ -86,8 +86,8 @@ public class CommandEvent {
 		reply(String.format(message, args));
 	}
 
-	public void reply(File file, String message) {
-		sendFile(event.getChannel(), file, message);
+	public void reply(File file, String message, Object... args) {
+		sendFile(event.getChannel(), file, message, args);
 	}
 
 	public void replyInDM(String message, Object... args) {
@@ -106,8 +106,8 @@ public class CommandEvent {
 		channel.sendMessage(message).queue();
 	}
 
-	public void sendFile(MessageChannel channel, File file, String message) {
-		channel.sendFile(file, new MessageBuilder().append(message).build()).queue();
+	public void sendFile(MessageChannel channel, File file, String message, Object... args) {
+		channel.sendFile(file, new MessageBuilder().append(String.format(message, args)).build()).queue();
 	}
 
 	public boolean isOwner() {

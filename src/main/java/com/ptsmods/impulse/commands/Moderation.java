@@ -68,9 +68,13 @@ public class Moderation {
 	private static Map<String, Role> roles = new HashMap();
 
 	static {
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			saveFiles();
-		}));
+		Runtime.getRuntime().addShutdownHook(new Thread("Moderation file saving shutdown hook") {
+			@Override
+			public void run() {
+				super.run();
+				saveFiles();
+			}
+		});
 		try {
 			settings = DataIO.loadJsonOrDefault("data/mod/settings.json", Map.class, new HashMap());
 		} catch (IOException e) {

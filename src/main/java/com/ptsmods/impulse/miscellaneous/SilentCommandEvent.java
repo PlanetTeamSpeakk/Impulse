@@ -18,7 +18,7 @@ public class SilentCommandEvent extends CommandEvent {
 	}
 
 	@Override
-	public void reply(File file, String message) { }
+	public void reply(File file, String message, Object... args) { }
 
 	@Override
 	public void reply(Message message, Object... args) { }
@@ -34,7 +34,7 @@ public class SilentCommandEvent extends CommandEvent {
 	public void replyInDM(String message, Object... args) { }
 
 	@Override
-	public void sendFile(MessageChannel channel, File file, String message) { }
+	public void sendFile(MessageChannel channel, File file, String message, Object... args) { }
 
 	@Override
 	public void sendMessage(MessageChannel channel, Message message) { }

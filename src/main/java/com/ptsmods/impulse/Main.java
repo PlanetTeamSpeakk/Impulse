@@ -116,8 +116,8 @@ import sun.reflect.Reflection;
 public class Main {
 
 	public static final int major = 1;
-	public static final int minor = 4;
-	public static final int revision = 1;
+	public static final int minor = 5;
+	public static final int revision = 0;
 	public static final String type = "stable";
 	public static final String version = String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object nil = null; // fucking retarded name, imo.
@@ -177,7 +177,7 @@ public class Main {
 		}
 	}
 
-	private static void main0(String[] args) {
+	private static void main0(String[] args) throws Throwable {
 		if (!headless)
 			try {
 				MainGUI.initialize();
@@ -194,7 +194,7 @@ public class Main {
 			System.setSecurityManager(new ImpulseSM());
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				if (devMode()) print(LogType.DEBUG, "Bot shutting down, deleting all temporary files.");
-				else print(LogType.DEBUG, "Shutting down...");
+				else print(LogType.INFO, "Shutting down...");
 				int counter = 0;
 				if (new File("data/tmp").exists() && new File("data/tmp").isDirectory())
 					for (File file : new File("data/tmp").listFiles())
@@ -415,10 +415,11 @@ public class Main {
 					Field field = getField(Class.forName("java.lang.ApplicationShutdownHooks"), "hooks", IdentityHashMap.class);
 					field.setAccessible(true);
 					IdentityHashMap<Thread, Thread> map = (IdentityHashMap) field.get(null);
-					print(LogType.DEBUG, map.size());
 					for (Thread thread : map.keySet()) {
 						thread.start();
-						thread.join();
+						try {
+							thread.join();
+						} catch (InterruptedException ignored) {}
 					}
 					field.set(null, new IdentityHashMap());
 				} catch (Exception e) {
@@ -443,8 +444,8 @@ public class Main {
 		return array;
 	}
 
-	public static void createDirectoryIfNotExisting(String file) {
-		if (!new File(file).isDirectory()) new File(file).mkdirs();
+	public static void createDirectoryIfNotExisting(String dir) {
+		if (!new File(dir).isDirectory()) new File(dir).mkdirs();
 	}
 
 	public static void createFileIfNotExisting(String file) throws IOException {
@@ -479,6 +480,7 @@ public class Main {
 	}
 
 	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event, Method cmd, String extraMsg) {
+		deleteCooldown(event.getAuthor(), cmd);
 		if (cmd.isAnnotationPresent(Command.class)) {
 			Command command = cmd.getAnnotation(Command.class);
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
@@ -717,13 +719,14 @@ public class Main {
 								} catch (Throwable e) {}
 								command.setAccessible(true);
 								try {
-									command.invoke(obj, cevent);
-									if (!Main.getOwner().getId().equals(event.getAuthor().getId())) {
+									if (!getOwner().getId().equals(event.getAuthor().getId())) {
 										Map userCooldowns = cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap());
 										userCooldowns.put(command.toString(), System.currentTimeMillis());
 										cooldowns.put(event.getAuthor().getId(), userCooldowns);
 									}
+									command.invoke(obj, cevent);
 								} catch (InvocationTargetException e) {
+									deleteCooldown(event.getAuthor(), command);
 									sendStackTrace(e.getCause(), event);
 								}
 							}
@@ -745,6 +748,14 @@ public class Main {
 		if (!Main.devMode())
 			Main.sendPrivateMessage(Main.getOwner(), String.format("A `%s` exception was thrown at line %s in %s while parsing the message `%s`. Stacktrace:\n```java\n%s```",
 					e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), event.getMessage().getContent(), Main.generateStackTrace(e)));
+	}
+
+	public static void deleteCooldown(User user, Method command) {
+		Map userCooldowns = cooldowns.getOrDefault(user.getId(), new HashMap());
+		if (userCooldowns.containsKey(command.toString())) {
+			userCooldowns.remove(command.toString());
+			cooldowns.put(user.getId(), userCooldowns);
+		}
 	}
 
 	public static void runAsynchronously(Runnable runnable) {

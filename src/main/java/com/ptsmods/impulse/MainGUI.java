@@ -318,7 +318,7 @@ public class MainGUI {
 	}
 
 	public static void logLine(String line) {
-		LTA.setText(LTA.getText() + line + System.lineSeparator());
+		if (!Main.isShuttingDown()) LTA.setText(LTA.getText() + line + System.lineSeparator());
 	}
 
 	private static final void calculate(JTextField sum) {
