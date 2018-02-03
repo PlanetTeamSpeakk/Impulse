@@ -72,7 +72,7 @@ public class Fun {
 			604800,
 			181440000
 	});
-	private static final Map<String, Map<String, Object>> plants = Main.newHashMap(new String[] {
+	public static final Map<String, Map<String, Object>> plants = Main.newHashMap(new String[] {
 			/* === VEGETABLES === */
 			"carrots",
 			"potatoes",
@@ -92,6 +92,7 @@ public class Fun {
 			"garlic",
 			"celery",
 			"kale",
+			"sprout",
 			"bell pepper",
 			"asparagus",
 			"turnip",

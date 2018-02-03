@@ -47,6 +47,7 @@ import javax.sound.sampled.Clip;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.w3c.css.sac.CSSException;
@@ -117,7 +118,7 @@ public class Main {
 
 	public static final int major = 1;
 	public static final int minor = 5;
-	public static final int revision = 0;
+	public static final int revision = 1;
 	public static final String type = "stable";
 	public static final String version = String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object nil = null; // fucking retarded name, imo.
@@ -150,6 +151,7 @@ public class Main {
 	private static Map<String, Map<String, Long>> cooldowns = new HashMap();
 	private static List<String> categories = new ArrayList();
 	private static boolean shutdown = false;
+	private static Map<Method, Integer> usages = new HashMap();
 
 	static {
 		try {
@@ -260,6 +262,10 @@ public class Main {
 				if (shardAmount < 1) shardAmount = 1;
 				print(LogType.INFO, "Loading commands...");
 				for (Class clazz : new Reflections("com.ptsmods.impulse.commands", new SubTypesScanner(false)).getSubTypesOf(Object.class)) {
+					runAsynchronously(() -> {
+						// initializing class asynchronously.
+						try {Class.forName(clazz.getName());} catch (Exception ignored) {}
+					});
 					EventListenerManager.registerListenersFromClass(clazz);
 					for (Method method : getMethods(clazz))
 						if (method.isAnnotationPresent(Command.class)) {
@@ -725,6 +731,7 @@ public class Main {
 										cooldowns.put(event.getAuthor().getId(), userCooldowns);
 									}
 									command.invoke(obj, cevent);
+									usages.put(command, usages.getOrDefault(command, 0) + 1);
 								} catch (InvocationTargetException e) {
 									deleteCooldown(event.getAuthor(), command);
 									sendStackTrace(e.getCause(), event);
@@ -745,9 +752,14 @@ public class Main {
 			if (element.getFileName() != null && element.getClassName().startsWith("com.ptsmods.impulse.commands")) stElement = element;
 		event.getChannel().sendMessageFormat("A `%s` exception was thrown at line %s in %s while parsing the command%s.%s",
 				e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), e.getMessage() != null ? String.format(": `%s`", e.getMessage()) : "", Main.devMode() ? "" : String.format("\nMy owner, %s, has been informed.", Main.getOwner().getAsMention())).queue();
-		if (!Main.devMode())
-			Main.sendPrivateMessage(Main.getOwner(), String.format("A `%s` exception was thrown at line %s in %s while parsing the message `%s`. Stacktrace:\n```java\n%s```",
-					e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), event.getMessage().getContent(), Main.generateStackTrace(e)));
+		if (!Main.devMode()) {
+			String output = String.format("A `%s` exception was thrown at line %s in %s while parsing the message `%s`. Stacktrace:\n```java\n%s```",
+					e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), event.getMessage().getContent(), Main.generateStackTrace(e));
+			while (output.length() > 1997) {
+				Main.sendPrivateMessage(owner, output.substring(0, 1997) + "```");
+				output = output.substring(1997);
+			}
+		}
 	}
 
 	public static void deleteCooldown(User user, Method command) {
@@ -1818,6 +1830,43 @@ public class Main {
 
 	public static boolean isShuttingDown() {
 		return shutdown;
+	}
+
+	public static JSONObject commandsToJson() {
+		long totalUsages = 0;
+		JSONObject commands = new JSONObject();
+		for (Method command : getCommands()) {
+			Command cann = command.getAnnotation(Command.class);
+			List<String> botPerms = new ArrayList();
+			for (Permission perm : cann.botPermissions())
+				botPerms.add(perm.getName());
+			List<String> userPerms = new ArrayList();
+			for (Permission perm : cann.userPermissions())
+				userPerms.add(perm.getName());
+			Map<String, Object> map = new HashMap();
+			map.put("help", cann.help());
+			map.put("category", cann.category());
+			map.put("guildOnly", cann.guildOnly());
+			map.put("dmOnly", cann.dmOnly());
+			map.put("hidden", cann.hidden());
+			map.put("sendTyping", cann.sendTyping());
+			map.put("arguments", cann.arguments());
+			map.put("botPermissions", botPerms);
+			map.put("userPermissions", userPerms);
+			map.put("cooldown", cann.cooldown());
+			map.put("serverOwnerCommand", cann.serverOwnerCommand());
+			map.put("ownerCommand", cann.ownerCommand());
+			map.put("requiredRole", cann.requiredRole());
+			map.put("obeyDashboard", cann.obeyDashboard());
+			map.put("usages", usages.getOrDefault(command, 0));
+			commands.put(cann.name(), new JSONObject(map));
+			totalUsages += (int) map.get("usages");
+		}
+		JSONObject object = new JSONObject();
+		object.put("count", getCommands().size());
+		object.put("totalUsages", totalUsages);
+		object.put("commands", commands);
+		return object;
 	}
 
 	private static final class SystemOutPrintStream extends PrintStream {

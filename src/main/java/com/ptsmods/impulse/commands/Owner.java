@@ -57,12 +57,13 @@ public class Owner {
 					"Packages.com.ptsmods.impulse.commands," +
 					"Packages.com.ptsmods.impulse.miscellaneous," +
 					"Packages.com.ptsmods.impulse.utils," +
-					"Packages.com.jagrosh.jdautilities);" +
-					"var Main = com.ptsmods.impulse.Main;");
+					"Packages.com.google.gson);" +
+					"var Main = com.ptsmods.impulse.Main;" +
+					"var LogType = Main.LogType;");
 		} catch (ScriptException e) {
 			throw new RuntimeException("An error occurred while setting up the imports for the evaluator.", e);
 		}
-		Main.addCommandHook((event) -> {
+		Main.addCommandHook(event -> {
 			if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && Main.devMode())
 				throw new CommandPermissionException("Developer mode is enabled which means only my owner can use commands.");
 		});
@@ -322,7 +323,7 @@ public class Owner {
 		}
 		String version = data.get("tag_name").toString();
 		int major = Integer.parseInt(version.split("\\.")[0]);
-		int minor = Integer.parseInt(version.split("\\.")[1]);
+		int minor = Integer.parseInt(version.split("\\.")[1].split("-")[0]);
 		int revision = Integer.parseInt(version.split("\\.")[2].split("-")[0]);
 		event.reply(major > Main.major || minor > Main.minor || revision > Main.revision ? String.format("This version of Impulse, **%s**, is outdated. The newest version is **%s**, you can download it here: %s.", Main.version, version, data.get("zipball_url")) : String.format("This version of Impulse, **%s**, is up-to-date.", Main.version));
 	}

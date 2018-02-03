@@ -17,6 +17,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.commands.Economy;
 import com.ptsmods.impulse.commands.Marriage;
@@ -25,6 +27,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
@@ -62,6 +65,18 @@ public class Dashboard {
 			@Override
 			public void handle0(HttpExchange he) throws IOException {
 				writeString(he, "Hello, and welcome to the Impulse API. Here you can get data from servers the bot is in, but only if you have a key.");
+			}
+		});
+		server.createContext("/getVersion", new DefaultHttpHandler() {
+			@Override
+			public void handle0(HttpExchange he) throws IOException {
+				writeString(he, "{\"Impulse\": \"%s\", \"JDA\": \"%s\", \"Java\": \"%s\"}", Main.version, JDAInfo.VERSION, System.getProperty("java.version"));
+			}
+		});
+		server.createContext("/getCommands", new DefaultHttpHandler() {
+			@Override
+			public void handle0(HttpExchange he) throws IOException {
+				writeString(he, Main.commandsToJson().toString());
 			}
 		});
 		server.createContext("/isValidKey", new DefaultHttpHandler() {
@@ -195,7 +210,16 @@ public class Dashboard {
 	public static void writeString(HttpExchange he, String string, Object... args) throws IOException {
 		if (args != null && args.length != 0)
 			string = String.format(string, args);
-		he.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+		boolean isJson = true;
+		Class type = null;
+		// checking if the string which has to be written is JSON.
+		try {new Gson().fromJson(string, Map.class); type = Map.class;} catch (JsonSyntaxException e) {try {new Gson().fromJson(string, List.class); type = List.class;} catch (JsonSyntaxException e1) {isJson = false;}}
+		if (isJson) {
+			he.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			string = gson.toJson(gson.fromJson(string, type)); // pretty printing
+		} else
+			he.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
 		he.sendResponseHeaders(200, string.getBytes("UTF-8").length);
 		BufferedOutputStream os = new BufferedOutputStream(he.getResponseBody());
 		os.write(string.getBytes("UTF-8"));
@@ -275,7 +299,7 @@ public class Dashboard {
 	}
 
 	/**
-	 * Supports JavaScript CORS requests by default and logs any traffic gotten.
+	 * Supports JavaScript CORS requests by default, logs any traffic gotten and pretty prints JSON.
 	 * @author PlanetTeamSpeak
 	 */
 	public static abstract class DefaultHttpHandler implements HttpHandler {
@@ -285,8 +309,6 @@ public class Dashboard {
 			he.getResponseHeaders().add("Access-Control-Allow-Origin", "*"); // support for JavaScript CORS requests, if you'd remove or comment out this line the entire dashboard wouldn't work anymore.
 			try (PrintWriter writer = new PrintWriter(new FileWriter("webserver.log", true))) {
 				writer.println(String.format("[%s %s] [INFO] Request gotten on %s from %s.", Main.getFormattedDate(), Main.getFormattedTime(), he.getRequestURI().getPath(), he.getRemoteAddress().getHostName().equals("0:0:0:0:0:0:0:1") ? "127.0.0.1" : he.getRemoteAddress().getHostName()));
-			}
-			try {
 				handle0(he);
 			} catch (Throwable t) {
 				t.printStackTrace();

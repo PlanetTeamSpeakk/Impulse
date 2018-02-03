@@ -71,7 +71,7 @@ public class Moderation {
 		Runtime.getRuntime().addShutdownHook(new Thread("Moderation file saving shutdown hook") {
 			@Override
 			public void run() {
-				super.run();
+				Main.print(LogType.DEBUG, "Shutting down, saving moderation files...");
 				saveFiles();
 			}
 		});
@@ -217,7 +217,10 @@ public class Moderation {
 		if (settings.containsKey(guild.getId())) {
 			if (actionType.toLowerCase().equals("mute"))
 				((List) ((Map) settings.get(guild.getId())).get("mutes")).add(user.getId());
-			TextChannel channel = guild.getTextChannelById((String) ((Map) settings.get(guild.getId())).get("channel"));
+			TextChannel channel = null;
+			try {
+				channel = guild.getTextChannelById((String) ((Map) settings.get(guild.getId())).get("channel"));
+			} catch (Exception ignored) {}
 			int caseNum = Main.getIntFromPossibleDouble(((Map) ((Map) settings.get(guild.getId())).get("cases")).size()) + 1;
 			if (channel != null) {
 				String messageId = channel.sendMessageFormat("**Case #%s** | %s :%s:\n"
@@ -345,12 +348,12 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Manage the filters.", name = "filter")
+	@Command(category = "Moderation", help = "Manage the filters.", name = "filter", guildOnly = true)
 	public static void filter(CommandEvent event) {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Add a filter to the list of filters.", name = "add", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = {Permission.MESSAGE_MANAGE})
+	@Subcommand(help = "Add a filter to the list of filters.", name = "add", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true)
 	public static void filterAdd(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			if (!filters.containsKey(event.getGuild().getId())) filters.put(event.getGuild().getId(), Main.newHashMap(new String[] {"filtered", "message", "disabled"}, new Object[] {new ArrayList(), "{USER} you're not allowed to say that!", false}));
@@ -364,7 +367,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Remove a filter from the list of filters.", name = "remove", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = {Permission.MESSAGE_MANAGE})
+	@Subcommand(help = "Remove a filter from the list of filters.", name = "remove", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true)
 	public static void filterRemove(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			if (!filters.containsKey(event.getGuild().getId())) event.reply("Nothing is being filtered in this server.");
@@ -381,7 +384,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Lists all filters in this server.", name = "list", parent = "com.ptsmods.impulse.commands.Moderation.filter")
+	@Subcommand(help = "Lists all filters in this server.", name = "list", parent = "com.ptsmods.impulse.commands.Moderation.filter", guildOnly = true)
 	public static void filterList(CommandEvent event) {
 		if (filters.containsKey(event.getGuild().getId()) && !((List) ((Map) filters.get(event.getGuild().getId())).get("filtered")).isEmpty())
 			event.reply("Currently the following messages are being filtered in this server: `" + Main.joinCustomChar("`, `", (List) ((Map) filters.get(event.getGuild().getId())).get("filtered")) + "`.");
@@ -982,7 +985,8 @@ public class Moderation {
 
 	@SubscribeEvent
 	public static void onMessageDelete(MessageDeleteEvent event) {
-		log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : Main.getUserById(loggedMessages.get(event.getMessageId()).get("author").toString()), event.getTextChannel().getName(), !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : loggedMessages.get(event.getMessageId()).get("content").toString());
+		if (loggedMessages.containsKey(event.getMessageId()) && !Main.getSelfUser().getId().equals(loggedMessages.get(event.getMessageId()).get("author")))
+			log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : Main.getUserById(loggedMessages.get(event.getMessageId()).get("author").toString()), event.getTextChannel().getName(), !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : loggedMessages.get(event.getMessageId()).get("content").toString());
 	}
 
 	@SubscribeEvent
@@ -1107,7 +1111,7 @@ public class Moderation {
 				return;
 			}
 		}
-		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
+		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && event.getMember() != null && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
 			try {
 				event.getMessage().delete().complete();
 			} catch (Throwable e) {
