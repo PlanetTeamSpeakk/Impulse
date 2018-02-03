@@ -986,7 +986,7 @@ public class Moderation {
 	@SubscribeEvent
 	public static void onMessageDelete(MessageDeleteEvent event) {
 		if (loggedMessages.containsKey(event.getMessageId()) && !Main.getSelfUser().getId().equals(loggedMessages.get(event.getMessageId()).get("author")))
-			log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : Main.getUserById(loggedMessages.get(event.getMessageId()).get("author").toString()), event.getTextChannel().getName(), !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : loggedMessages.get(event.getMessageId()).get("content").toString());
+			log(event.getGuild(), "wastebasket", "Message Delete", "Member: %s\nChannel: %s\nMessage: %s", !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : Main.str(Main.getUserById(loggedMessages.get(event.getMessageId()).get("author").toString())), event.getTextChannel().getName(), !loggedMessages.containsKey(event.getMessageId()) ? "Unknown" : loggedMessages.get(event.getMessageId()).get("content").toString());
 	}
 
 	@SubscribeEvent
