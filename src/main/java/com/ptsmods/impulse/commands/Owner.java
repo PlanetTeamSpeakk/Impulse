@@ -57,7 +57,8 @@ public class Owner {
 					"Packages.com.ptsmods.impulse.commands," +
 					"Packages.com.ptsmods.impulse.miscellaneous," +
 					"Packages.com.ptsmods.impulse.utils," +
-					"Packages.com.google.gson);" +
+					"Packages.com.google.gson," +
+					"Packages.java.nio);" +
 					"var Main = com.ptsmods.impulse.Main;" +
 					"var LogType = Main.LogType;");
 		} catch (ScriptException e) {

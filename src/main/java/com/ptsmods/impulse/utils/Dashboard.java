@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.regex.Pattern;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -35,6 +36,10 @@ import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 
+/**
+ *
+ * @author PlanetTeamSpeak
+ */
 public class Dashboard {
 
 	public static final int port = 61192;
@@ -211,15 +216,18 @@ public class Dashboard {
 		if (args != null && args.length != 0)
 			string = String.format(string, args);
 		boolean isJson = true;
+		boolean isHtml = Pattern.compile(".*\\<[^>]+>.*", Pattern.DOTALL).matcher(string).matches();
 		Class type = null;
 		// checking if the string which has to be written is JSON.
 		try {new Gson().fromJson(string, Map.class); type = Map.class;} catch (JsonSyntaxException e) {try {new Gson().fromJson(string, List.class); type = List.class;} catch (JsonSyntaxException e1) {isJson = false;}}
+		// checking if the string which has to be written is HTML.
 		if (isJson) {
 			he.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
 			Gson gson = new GsonBuilder().setPrettyPrinting().create();
 			string = gson.toJson(gson.fromJson(string, type)); // pretty printing
-		} else
-			he.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+		} else if (isHtml)
+			he.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+		else he.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
 		he.sendResponseHeaders(200, string.getBytes("UTF-8").length);
 		BufferedOutputStream os = new BufferedOutputStream(he.getResponseBody());
 		os.write(string.getBytes("UTF-8"));
@@ -299,7 +307,7 @@ public class Dashboard {
 	}
 
 	/**
-	 * Supports JavaScript CORS requests by default, logs any traffic gotten and pretty prints JSON.
+	 * Supports JavaScript CORS requests by default, logs any traffic gotten, pretty prints JSON, and sends any errors to the owner.
 	 * @author PlanetTeamSpeak
 	 */
 	public static abstract class DefaultHttpHandler implements HttpHandler {

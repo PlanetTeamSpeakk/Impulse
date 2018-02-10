@@ -44,6 +44,7 @@ import com.ptsmods.impulse.commands.Main;
 import com.ptsmods.impulse.miscellaneous.JGraphPanel;
 import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.MathHelper;
+import com.ptsmods.impulse.utils.UsageMonitorer;
 
 public class MainGUI {
 
@@ -260,18 +261,31 @@ public class MainGUI {
 				desc3.setBounds(2, 156, (int) desc3.getFont().getStringBounds(desc3.getText(), frc).getWidth(), 20);
 				calculator.add(desc3);
 				tabbedPane.addTab("Calculator", null, calculator, "Just a helpful little calculator.");
+				JTabbedPane usage = new JTabbedPane(JTabbedPane.TOP);
+				usage.setBounds(0, -10, tabbedPane.getWidth(), tabbedPane.getHeight());
 				JGraphPanel ram = new JGraphPanel(new ArrayList(), "RAM usage in MB", "Seconds ago", true);
 				Main.runAsynchronously(() -> {
 					List<Double> scores = Lists.newArrayList(new Double[60]);
-					while (true) {
-						if (Main.isShuttingDown()) break;
-						scores.add(Main.formatFileSizeDoubleMb(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()));
+					while (!Main.isShuttingDown()) {
+						scores.add(Main.formatFileSizeDoubleMb(UsageMonitorer.getRamUsage()));
 						if (scores.size() > 60) scores.remove(0);
 						ram.setScores(scores);
 						Main.sleep(1, TimeUnit.SECONDS);
 					}
 				});
-				tabbedPane.addTab("RAM usage", null, ram, "Shows you the RAM usage of the last 60 seconds.");
+				usage.addTab("RAM", null, ram, "Shows you the RAM usage of the last 60 seconds.");
+				JGraphPanel cpu = new JGraphPanel(new ArrayList(), "CPU usage in %", "Seconds ago", true);
+				Main.runAsynchronously(() -> {
+					List<Double> scores = Lists.newArrayList(new Double[60]);
+					while (!Main.isShuttingDown()) {
+						scores.add(UsageMonitorer.getSystemCpuLoad().doubleValue());
+						if (scores.size() > 60) scores.remove(0);
+						cpu.setScores(scores);
+						Main.sleep(1, TimeUnit.SECONDS);
+					}
+				});
+				usage.addTab("CPU", null, cpu, "Shows you the CPU usage of the last 60 seconds.");
+				tabbedPane.addTab("Usage", null, usage, "Shows you the usage of various things of the last 60 seconds.");
 				JPanel shutdown = new JPanel();
 				shutdown.setLayout(null);
 				JButton shutdownBtn = new JButton("Shutdown");

@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.ajbrown.namemachine.Gender;
+import org.ajbrown.namemachine.Name;
+import org.ajbrown.namemachine.NameGenerator;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.ptsmods.impulse.Main.TimeType;
@@ -47,9 +51,6 @@ public class General {
 			"As I see it, yes", "Most likely", "Outlook good", "Yes", "Signs point to yes",					  						  // positive
 			"Reply hazy try again", "Ask again later", "Better not tell you now", "Cannot predict now", "Concentrate and ask again",  // neutral
 			"Don't count on it", "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful"};					  // negative
-	private static final Character[] consonants = {'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'};
-	private static final Character[] vowels = {'a', 'e', 'i', 'o', 'u'};
-
 	static {
 		Main.apiKeys.put("steam", "4097EECAE0C75569D595A25BEB4BCB3C");
 		Main.apiKeys.put("wargaming", "a223cd2a48a13e5b2e484f4a9ec80d33");
@@ -675,26 +676,12 @@ public class General {
 		else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "General", help = "Generates a name of the given length which must be greater than 3, but less than 10, defaults to a random number between 3 and 10.", name = "genname", arguments = "[length]")
+	@Command(category = "General", help = "Generates a name for the given gender.\nGender can either be male, female, or random.\nType can either be first, last, or both.", name = "genname", arguments = "[gender] [type]")
 	public static void genName(CommandEvent event) {
-		int length = !event.argsEmpty() && Main.isInteger(event.getArgs()) && Integer.parseInt(event.getArgs()) >= 3 && Integer.parseInt(event.getArgs()) <= 10 ? Integer.parseInt(event.getArgs()) : Random.randInt(3, 10);
-		String name = "";
-		int vowelsPassed = 0; // max of 2 vowels in a row.
-		int consonantsPassed = 0; // max of 2 consonants in a row.
-		for (int i : Main.range(length)) {
-			boolean useVowel = Random.choice(true, false) && vowelsPassed != 2 || consonantsPassed == 2;
-			if (useVowel) {
-				name += Random.choice(vowels);
-				vowelsPassed += 1;
-				consonantsPassed = 0;
-			} else {
-				name += Random.choice(consonants);
-				consonantsPassed += 1;
-				vowelsPassed = 0;
-			}
-		}
-		while (name.endsWith("v")) name = name.substring(0, name.length()-1); // no Russian names allowed here.
-		event.reply(Main.encase(name));
+		int type = event.argsEmpty() || event.getArgs().split(" ").length < 2 || event.getArgs().split(" ")[1].equalsIgnoreCase("both") ? 0 : event.getArgs().split(" ")[1].equalsIgnoreCase("last") ? 2 : 1;
+		Gender gender = event.argsEmpty() || event.getArgs().split(" ")[0].equalsIgnoreCase("random") ? Random.choice(Gender.values()) : event.getArgs().split(" ")[0].equalsIgnoreCase("female") ? Gender.FEMALE : Gender.MALE;
+		Name name = new NameGenerator().generateName(gender);
+		event.reply("Gender: **%s**\nName: **%s**", name.getGender().name(), type == 0 ? name.toString() : type == 1 ? name.getFirstName() : name.getLastName());
 	}
 
 	@Command(category = "General", help = "Tells you the time in the given location.", name = "time", arguments = "<location>", cooldown = 30)

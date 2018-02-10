@@ -100,11 +100,11 @@ public class Moderation {
 				if (event.getCommand().isAnnotationPresent(Command.class)) {
 					Command command = event.getCommand().getAnnotation(Command.class);
 					if (!Dashboard.getEnabledModules(event.getGuild()).contains(command.category().toLowerCase()) && command.obeyDashboard())
-						throw new CommandPermissionException("That command can not be used as its category, %s, isn't enabled.", command.category());
+						throw new CommandPermissionException("That command cannot be used as its category, %s, isn't enabled.", command.category());
 				} else if (event.getCommand().isAnnotationPresent(Subcommand.class)) {
 					Subcommand command = event.getCommand().getAnnotation(Subcommand.class);
 					if (!Dashboard.getEnabledModules(event.getGuild()).contains(Main.getAbsoluteParentCommand(command).getAnnotation(Command.class).category().toLowerCase()) && command.obeyDashboard())
-						throw new CommandPermissionException("That command can not be used as its category, %s, isn't enabled.", Main.getAbsoluteParentCommand(command).getAnnotation(Command.class).category());
+						throw new CommandPermissionException("That command cannot be used as its category, %s, isn't enabled.", Main.getAbsoluteParentCommand(command).getAnnotation(Command.class).category());
 				}
 		});
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> saveFiles()));

@@ -76,6 +76,7 @@ import com.ptsmods.impulse.utils.Dashboard;
 import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.Downloader;
 import com.ptsmods.impulse.utils.EventListenerManager;
+import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.client.entities.Group;
 import net.dv8tion.jda.core.AccountType;
@@ -117,8 +118,8 @@ import sun.reflect.Reflection;
 public class Main {
 
 	public static final int major = 1;
-	public static final int minor = 5;
-	public static final int revision = 1;
+	public static final int minor = 6;
+	public static final int revision = 0;
 	public static final String type = "stable";
 	public static final String version = String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object nil = null; // fucking retarded name, imo.
@@ -243,6 +244,8 @@ public class Main {
 					Config.addComment("The amount of shards you want, for every shard the startup time takes at least 5 more seconds, this is due to rate limiting.");
 					Config.addComment("If you don't know what shards are, maybe you should learn some stuff about computers before making your own Discord bot.");
 					Config.put("shards", "1");
+					Config.addComment("The key used to encrypt the JSON files, this should *never* be changed as it'll make the JSON files unreadable. This has to be 16 characters.");
+					Config.put("kryptoKey", Random.genKey(16));
 					Config.addComment("The key used to send bot stats to https://carbinotex.net");
 					Config.put("carbonitexKey", "");
 					Config.addComment("The key used to send bot stats to https://discordbots.org");
@@ -253,6 +256,10 @@ public class Main {
 					return;
 				} else if (Config.get("token").isEmpty() || Config.get("ownerId").isEmpty() || Config.get("prefix").isEmpty() || Config.get("shards").isEmpty()) {
 					print(LogType.WARN, "The config hasn't been changed yet, please go to the settings tab or open config.cfg and change the variables.");
+					return;
+				}
+				if (Config.get("kryptoKey") == null || Config.get("kryptoKey").length() != 16) {
+					print(LogType.ERROR, "The variable kryptoKey in the config is not 16 characters long.");
 					return;
 				}
 				int shardAmount = 1;
@@ -771,7 +778,7 @@ public class Main {
 	}
 
 	public static void runAsynchronously(Runnable runnable) {
-		miscellaneousExecutor.execute(runnable);
+		miscellaneousExecutor.execute(()->{try{runnable.run();}catch(Throwable t){t.printStackTrace();}});
 	}
 
 	public static void runAsynchronously(Object obj, Method method, Object... args) {
