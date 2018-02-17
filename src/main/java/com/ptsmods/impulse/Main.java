@@ -120,7 +120,7 @@ public class Main {
 
 	public static final int major = 1;
 	public static final int minor = 7;
-	public static final int revision = 0;
+	public static final int revision = 1;
 	public static final String type = "stable";
 	public static final String version = String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object nil = null; // fucking retarded name, imo.
@@ -144,7 +144,6 @@ public class Main {
 	private static boolean devMode = false;
 	private static boolean eclipse = false;
 	private static boolean headless = false;
-	private static boolean logMessages = false;
 	private static User owner = null;
 	private static List<User> coOwners = new ArrayList();
 	private static List<Method> commands = new ArrayList<>();
@@ -170,7 +169,6 @@ public class Main {
 		devMode = argsList.contains("-devMode");
 		eclipse = argsList.contains("-eclipse");
 		headless = argsList.contains("-headless") || argsList.contains("-noGui");
-		logMessages = argsList.contains("-logMessages");
 		try {
 			main0(args);
 		} catch (Throwable e) {
@@ -699,7 +697,7 @@ public class Main {
 							String errorMsg = "";
 							boolean isCoOwner = false;
 							for (User coOwner : coOwners)
-								if (event.getAuthor().getId().equals(coOwner.getId())) {
+								if (coOwner != null && event.getAuthor().getId().equals(coOwner.getId())) {
 									isCoOwner = true;
 									break;
 								}
@@ -852,10 +850,6 @@ public class Main {
 			return false;
 		}
 		return true;
-	}
-
-	public static boolean logMessages() {
-		return logMessages;
 	}
 
 	public static boolean headless() {

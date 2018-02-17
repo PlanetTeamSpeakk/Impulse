@@ -1,9 +1,7 @@
 package com.ptsmods.impulse.commands;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1150,12 +1148,6 @@ public class Moderation {
 
 	@SubscribeEvent
 	public static void onMessageReceived(MessageReceivedEvent event) {
-		if (Main.logMessages())
-			try (PrintWriter writer = new PrintWriter(new FileWriter("messages.txt", true))){
-				writer.println(String.format("[S: %s; C: %s; U: %s; T: %s] %s", event.getGuild().getName(), event.getChannel().getName(), Main.str(event.getAuthor()), Main.getFormattedTime(), event.getMessage().getContent()));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()}));
 		if (event.getGuild() == null) return;
 		if (filters.containsKey(event.getGuild().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
@@ -1175,7 +1167,13 @@ public class Moderation {
 				return;
 			}
 		}
-		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && event.getMember() != null && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE) && settings.containsKey(event.getGuild().getId()) && !((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") || ((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") && (boolean) ((Map) settings.get(event.getGuild().getId())).get("inviteRemoving")) {
+		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && event.getMember() != null &&
+				!event.getMember().hasPermission(Permission.MESSAGE_MANAGE) &&
+				event.getGuild() != null &&
+				settings.containsKey(event.getGuild().getId()) &&
+				(!((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") ||
+						((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") &&
+						(boolean) ((Map) settings.get(event.getGuild().getId())).get("inviteRemoving"))) {
 			try {
 				event.getMessage().delete().complete();
 			} catch (Throwable e) {

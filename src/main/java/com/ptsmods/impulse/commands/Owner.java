@@ -66,7 +66,7 @@ public class Owner {
 		}
 		Main.addCommandHook(event -> {
 			if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && Main.devMode())
-				throw new CommandPermissionException("Developer mode is enabled which means only my owner can use commands.");
+				throw new CommandPermissionException(/*"Developer mode is enabled which means only my owner can use commands."*/);
 		});
 	}
 

@@ -188,8 +188,8 @@ public class General {
 		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
 		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. "
 				+ "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") "
-				+ "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\") "
-				+ ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\")"
+				+ "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")"
+				+ ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), "
 				+ "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
 		embed.setFooter("PS, the color used is #" + Integer.toHexString(embed.build().getColor().getRGB()).substring(2).toUpperCase() + ".", null);
 		event.reply(embed.build());

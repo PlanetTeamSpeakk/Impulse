@@ -278,8 +278,12 @@ public class MainGUI {
 				Main.runAsynchronously(() -> {
 					List<Double> scores = Lists.newArrayList(new Double[60]);
 					while (!Main.isShuttingDown()) {
-						if (UsageMonitorer.getSystemCpuLoad().doubleValue() > 95) Main.shutdown(0);
-						scores.add(UsageMonitorer.getSystemCpuLoad().doubleValue());
+						double cpuUsage = UsageMonitorer.getSystemCpuLoad().doubleValue();
+						if (cpuUsage > 95 && System.currentTimeMillis()-Main.started.getTime() > 1000*60*3) {
+							Main.print(LogType.WARN, "System CPU load was above 95%, assuming bot crashed, shutting down.");
+							Main.shutdown(0);
+						}
+						scores.add(cpuUsage);
 						if (scores.size() > 60) scores.remove(0);
 						cpu.setScores(scores);
 						Main.sleep(1, TimeUnit.SECONDS);
