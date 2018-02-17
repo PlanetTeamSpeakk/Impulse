@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.HashMap;
@@ -35,7 +36,9 @@ public class Downloader {
 			}
 		if (new File(fileLocation).exists()) fileLocation = fileLocation.split("\\.")[0] + "-1" + (fileLocation.split("\\.").length != 1 ? "." + fileLocation.split("\\.")[fileLocation.split("\\.").length-1] : "");
 		while (new File(fileLocation).exists()) fileLocation = addNextDigit(fileLocation);
-		ReadableByteChannel rbc = Channels.newChannel(new URL(url).openStream());
+		URLConnection connection = new URL(url).openConnection();
+		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+		ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream());
 		FileOutputStream fos = new FileOutputStream(fileLocation);
 		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 		fos.close();

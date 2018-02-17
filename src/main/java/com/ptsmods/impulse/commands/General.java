@@ -82,7 +82,7 @@ public class General {
 		if (!event.getArgs().isEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
 			if (user == null) event.reply("The given user could not be found.");
-			else event.reply(user.getAvatarUrl() == null ? user.getDefaultAvatarUrl() : user.getAvatarUrl());
+			else event.reply(user.getEffectiveAvatarUrl());
 		} else Main.sendCommandHelp(event);
 	}
 
@@ -189,7 +189,8 @@ public class General {
 		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. "
 				+ "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") "
 				+ "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\") "
-				+ "and check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\").");
+				+ ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\")"
+				+ "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
 		embed.setFooter("PS, the color used is #" + Integer.toHexString(embed.build().getColor().getRGB()).substring(2).toUpperCase() + ".", null);
 		event.reply(embed.build());
 	}
@@ -533,7 +534,7 @@ public class General {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Get some user info.\nUser has to be the Wargaming username and server has to be eu, ru, asia, na, or kr.", name = "getuserinfo", parent = "com.ptsmods.impulse.commands.General.wot", cooldown = 30, arguments = "<user> <server>")
+	@Subcommand(help = "Get some user info.\nUser has to be the Wargaming username and server has to be eu, ru, asia, na, or kr.", name = "getuserinfo", parent = "com.ptsmods.impulse.commands.General.wot", cooldown = 30, arguments = "<user> <server>", guildOnly = true)
 	public static void wotGetUserInfo(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty() && event.getArgs().split(" ").length == 2) {
 			String username = event.getArgs().split(" ")[0];
@@ -566,7 +567,7 @@ public class General {
 						if (choice > users.size()) {
 							event.reply("The chosen number was larger than the amount of choices.");
 							return;
-						} else if (choice <= 0) {
+						} else if (choice < 1) {
 							event.reply("The chosen number was smaller than 1.");
 							return;
 						} else
@@ -601,7 +602,7 @@ public class General {
 						data1.get("piercings").toString().split("\\.")[0],
 						data1.get("shots").toString().split("\\.")[0],
 						data1.get("hits").toString().split("\\.")[0],
-						MathHelper.percentage(Double.parseDouble(data1.get("shots").toString()), Double.parseDouble(data1.get("hits").toString())),
+						MathHelper.percentage((double) data1.get("shots"), (double) data1.get("hits")),
 						data1.get("xp").toString().split("\\.")[0],
 						data1.get("battles").toString().split("\\.")[0],
 						data1.get("survived_battles").toString().split("\\.")[0],

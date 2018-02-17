@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -118,7 +119,7 @@ import sun.reflect.Reflection;
 public class Main {
 
 	public static final int major = 1;
-	public static final int minor = 6;
+	public static final int minor = 7;
 	public static final int revision = 0;
 	public static final String type = "stable";
 	public static final String version = String.format("%s.%s.%s-%s", major, minor, revision, type);
@@ -143,7 +144,9 @@ public class Main {
 	private static boolean devMode = false;
 	private static boolean eclipse = false;
 	private static boolean headless = false;
+	private static boolean logMessages = false;
 	private static User owner = null;
+	private static List<User> coOwners = new ArrayList();
 	private static List<Method> commands = new ArrayList<>();
 	private static List<Method> subcommands = new ArrayList<>();
 	private static List<Message> messages = new ArrayList<>();
@@ -167,6 +170,7 @@ public class Main {
 		devMode = argsList.contains("-devMode");
 		eclipse = argsList.contains("-eclipse");
 		headless = argsList.contains("-headless") || argsList.contains("-noGui");
+		logMessages = argsList.contains("-logMessages");
 		try {
 			main0(args);
 		} catch (Throwable e) {
@@ -210,16 +214,13 @@ public class Main {
 				try {
 					new File("data/tmp/info.txt").createNewFile();
 				} catch (Throwable e) {}
-				PrintWriter writer = null;
-				try {
-					writer = new PrintWriter(new FileWriter("data/tmp/info.txt"));
-				} catch (Throwable e) {
-					return;
-				} finally {
+				try (PrintWriter writer = new PrintWriter(new FileWriter("data/tmp/info.txt"))){
 					writer.println("This directory is meant for temporary files which are created when making new JSON files.");
 					writer.println("This directory is cleared on bot shutdown.");
 					writer.println("DO NOT STORE FILES IN THIS DIRECTORY!");
 					IOUtils.closeQuietly(writer);
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 				for (Thread thread : Thread.getAllStackTraces().keySet())
 					if (!thread.equals(mainThread)) thread.interrupt();
@@ -317,6 +318,8 @@ public class Main {
 					}
 				}
 				owner = getUserById(Config.get("ownerId"));
+				for (String coOwnerId : (Config.get("coOwnerIds") == null ? "" : Config.get("coOwnersIds")).split(";"))
+					try {coOwners.add(getUserById(coOwnerId));} catch (Exception e) {}
 				if (owner == null) {
 					print(LogType.WARN, "Could not find a user with the given owner ID.");
 					shutdown(2);
@@ -423,7 +426,9 @@ public class Main {
 				shard.shutdown();
 			commandsExecutor.shutdown();
 			miscellaneousExecutor.shutdown();
-			new Thread(() -> {
+			long currentMillis = System.currentTimeMillis();
+			AtomicBoolean done = new AtomicBoolean(false);
+			Thread shutdownThread = new Thread(() -> {
 				try {
 					Field field = getField(Class.forName("java.lang.ApplicationShutdownHooks"), "hooks", IdentityHashMap.class);
 					field.setAccessible(true);
@@ -438,8 +443,14 @@ public class Main {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				System.exit(status);
-			}).start();
+				done.set(true);
+			});
+			shutdownThread.setName("Shutdown thread");
+			shutdownThread.start();
+			while (!done.get() && System.currentTimeMillis()-currentMillis < 30000) // Timeout of 30 seconds
+				sleep(250);/*Just making sure not to use too much CPU*/
+			shutdownThread.interrupt();
+			System.exit(status);
 		}
 	}
 
@@ -686,7 +697,13 @@ public class Main {
 								sendTyping = annotation.sendTyping();
 							}
 							String errorMsg = "";
-							if (!event.getAuthor().getId().equals(Main.getOwner().getId()))
+							boolean isCoOwner = false;
+							for (User coOwner : coOwners)
+								if (event.getAuthor().getId().equals(coOwner.getId())) {
+									isCoOwner = true;
+									break;
+								}
+							if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && !isCoOwner)
 								if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown*1000)
 									errorMsg = "You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis()-cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".";
 								else if (event.getGuild() == null && guildOnly)
@@ -711,9 +728,10 @@ public class Main {
 							}
 							if (!errorMsg.isEmpty())
 								event.getChannel().sendMessage(errorMsg).queue(RestAction.DEFAULT_SUCCESS, t -> {
-									if (t instanceof InsufficientPermissionException) try {
-										sendPrivateMessage(event.getAuthor(), "I cannot parse the command as I don't have permissions to talk in the channel you ran the command in.");
-									} catch (Exception e) {}
+									if (t instanceof InsufficientPermissionException)
+										try {
+											sendPrivateMessage(event.getAuthor(), "I cannot parse the command as I don't have permissions to talk in the channel you ran the command in.");
+										} catch (Exception e) {}
 									else t.printStackTrace();
 								});
 							else {
@@ -836,6 +854,10 @@ public class Main {
 		return true;
 	}
 
+	public static boolean logMessages() {
+		return logMessages;
+	}
+
 	public static boolean headless() {
 		return headless;
 	}
@@ -938,9 +960,7 @@ public class Main {
 			Message lastMsg = messages.get(messages.size()-1);
 			if (lastMsg.getCreationTime().toEpochSecond() > currentSeconds && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && (lastMsg.getGuild() == null || lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong()) && lastMsg.getChannel().getIdLong() == channel.getIdLong()) return lastMsg;
 			else if (System.currentTimeMillis()-currentMillis >= timeoutMillis) return null;
-			try {
-				Thread.sleep(5);
-			} catch (InterruptedException e) {}
+			sleep(250);
 		}
 	}
 
@@ -1251,8 +1271,18 @@ public class Main {
 		return ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9';
 	}
 
+	public static <K, V> Map<K, V> reverseMap(Map<K, V> map) {
+		Map<K, V> copy = new HashMap<>(map);
+		map.clear();
+		List<K> keys = Lists.reverse(new ArrayList(copy.keySet()));
+		List<V> values = Lists.reverse(new ArrayList(copy.values()));
+		for (int i : range(keys.size()))
+			map.put(keys.get(i), values.get(i));
+		return map;
+	}
+
 	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-		return map.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+		return reverseMap(map.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new)));
 	}
 
 	public static <T extends Comparable<? super T>> List<T> sort(List<T> list) {
@@ -1540,7 +1570,7 @@ public class Main {
 		else if (obj instanceof Guild) 		return obj == null ? "null" : ((Guild) obj).getName();
 		else if (obj instanceof Channel) 	return obj == null ? "null" : ((Channel) obj).getName();
 		// more to be added later.
-		else return obj == null ? "null" : obj.toString();
+		else 								return obj == null ? "null" : obj.toString();
 	}
 
 	public static EventHandler getEventHandler() {
@@ -1874,6 +1904,35 @@ public class Main {
 		object.put("totalUsages", totalUsages);
 		object.put("commands", commands);
 		return object;
+	}
+
+	public static String getImageType(String URL) throws IOException {
+		URL url = new URL(URL);
+		URLConnection connection = url.openConnection();
+		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+		String type = connection.getHeaderField("Content-Type");
+		if (type.startsWith("image/")) return type.substring(6).split(";")[0];
+		else return "unknown";
+	}
+
+	public static String getAsOrdinal(int i) {
+		String ordinal = "" + i;
+		if (ordinal.endsWith("1")) 		ordinal += "st";
+		else if (ordinal.endsWith("2")) ordinal += "nd";
+		else if (ordinal.endsWith("3")) ordinal += "rd";
+		else 							ordinal += "th";
+		return ordinal;
+	}
+
+	public static String getUnicode(char ch) {
+		return Integer.toHexString(ch | 0x10000).substring(1);
+	}
+
+	public static String stringToWingdings(String string) {
+		String wingdings = "";
+		for (char ch : string.toCharArray())
+			wingdings += (char) Integer.parseInt(getUnicode(ch).replace("00", "F0"), 16);
+		return wingdings;
 	}
 
 	private static final class SystemOutPrintStream extends PrintStream {

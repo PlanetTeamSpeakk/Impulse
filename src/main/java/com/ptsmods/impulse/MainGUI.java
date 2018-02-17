@@ -278,6 +278,7 @@ public class MainGUI {
 				Main.runAsynchronously(() -> {
 					List<Double> scores = Lists.newArrayList(new Double[60]);
 					while (!Main.isShuttingDown()) {
+						if (UsageMonitorer.getSystemCpuLoad().doubleValue() > 95) Main.shutdown(0);
 						scores.add(UsageMonitorer.getSystemCpuLoad().doubleValue());
 						if (scores.size() > 60) scores.remove(0);
 						cpu.setScores(scores);

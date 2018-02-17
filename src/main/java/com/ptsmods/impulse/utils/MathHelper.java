@@ -1,5 +1,8 @@
 package com.ptsmods.impulse.utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MathHelper {
 
 	public static Percentage percentage(double max, double amount) {
@@ -110,6 +113,20 @@ public class MathHelper {
 				return x;
 			}
 		}.parse();
+	}
+
+	public static int max(Integer... ints) {
+		List<Double> doubles = new ArrayList();
+		for (int i : ints)
+			doubles.add((double) i);
+		return (int) max(doubles.toArray(new Double[] {}));
+	}
+
+	public static double max(Double... doubles) {
+		double max = Double.MIN_VALUE;
+		for (double d : doubles)
+			if (d > max) max = d;
+		return max;
 	}
 
 	public static class Percentage extends Number {

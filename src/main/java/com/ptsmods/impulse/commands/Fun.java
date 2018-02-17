@@ -1,13 +1,17 @@
 package com.ptsmods.impulse.commands;
 
 import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import com.google.common.collect.Lists;
 import com.ptsmods.impulse.miscellaneous.Command;
@@ -18,6 +22,7 @@ import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
 import com.ptsmods.impulse.miscellaneous.Trivia;
 import com.ptsmods.impulse.miscellaneous.Trivia.TriviaResult;
 import com.ptsmods.impulse.utils.DataIO;
+import com.ptsmods.impulse.utils.ImageManipulator;
 import com.ptsmods.impulse.utils.LaughingMao;
 import com.ptsmods.impulse.utils.Random;
 
@@ -842,6 +847,36 @@ public class Fun {
 				TriviaResult result = Trivia.getInstance(event.getArgs()).start(event.getChannel(), event.getGuild());
 				event.reply(String.valueOf(result));
 			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Fun", help = "Create an Impact meme.\n\nImage and toptext are mandatory, bottomtext and size are optional\nExample:\n\t[p]impactmeme <https://target.scene7.com/is/image/Target/red_bg84112-170313_1489428814121?wid=1110&qlt=100&fmt=png>;one does not simply;get rid of impact", name = "impactmeme", arguments = "<image>;<toptext>;[bottomtext];[size]")
+	public static void impactMeme(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty() && event.getArgs().split(";").length > 1) {
+			String image = event.getArgs().split(";")[0];
+			String topText = event.getArgs().split(";")[1];
+			String bottomText = event.getArgs().split(";").length > 2 ? event.getArgs().split(";")[2] : "";
+			float size = event.getArgs().split(";").length > 3 && Main.isFloat(event.getArgs().split(";")[3]) ? Float.parseFloat(event.getArgs().split(";")[3]) : 48F;
+			String fileLocation = "data/tmp/" + Random.randInt() + ".png";
+			try {
+				ImageIO.write(ImageManipulator.toBufferedImage(ImageManipulator.impactMeme(ImageIO.read(new URL(image).openStream()), topText, bottomText, size)), "png", new File(fileLocation));
+			} catch (IOException e) {
+				if (e.getMessage() != null && e.getMessage().startsWith("Server returned HTTP response code:")) {
+					event.reply("The given image could not be downloaded because it returned a **%s** error, you could try downloading it and uploading it to <https://cdn.impulsebot.com> and use that URL instead.", e.getMessage().substring(36, 39));
+					return;
+				}
+				throw new CommandException("An unknown error occurred while drawing the top- and bottomtext.");
+			} catch (NullPointerException e) {
+				e.printStackTrace();
+				event.reply("The given image is not supported by the ImageIO Java library.");
+				return;
+			}
+			try {
+				event.getChannel().sendFile(new File(fileLocation), null).complete();
+			} catch (IllegalArgumentException e) {
+				event.reply("The output image was too large, please try again with a smaller image.");
+			}
+			new File(fileLocation).delete();
 		} else Main.sendCommandHelp(event);
 	}
 
