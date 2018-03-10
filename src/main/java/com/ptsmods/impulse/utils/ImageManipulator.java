@@ -15,6 +15,7 @@ import java.net.URLConnection;
 
 import javax.imageio.ImageIO;
 
+import javafx.embed.swing.SwingFXUtils;
 import net.dv8tion.jda.core.entities.Member;
 
 public class ImageManipulator {
@@ -59,7 +60,7 @@ public class ImageManipulator {
 		g.drawImage(avatar, 0, 0, image.getHeight(), image.getHeight(), 0, 0, avatar.getWidth(null), avatar.getHeight(null), null);
 		g.setFont(arvo);
 		g.setColor(Color.WHITE);
-		drawWithOutline(g, Color.BLACK, line1, image.getHeight()+40, g.getFont().getSize()+10, 3);
+		drawWithOutline(g, Color.BLACK, line1, image.getHeight()+40, g.getFont().getSize()  +10, 3);
 		drawWithOutline(g, Color.BLACK, line2, image.getHeight()+40, g.getFont().getSize()*2+15, 3);
 		drawWithOutline(g, Color.BLACK, line3, image.getHeight()+40, g.getFont().getSize()*3+20, 3);
 		return image;
@@ -84,6 +85,10 @@ public class ImageManipulator {
 		bGr.dispose();
 		img.flush();
 		return bimage;
+	}
+
+	public static BufferedImage toBufferedImage(javafx.scene.image.Image img) {
+		return SwingFXUtils.fromFXImage(img, new BufferedImage((int) img.getWidth(), (int) img.getHeight(), BufferedImage.TYPE_INT_ARGB));
 	}
 
 	/**

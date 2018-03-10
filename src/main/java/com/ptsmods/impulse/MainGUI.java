@@ -46,6 +46,11 @@ import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.MathHelper;
 import com.ptsmods.impulse.utils.UsageMonitorer;
 
+/**
+ * @deprecated This class is no longer used, take a look at {@link com.ptsmods.impulse.MainJFXGUI MainJFXGUI} instead.
+ * @author PlanetTeamSpeak
+ */
+@Deprecated
 public class MainGUI {
 
 	public static final Font sansSerif = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
@@ -78,7 +83,7 @@ public class MainGUI {
 					e1.printStackTrace();
 				}
 			Main.print(LogType.DEBUG, "Original MD5:", impulsePngMD5, "Current MD5:", MD5);
-			mainFrame.setTitle("Impulse Discord bot - written by PlanetTeamSpeak");
+			mainFrame.setTitle("Impulse v" + Main.version + " - written by PlanetTeamSpeak");
 			mainFrame.setResizable(false);
 			mainFrame.setBounds(0, 0, 1080, 720);
 			mainFrame.setAutoRequestFocus(true);

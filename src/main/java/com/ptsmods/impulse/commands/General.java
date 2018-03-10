@@ -18,6 +18,7 @@ import org.ajbrown.namemachine.Gender;
 import org.ajbrown.namemachine.Name;
 import org.ajbrown.namemachine.NameGenerator;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.ptsmods.impulse.Main.TimeType;
@@ -38,7 +39,9 @@ import net.dv8tion.jda.core.entities.Emote;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.Role;
+import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.swisstech.bitly.BitlyClient;
 import net.swisstech.bitly.model.Response;
 import net.swisstech.bitly.model.v3.ShortenResponse;
@@ -191,7 +194,7 @@ public class General {
 				+ "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")"
 				+ ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), "
 				+ "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
-		embed.setFooter("PS, the color used is #" + Integer.toHexString(embed.build().getColor().getRGB()).substring(2).toUpperCase() + ".", null);
+		embed.setFooter("PS, the color used is #" + Main.colorToHex(embed.build().getColor()) + ".", null);
 		event.reply(embed.build());
 	}
 
@@ -541,77 +544,79 @@ public class General {
 			String server = event.getArgs().split(" ")[1].toLowerCase();
 			String userid = null;
 			if (server.equals("na")) server = "com";
-			Map data;
-			try {
-				data = new Gson().fromJson(Main.getHTML("https://api.worldoftanks." + server + "/wot/account/list/?application_id=" + Main.apiKeys.get("wargaming") + "&search=" + username), Map.class);
-			} catch (JsonSyntaxException | IOException e) {
-				throw new CommandException("An unknown error occurred while getting the user's id.", e);
-			}
-			if (data.containsKey("error"))
-				event.reply("An unknown error occurred while getting the data: %s, %s.", Main.getIntFromPossibleDouble(((Map) data.get("error")).get("code")), ((Map) data.get("error")).get("message"));
-			else {
-				Map data1;
-				if (Main.getIntFromPossibleDouble(((Map) data.get("meta")).get("count")) > 1) {
-					List<Map<String, String>> users = new ArrayList();
-					for (int i : Main.range(((List) data.get("data")).size()))
-						users.add(Main.newHashMap(new String[] {"username", "id"}, new String[] {((Map) ((List) data.get("data")).get(i)).get("nickname").toString(), String.format("%.0f", ((Map) ((List) data.get("data")).get(i)).get("account_id"))}));
-					String msg = "Found multiple results, please pick 1:\n";
-					for (int i : Main.range(users.size())) msg += i+1 + ". " + users.get(i).get("username") + "\n";
-					event.reply(msg.trim());
-					Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000);
-					if (response == null) {
-						event.reply("No response gotten.");
-						return;
-					} else if (Main.isInteger(response.getContent())) {
-						int choice = Integer.parseInt(response.getContent());
-						if (choice > users.size()) {
-							event.reply("The chosen number was larger than the amount of choices.");
-							return;
-						} else if (choice < 1) {
-							event.reply("The chosen number was smaller than 1.");
-							return;
-						} else
-							userid = users.get(choice-1).get("id");
-					}
-				} else
-					userid = ((Map) ((List) data.get("data")).get(0)).get("account_id").toString();
+			if (Lists.newArrayList("eu", "ru", "asia", "com", "kr").contains(server)) {
+				Map data;
 				try {
-					data1 = (Map) ((Map) new Gson().fromJson(Main.getHTML("https://api.worldoftanks." + server + "/wot/account/info/?application_id=" + Main.apiKeys.get("wargaming") + "&account_id=" + userid), Map.class).get("data")).get(userid);
+					data = new Gson().fromJson(Main.getHTML("https://api.worldoftanks." + server + "/wot/account/list/?application_id=" + Main.apiKeys.get("wargaming") + "&search=" + username), Map.class);
 				} catch (JsonSyntaxException | IOException e) {
-					throw new CommandException("An unknown error occurred while getting the user's data.", e);
+					throw new CommandException("An unknown error occurred while getting the user's id.", e);
 				}
-				username = data1.get("nickname").toString();
-				String globalRating = data1.get("global_rating").toString().split("\\.")[0];
-				String clientLang = data1.get("client_language").toString();
-				Long lastBattleTime = Main.getLongFromPossibleDouble(data1.get("last_battle_time")) * 1000;
-				Long createdAt = Main.getLongFromPossibleDouble(data1.get("created_at")) * 1000;
-				data1 = (Map) ((Map) data1.get("statistics")).get("all");
-				event.reply("```fix\nUsername: %s\nUser ID: %s\nCreated at: %s (DD/MM/YY)\nLast battle: %s (DD/MM/YY)\nGlobal rating: %s\nClient language: %s\nSpotted: %s\nMax xp earned: %s\nAverage damage blocked: %s\nDirect hits received: %s\nTimes ammoracked player: %s\nPenetrations received: %s\nPenetrations done: %s\nShots: %s\nHits: %s\nHit percentage: %s%%\nFree xp: %s\nBattles done: %s\nSurived battles: %s\nBattles won: %s\nBattles lost: %s\nBattles drawn: %s\nDropped capture points: %s\nTotal damage dealt: %s```",
-						username,
-						userid,
-						new SimpleDateFormat("dd/MM/yyyy").format(new Date(createdAt)),
-						new SimpleDateFormat("dd/MM/yyyy").format(new Date(lastBattleTime)),
-						globalRating,
-						clientLang,
-						data1.get("spotted").toString().split("\\.")[0],
-						data1.get("max_xp").toString().split("\\.")[0],
-						data1.get("avg_damage_blocked"),
-						data1.get("direct_hits_received").toString().split("\\.")[0],
-						data1.get("explosion_hits").toString().split("\\.")[0],
-						data1.get("piercings_received").toString().split("\\.")[0],
-						data1.get("piercings").toString().split("\\.")[0],
-						data1.get("shots").toString().split("\\.")[0],
-						data1.get("hits").toString().split("\\.")[0],
-						MathHelper.percentage((double) data1.get("shots"), (double) data1.get("hits")),
-						data1.get("xp").toString().split("\\.")[0],
-						data1.get("battles").toString().split("\\.")[0],
-						data1.get("survived_battles").toString().split("\\.")[0],
-						data1.get("wins").toString().split("\\.")[0],
-						data1.get("losses").toString().split("\\.")[0],
-						data1.get("draws").toString().split("\\.")[0],
-						data1.get("dropped_capture_points").toString().split("\\.")[0],
-						data1.get("damage_dealt").toString().split("\\.")[0]);
-			}
+				if (data.containsKey("error"))
+					event.reply("An unknown error occurred while getting the data: %s, %s.", Main.getIntFromPossibleDouble(((Map) data.get("error")).get("code")), ((Map) data.get("error")).get("message"));
+				else {
+					Map data1;
+					if (Main.getIntFromPossibleDouble(((Map) data.get("meta")).get("count")) > 1) {
+						List<Map<String, String>> users = new ArrayList();
+						for (int i : Main.range(((List) data.get("data")).size()))
+							users.add(Main.newHashMap(new String[] {"username", "id"}, new String[] {((Map) ((List) data.get("data")).get(i)).get("nickname").toString(), String.format("%.0f", ((Map) ((List) data.get("data")).get(i)).get("account_id"))}));
+						String msg = "Found multiple results, please pick 1:\n";
+						for (int i : Main.range(users.size())) msg += i+1 + ". " + users.get(i).get("username") + "\n";
+						event.reply(msg.trim());
+						Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000);
+						if (response == null) {
+							event.reply("No response gotten.");
+							return;
+						} else if (Main.isInteger(response.getContent())) {
+							int choice = Integer.parseInt(response.getContent());
+							if (choice > users.size()) {
+								event.reply("The chosen number was larger than the amount of choices.");
+								return;
+							} else if (choice < 1) {
+								event.reply("The chosen number was smaller than 1.");
+								return;
+							} else
+								userid = users.get(choice-1).get("id");
+						}
+					} else
+						userid = ((Map) ((List) data.get("data")).get(0)).get("account_id").toString();
+					try {
+						data1 = (Map) ((Map) new Gson().fromJson(Main.getHTML("https://api.worldoftanks." + server + "/wot/account/info/?application_id=" + Main.apiKeys.get("wargaming") + "&account_id=" + userid), Map.class).get("data")).get(userid);
+					} catch (JsonSyntaxException | IOException e) {
+						throw new CommandException("An unknown error occurred while getting the user's data.", e);
+					}
+					username = data1.get("nickname").toString();
+					String globalRating = data1.get("global_rating").toString().split("\\.")[0];
+					String clientLang = data1.get("client_language").toString();
+					Long lastBattleTime = Main.getLongFromPossibleDouble(data1.get("last_battle_time")) * 1000;
+					Long createdAt = Main.getLongFromPossibleDouble(data1.get("created_at")) * 1000;
+					data1 = (Map) ((Map) data1.get("statistics")).get("all");
+					event.reply("```fix\nUsername: %s\nUser ID: %s\nCreated at: %s (DD/MM/YY)\nLast battle: %s (DD/MM/YY)\nGlobal rating: %s\nClient language: %s\nSpotted: %s\nMax xp earned: %s\nAverage damage blocked: %s\nDirect hits received: %s\nTimes ammoracked player: %s\nPenetrations received: %s\nPenetrations done: %s\nShots: %s\nHits: %s\nHit percentage: %s%%\nFree xp: %s\nBattles done: %s\nSurived battles: %s\nBattles won: %s\nBattles lost: %s\nBattles drawn: %s\nDropped capture points: %s\nTotal damage dealt: %s```",
+							username,
+							userid,
+							new SimpleDateFormat("dd/MM/yyyy").format(new Date(createdAt)),
+							new SimpleDateFormat("dd/MM/yyyy").format(new Date(lastBattleTime)),
+							globalRating,
+							clientLang,
+							data1.get("spotted").toString().split("\\.")[0],
+							data1.get("max_xp").toString().split("\\.")[0],
+							data1.get("avg_damage_blocked"),
+							data1.get("direct_hits_received").toString().split("\\.")[0],
+							data1.get("explosion_hits").toString().split("\\.")[0],
+							data1.get("piercings_received").toString().split("\\.")[0],
+							data1.get("piercings").toString().split("\\.")[0],
+							data1.get("shots").toString().split("\\.")[0],
+							data1.get("hits").toString().split("\\.")[0],
+							MathHelper.percentage((double) data1.get("shots"), (double) data1.get("hits")),
+							data1.get("xp").toString().split("\\.")[0],
+							data1.get("battles").toString().split("\\.")[0],
+							data1.get("survived_battles").toString().split("\\.")[0],
+							data1.get("wins").toString().split("\\.")[0],
+							data1.get("losses").toString().split("\\.")[0],
+							data1.get("draws").toString().split("\\.")[0],
+							data1.get("dropped_capture_points").toString().split("\\.")[0],
+							data1.get("damage_dealt").toString().split("\\.")[0]);
+				}
+			} else Main.sendCommandHelp(event);
 		} else Main.sendCommandHelp(event);
 	}
 
@@ -804,7 +809,7 @@ public class General {
 		event.reply("This server has **%s users** and **%s bots** with a total of **%s members**.", members, bots, members+bots);
 	}
 
-	@Subcommand(help = "Tells you the ID of this server and this channel.", name = "id", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	@Subcommand(help = "Shows you the ID of this server and this channel.", name = "id", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
 	public static void serverId(CommandEvent event) {
 		event.reply("This server's ID is **%s**, this channel's ID is **%s**.", event.getGuild().getId(), event.getChannel().getId());
 	}
@@ -841,11 +846,32 @@ public class General {
 		} else Main.sendCommandHelp(event);
 	}
 
+	@Subcommand(help = "Shows you all of the channels in this server.", name = "channels", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverChannels(CommandEvent event) {
+		String msg = "**Text channels**";
+		for (TextChannel channel : event.getGuild().getTextChannels()) {
+			msg += "\n\t" + channel.getAsMention();
+			if (msg.length() > 1990) {
+				event.reply(msg);
+				msg = "";
+			}
+		}
+		msg += "\n\n**Voice Channels**";
+		for (VoiceChannel channel : event.getGuild().getVoiceChannels()) {
+			msg += "\n\t" + channel.getName();
+			if (msg.length() > 1990) {
+				event.reply(msg);
+				msg = "";
+			}
+		}
+		event.reply(msg);
+	}
+
 	@Command(category = "General", help = "Have a conversation with the bot.", name = "cleverbot")
 	public static void Cleverbot(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
 			String response = Cleverbot.newBot().askQuestion(event.getArgs());
-			event.reply(response == null || response.isEmpty() ? "No response gotten, try again." : response);
+			event.reply(response == null || response.isEmpty() ? "No response gotten, please try again." : response);
 		} else Main.sendCommandHelp(event);
 	}
 

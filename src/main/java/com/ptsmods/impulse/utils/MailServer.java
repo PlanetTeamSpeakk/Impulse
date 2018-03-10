@@ -13,7 +13,7 @@ public class MailServer {
 
 	public MailServer() {}
 
-	public static boolean createMailAddress(String name, String password) throws IOException {
+	public static boolean createMailAddress(String name, String password, boolean changePassIfExists) throws IOException {
 		if (isEnabled()) {
 			StringBuilder result = new StringBuilder();
 			URL URL = new URL(Config.get("miabBaseUrl") + "/admin/mail/users/add");
@@ -25,13 +25,15 @@ public class MailServer {
 			try {
 				rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 			} catch (IOException e) {
-				// account already exists, changing its password.
-				URL = new URL(Config.get("miabBaseUrl") + "/admin/mail/users/password");
-				connection = getConnection(URL);
-				writer = connection.getOutputStream();
-				writer.write(String.format("email=%s@%s&password=%s", name, Config.get("mailBaseUrl"), password).getBytes("UTF-8"));
-				writer.flush();
-				rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				if (changePassIfExists) {
+					// account already exists, changing its password.
+					URL = new URL(Config.get("miabBaseUrl") + "/admin/mail/users/password");
+					connection = getConnection(URL);
+					writer = connection.getOutputStream();
+					writer.write(String.format("email=%s@%s&password=%s", name, Config.get("mailBaseUrl"), password).getBytes("UTF-8"));
+					writer.flush();
+					rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				} else throw e;
 			}
 			String line;
 			while ((line = rd.readLine()) != null)
@@ -62,9 +64,7 @@ public class MailServer {
 		connection.setRequestProperty("Accept", "*/*");
 		connection.setRequestProperty("Username", Config.get("miabUsername"));
 		connection.setRequestProperty("Password", Config.get("miabPassword"));
-		String userpass = Config.get("miabUsername") + ":" + Config.get("miabPassword");
-		String basicAuth = "Basic " + new String(new Base64().encode(userpass.getBytes()));
-		connection.setRequestProperty("Authorization", basicAuth);
+		connection.setRequestProperty("Authorization", "Basic " + new String(new Base64().encode((Config.get("miabUsername") + ":" + Config.get("miabPassword")).getBytes())));
 		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
 		connection.setDoOutput(true);
 		return connection;

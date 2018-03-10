@@ -25,6 +25,10 @@ public class CommandEvent {
 	private final String argsOriginal;
 	private String args;
 
+	CommandEvent(String args, Method command) {
+		this(null, args, command);
+	}
+
 	public CommandEvent(MessageReceivedEvent event, String args, Method command) {
 		this.event = event;
 		this.args = args;
@@ -79,11 +83,6 @@ public class CommandEvent {
 
 	public void reply(MessageEmbed message) {
 		sendMessage(event.getChannel(), message);
-	}
-
-	@Deprecated
-	public void replyFormatted(String message, Object... args) {
-		reply(String.format(message, args));
 	}
 
 	public void reply(File file, String message, Object... args) {

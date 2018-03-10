@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
@@ -24,17 +25,22 @@ import com.ptsmods.impulse.utils.Url2Png;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.Role;
+import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class Miscellaneous {
 
 	private static Map settings;
+	private static Map<String, Map<String, String>> patronEmails;
 
 	static {
 		try {
-			settings = DataIO.loadJson("data/customcommands/settings.json", Map.class);
-			settings = settings == null ? new HashMap() : settings;
+			settings = DataIO.loadJsonOrDefault("data/customcommands/settings.json", Map.class, new HashMap());
+			patronEmails = DataIO.loadJsonOrDefault("data/other/patronEmails.json", Map.class, new HashMap());
 		} catch (IOException e) {
 			throw new RuntimeException("There was an error while loading the data file.", e);
 		}
@@ -105,14 +111,16 @@ public class Miscellaneous {
 	public static void emailCreate(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
 			if (MailServer.isEnabled()) {
-				boolean success;
-				try {
-					success = MailServer.createMailAddress(event.getAuthor().getId(), event.getArgs());
-				} catch (IOException e) {
-					throw new CommandException("An unknown error occurred while creating the email address.", e);
-				}
-				if (success) event.reply("Successfully made an email account, login info:\n\tEmail address: %s@%s\n\tPassword: %s\n\nTo see how to log in on any email client type %semail options", event.getAuthor().getId(), Config.get("mailBaseUrl"), event.getArgs(), Main.getPrefix(event.getGuild()));
-				else event.reply("An email address could not be created.");
+				if (event.getArgs().length() >= 8) {
+					boolean success;
+					try {
+						success = MailServer.createMailAddress(event.getAuthor().getId(), event.getArgs(), true);
+					} catch (IOException e) {
+						throw new CommandException("An unknown error occurred while creating the email address.", e);
+					}
+					if (success) event.reply("Successfully made an email account, login info:\n\tEmail address: %s@%s\n\tPassword: %s\n\nTo see how to log in on any email client type %semail options", event.getAuthor().getId(), Config.get("mailBaseUrl"), event.getArgs(), Main.getPrefix(event.getGuild()));
+					else event.reply("An email address could not be created.");
+				} else event.reply("The password must be a minimum of 8 characters long.");
 			} else event.reply("This feature has not been enabled by the owner of this bot.");
 		} else Main.sendCommandHelp(event);
 	}
@@ -131,6 +139,63 @@ public class Miscellaneous {
 					.addField("SMTP always verify", Config.get("miabSmtpAlwaysVerify"), true)
 					.build());
 		else event.reply("This feature has not been enabled by the owner of this bot.");
+	}
+
+	@Command(category = "Miscellaneous", help = "A command for Patrons to create custom email addresses.", name = "pemail", dmOnly = true)
+	public static void pemail(CommandEvent event) {
+		if (isPatron(event.getAuthor()) && MailServer.isEnabled())
+			Main.sendCommandHelp(event);
+		else event.reply("You're not a patron or this feature has not been enabled by the owner of this bot so you cannot use this command.");
+	}
+
+	@Subcommand(help = "Create your custom patron email address.", name = "create", parent = "com.ptsmods.impulse.commands.Miscellaneous.pemail", arguments = "<name> <password>", dmOnly = true)
+	public static void pemailCreate(CommandEvent event) throws CommandException {
+		if (isPatron(event.getAuthor()) && MailServer.isEnabled()) {
+			if (event.getArgs().split(" ").length >= 2) {
+				String name = event.getArgs().split(" ")[0];
+				String password = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
+				if (password.length() >= 8) {
+					try {
+						MailServer.createMailAddress(name, password, patronEmails.containsKey(event.getAuthor().getId()) ? patronEmails.get(event.getAuthor().getId()).containsKey(name+"@"+Config.get("mailBaseUrl")) : false);
+					} catch (IOException e) {
+						event.reply("An unknown error occurred while making the email address, this is most likely due to it already being registered by someone other than you and thus you cannot change its password, if you don't think this is the case, please contact my owner using %scontact.", Main.getPrefix(event.getGuild()));
+						e.printStackTrace();
+						return;
+					}
+					if (!patronEmails.containsKey(event.getAuthor().getId())) patronEmails.put(event.getAuthor().getId(), new HashMap());
+					patronEmails.get(event.getAuthor().getId()).put(name+"@"+Config.get("mailBaseUrl"), password);
+					try {
+						DataIO.saveJson(patronEmails, "data/other/patronEmails.json");
+					} catch (IOException e) {
+						throw new CommandException(String.format("An unknown error occurred while saving your email address to the data file, it should be made, but it won't appear in %spemail list.", Main.getPrefix(event.getGuild())), e);
+					}
+					event.reply("Successfully made your custom email address, your email address is **%s@%s** and your password is **%s**, type %spemail options for the options used to log in.", name, Config.get("mailBaseUrl"), password, Main.getPrefix(null));
+				} else event.reply("The password must be a minimum of 8 characters long.");
+			} else Main.sendCommandHelp(event);
+		} else event.reply("You're not a patron or this feature has not been enabled by the owner of this bot so you cannot use this command.");
+	}
+
+	@Subcommand(help = "Lists all your custom patron emails, to make it show passwords run it with [p]pemail list -showpass.", name = "list", parent = "com.ptsmods.impulse.commands.Miscellaneous.pemail")
+	public static void pemailList(CommandEvent event) {
+		if (patronEmails.containsKey(event.getAuthor().getId())) {
+			int maxLength = 6;
+			for (String key : patronEmails.get(event.getAuthor().getId()).keySet())
+				if (key.length() > maxLength) maxLength = key.length()+1;
+			String msg = "```\nEmail"+Main.multiplyString("*", maxLength-5)+"Password";
+			for (Entry<String, String> email : patronEmails.get(event.getAuthor().getId()).entrySet()) {
+				msg += "\n" + email.getKey() + Main.multiplyString(" ", maxLength-email.getKey().length())+(event.getArgs().contains("-showpass") ? email.getValue() : Main.multiplyString("*", email.getValue().length()));
+				if (msg.length() > 1900) {
+					event.reply(msg.trim()+"```");
+					msg = "```\n";
+				}
+			}
+			event.reply(msg+"```\n");
+		} else event.reply("You have no custom emails.");
+	}
+
+	@Subcommand(help = "Shows you all the options necessary for logging in on any email client.", name = "options", parent = "com.ptsmods.impulse.commands.Miscellaneous.pemail")
+	public static void pemailOptions(CommandEvent event) {
+		emailOptions(event);
 	}
 
 	@Command(category = "Miscellaneous", help = "Captures a screenshot of a website.", name = "capture", arguments = "<url>", cooldown = 120)
@@ -176,6 +241,16 @@ public class Miscellaneous {
 				}
 				event.getChannel().sendMessage((String) ((Map) settings.get(event.getGuild().getId())).get(event.getMessage().getContent().substring(serverPrefix.length()))).queue();
 			}
+	}
+
+	public static boolean isPatron(User user) {
+		Guild impulseGuild = Main.getGuildById("234356084398096394");
+		if (impulseGuild != null) {
+			Member member = impulseGuild.getMember(user);
+			Role patronRole = impulseGuild.getRoleById("421057366960635904");
+			return member != null && patronRole != null && member.getRoles().contains(patronRole);
+		}
+		return false;
 	}
 
 }

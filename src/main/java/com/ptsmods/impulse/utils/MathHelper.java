@@ -38,7 +38,7 @@ public class MathHelper {
 	 * It does addition, subtraction, multiplication, division, exponentiation (using the ^ symbol), factorial (! <b>before</b> a number), and a few basic functions like sqrt, cbrt, sin, cos, and tan. It supports grouping using (...), and it gets the operator precedence and associativity rules correct.
 	 * @param str
 	 * @return The answer to the equation.
-	 * @author Boann (https://stackoverflow.com/a/26227947)
+	 * @author Boann
 	 */
 	public static double eval(final String str) {
 		return new Object() {
@@ -77,6 +77,7 @@ public class MathHelper {
 				while (true)
 					if      (eat('*')) x *= parseFactor(); // multiplication
 					else if (eat('/')) x /= parseFactor(); // division
+					else if (eat('%')) x %= parseFactor(); // modulo
 					else return x;
 			}
 
@@ -113,6 +114,20 @@ public class MathHelper {
 				return x;
 			}
 		}.parse();
+	}
+
+	public static int min(Integer... ints) {
+		List<Double> doubles = new ArrayList();
+		for (int i : ints)
+			doubles.add((double) i);
+		return (int) min(doubles.toArray(new Double[] {}));
+	}
+
+	public static double min(Double... doubles) {
+		double min = Double.MAX_VALUE;
+		for (double d : doubles)
+			if (d < min) min = d;
+		return min;
 	}
 
 	public static int max(Integer... ints) {
@@ -166,7 +181,7 @@ public class MathHelper {
 
 		@Override
 		public String toString() {
-			return Float.toString(value);
+			return Float.toString(value) + "%";
 		}
 
 		public void add(float arg1) {

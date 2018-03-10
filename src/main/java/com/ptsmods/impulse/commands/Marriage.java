@@ -195,7 +195,7 @@ public class Marriage {
 					event.reply("%s, do you take %s as your husband/wife? (yes/no)", member.getAsMention(), event.getAuthor().getAsMention());
 					Message response = Main.waitForInput(member, event.getChannel(), 60000);
 					if (response == null) event.reply("%s, the user you tried to marry did not respond, I'm sorry.", event.getAuthor().getAsMention());
-					else if (!response.getContent().startsWith("ye")) event.reply("%s, the user you tried to marry did not say yes, I'm sorry.", event.getAuthor().getAsMention());
+					else if (!response.getContent().toLowerCase().contains("ye")) event.reply("%s, the user you tried to marry did not say yes, I'm sorry.", event.getAuthor().getAsMention());
 					else {
 						Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", event.getAuthor().getName(), member.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions(Main.defaultPermissionsArray).complete();
 						event.getGuild().getController().addSingleRoleToMember(event.getMember(), role).queue();

@@ -2,6 +2,7 @@ package com.ptsmods.impulse.miscellaneous;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -37,7 +38,7 @@ public class JGraphPanel extends JPanel {
 	private List<Double> scores;
 
 	public JGraphPanel(List<Double> scores) {
-		this(scores, "", "");
+		this(scores, null, null);
 	}
 
 	public JGraphPanel(List<Double> scores, String yName, String xName) {
@@ -60,6 +61,7 @@ public class JGraphPanel extends JPanel {
 
 	@Override
 	protected void paintComponent(Graphics g) {
+		g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -146,11 +148,6 @@ public class JGraphPanel extends JPanel {
 		}
 	}
 
-	//    @Override
-	//    public Dimension getPreferredSize() {
-	//        return new Dimension(width, heigth);
-	//    }
-
 	private double getMinScore() {
 		double minScore = Double.MAX_VALUE;
 		for (Double score : Main.removeNulls(scores))
@@ -168,7 +165,7 @@ public class JGraphPanel extends JPanel {
 	public void setScores(List<Double> scores) {
 		this.scores = scores;
 		invalidate();
-		this.repaint();
+		repaint();
 	}
 
 	public List<Double> getScores() {

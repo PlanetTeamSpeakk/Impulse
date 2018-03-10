@@ -81,7 +81,7 @@ public class Dashboard {
 		server.createContext("/getCommands", new DefaultHttpHandler() {
 			@Override
 			public void handle0(HttpExchange he) throws IOException {
-				writeString(he, Main.commandsToJson().toString());
+				writeString(he, false, Main.commandsToJson().toString(2));
 			}
 		});
 		server.createContext("/isValidKey", new DefaultHttpHandler() {
@@ -213,14 +213,17 @@ public class Dashboard {
 	}
 
 	public static void writeString(HttpExchange he, String string, Object... args) throws IOException {
+		writeString(he, true, string, args);
+	}
+
+	public static void writeString(HttpExchange he, boolean prettyPrintJson, String string, Object... args) throws IOException {
 		if (args != null && args.length != 0)
 			string = String.format(string, args);
 		boolean isJson = true;
 		boolean isHtml = Pattern.compile(".*\\<[^>]+>.*", Pattern.DOTALL).matcher(string).matches();
 		Class type = null;
 		// checking if the string which has to be written is JSON.
-		try {new Gson().fromJson(string, Map.class); type = Map.class;} catch (JsonSyntaxException e) {try {new Gson().fromJson(string, List.class); type = List.class;} catch (JsonSyntaxException e1) {isJson = false;}}
-		// checking if the string which has to be written is HTML.
+		try {new Gson().fromJson(string, ArrayMap.class); type = ArrayMap.class;} catch (JsonSyntaxException e) {try {new Gson().fromJson(string, List.class); type = List.class;} catch (JsonSyntaxException e1) {isJson = false;}}
 		if (isJson) {
 			he.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
 			Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -230,8 +233,12 @@ public class Dashboard {
 		else he.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
 		he.sendResponseHeaders(200, string.getBytes("UTF-8").length);
 		BufferedOutputStream os = new BufferedOutputStream(he.getResponseBody());
-		os.write(string.getBytes("UTF-8"));
-		os.close();
+		try {
+			os.write(string.getBytes("UTF-8"));
+			os.close();
+		} catch (IOException ignored) {
+			return; // user is probably just refreshing the page very fast.
+		}
 	}
 
 	public static String createKey(Member member) throws IOException {
@@ -320,7 +327,11 @@ public class Dashboard {
 				handle0(he);
 			} catch (Throwable t) {
 				t.printStackTrace();
-				Main.sendPrivateMessage(Main.getOwner(), "A `%s` exception was thrown on line %s in %s while parsing a %s request on %s. ```java\n%s```", t.getClass().getName(), t.getStackTrace()[0].getLineNumber(), t.getStackTrace()[0].getFileName(), he.getRequestMethod(), he.getRequestURI().getPath(), Main.generateStackTrace(t));
+				for (StackTraceElement element : t.getStackTrace())
+					if (element.getClassName().startsWith("com.ptsmods.impulse")) {
+						Main.sendPrivateMessage(Main.getOwner(), "A `%s` exception was thrown on line %s in %s while parsing a %s request on %s. ```java\n%s```", t.getClass().getName(), element.getLineNumber(), element.getFileName(), he.getRequestMethod(), he.getRequestURI().getPath(), Main.generateStackTrace(t));
+						break;
+					}
 			}
 		}
 

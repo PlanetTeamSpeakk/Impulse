@@ -27,14 +27,13 @@ import com.ptsmods.impulse.miscellaneous.CommandPermissionException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
 
+import javafx.application.Platform;
 import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Icon;
 import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.TextChannel;
 
 public class Owner {
 
@@ -66,7 +65,7 @@ public class Owner {
 		}
 		Main.addCommandHook(event -> {
 			if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && Main.devMode())
-				throw new CommandPermissionException(/*"Developer mode is enabled which means only my owner can use commands."*/);
+				throw new CommandPermissionException("Developer mode is enabled which means only my owner can use commands.");
 		});
 	}
 
@@ -74,11 +73,14 @@ public class Owner {
 	public static void announce(CommandEvent event) {
 		if (event.getArgs().length() != 0) {
 			Message status = event.getChannel().sendMessageFormat("Sending announcement to every guild...", Main.getGuilds().size()).complete();
+			int succeeded = 0;
+			int failed = 0;
 			for (Guild guild : Main.getGuilds())
 				try {
-					guild.getDefaultChannel().sendMessageFormat("%s ~ %s", event.getArgs(), Main.str(event.getAuthor())).queue();
-				} catch (Exception ignored) {}
-			status.editMessage("Announcement sent.").queue();
+					Main.getSendChannel(guild).sendMessageFormat("%s ~ %s", event.getArgs(), Main.str(event.getAuthor())).queue();
+					succeeded += 1;
+				} catch (Exception ignored) {failed += 1;}
+			status.editMessageFormat("Successfully sent the announcement to **%s** guilds, could not send the announcement to **%s** guilds.", succeeded, failed).queue();
 		} else Main.sendCommandHelp(event);
 	}
 
@@ -94,25 +96,10 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Owner", help = "Evaluate code.", name = "debug", ownerCommand = true, hidden = true)
+	@Command(category = "Owner", help = "Compiles and runs Java code.", name = "debug", ownerCommand = true, hidden = true)
 	public static void debug(CommandEvent event) {
 		try {
-			engine.put("event", event);
-			engine.put("message", event.getMessage());
-			engine.put("channel", event.getTextChannel());
-			engine.put("args", event.getArgs());
-			engine.put("jda", event.getJDA());
-			engine.put("author", event.getAuthor());
-			if (event.isFromType(ChannelType.TEXT)) {
-				engine.put("guild", event.getGuild());
-				engine.put("member", event.getMember());
-			}
-			Object out;
-			try {
-				out = engine.eval(String.format("(function() {with (imports) {return %s;}})();", event.getArgs()));
-			} catch (Throwable e) {
-				out = engine.eval(String.format("(function() {with (imports) {%s;}})();", event.getArgs()));
-			}
+			Object out = String.valueOf(Main.compileAndRunJavaCode(event.getArgs(), Main.newHashMap(new String[] {"event"}, new Object[] {event}), null, false));
 			out = out == null ? "null" : out.toString();
 			List<String> messages = new ArrayList<>();
 			while (out.toString().length() > 1990) {
@@ -120,12 +107,33 @@ public class Owner {
 				out = out.toString().substring(1990, out.toString().length());
 			}
 			messages.add(out.toString());
-			event.reply("Input:```javascript\n" + event.getArgs() + "```\nOutput:```javascript\n" + messages.get(0) + "```");
+			event.reply("Input:```java\n" + event.getArgs() + "```\nOutput:```java\n" + messages.get(0) + "```");
 			messages.remove(0);
-			for (String message : messages) event.reply("```javascript\n" + message + "```");
-		} catch (Throwable e1) {
-			event.reply("```javascript\n" + e1.getMessage() + "```");
+			for (String message : messages) event.reply("```java\n" + message + "```");
+		} catch (Throwable e) {
+			if (e.getMessage() != null && e.getMessage().contains("Cannot run program \"javac\"")) event.reply("The Java JDK was either not added to the PATH environment variable or not installed.");
+			else {
+				StackTraceElement stElement = null;
+				for (StackTraceElement element : e.getStackTrace())
+					if (element.getFileName() != null && element.getClassName().startsWith("com.ptsmods.impulse.commands")) stElement = element;
+				String output = String.format("A `%s` exception was thrown at line %s in %s while executing the code. Stacktrace:\n```java\n%s```",
+						e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), Main.generateStackTrace(e));
+				if (output.length() < 1997)
+					event.getChannel().sendMessage(output).queue();
+				else
+					while (output.length() > 1997) {
+						event.getChannel().sendMessage(output.substring(0, 1997) + "```").queue();
+						output = output.substring(1997);
+					}
+			}
 		}
+	}
+
+	@Command(category = "Owner", help = "Basically just the same as debug, but it runs the code on the JFX thread.", name = "debugjfx", ownerCommand = true, hidden = true)
+	public static void debugJFX(CommandEvent event) {
+		Platform.runLater(() -> {
+			debug(event);
+		});
 	}
 
 	@Command(category = "Owner", help = "Shows you all the servers the bot is in.", name = "servers", ownerCommand = true, hidden = true)
@@ -135,11 +143,13 @@ public class Owner {
 		int counter1 = 0;
 		String page = "```css\n[Page 1/%s]\n\t";
 		int id = 0;
-		for (Guild guild : Main.getGuilds()) {
-			page += guild.getName() + "\n\t";
+		List<String> guilds = new ArrayList();
+		for (Guild guild : Main.getGuilds()) guilds.add(guild.getName());
+		for (String guild : Main.sort(guilds)) {
+			page += guild + "\n\t";
 			counter += 1;
 			counter1 += 1;
-			if (counter == 10 || counter1 == Main.getGuilds().size()) {
+			if (counter == 10 || counter1 == guilds.size()) {
 				counter = 0;
 				id += 1;
 				pages.put(id, page.trim() + "```");
@@ -148,7 +158,7 @@ public class Owner {
 		}
 		int pageN = 1;
 		if (event.getArgs().length() != 0 && Main.isInteger(event.getArgs().split(" ")[0])) pageN = Integer.parseInt(event.getArgs().split(" ")[0]);
-		if (pageN >= pages.size()+1) event.reply("The maximum page is " + (pages.size()-1) + ".");
+		if (pageN > pages.size()) event.reply("The maximum page is " + (pages.size()-1) + ".");
 		else event.reply(pages.get(pageN), pages.size());
 	}
 
@@ -160,12 +170,12 @@ public class Owner {
 	@Subcommand(help = "Set the bot's status.", name = "status", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "<status>", ownerCommand = true)
 	public static void setStatus(CommandEvent event) {
 		if (!event.getArgs().isEmpty() &&
-				event.getArgs().split(" ")[0].toUpperCase().equals("OFFLINE") ||
-				event.getArgs().split(" ")[0].toUpperCase().equals("INVISIBLE") ||
-				event.getArgs().split(" ")[0].toUpperCase().equals("DND") ||
-				event.getArgs().split(" ")[0].toUpperCase().equals("DO_NOT_DISTURB") ||
-				event.getArgs().split(" ")[0].toUpperCase().equals("IDLE") ||
-				event.getArgs().split(" ")[0].toUpperCase().equals("ONLINE")) {
+				event.getArgs().split(" ")[0].equalsIgnoreCase("OFFLINE") ||
+				event.getArgs().split(" ")[0].equalsIgnoreCase("INVISIBLE") ||
+				event.getArgs().split(" ")[0].equalsIgnoreCase("DND") ||
+				event.getArgs().split(" ")[0].equalsIgnoreCase("DO_NOT_DISTURB") ||
+				event.getArgs().split(" ")[0].equalsIgnoreCase("IDLE") ||
+				event.getArgs().split(" ")[0].equalsIgnoreCase("ONLINE")) {
 			Main.setOnlineStatus(Main.getStatusFromString(event.getArgs().split(" ")[0]));
 			event.reply("Successfully set the online status to " + Main.getStatusFromString(event.getArgs().split(" ")[0]).name() + ".");
 		} else Main.sendCommandHelp(event);
@@ -288,11 +298,7 @@ public class Owner {
 				Main.getTextChannelById(id).sendMessage(message).queue();
 				toChannel = true;
 			} else if (Main.getGuildById(id) != null) {
-				for (TextChannel channel : Main.getGuildById(id).getTextChannels())
-					if (channel.canTalk()) {
-						channel.sendMessage(message).queue();
-						break;
-					}
+				if (Main.getSendChannel(Main.getGuildById(id)) != null) Main.getSendChannel(Main.getGuildById(id)).sendMessage(message).queue();
 			} else {
 				event.reply("Could not find a user, channel, or guild with the given ID.");
 				return;
@@ -327,6 +333,25 @@ public class Owner {
 		int minor = Integer.parseInt(version.split("\\.")[1].split("-")[0]);
 		int revision = Integer.parseInt(version.split("\\.")[2].split("-")[0]);
 		event.reply(major > Main.major || minor > Main.minor || revision > Main.revision ? String.format("This version of Impulse, **%s**, is outdated. The newest version is **%s**, you can download it here: %s.", Main.version, version, data.get("zipball_url")) : String.format("This version of Impulse, **%s**, is up-to-date.", Main.version));
+	}
+
+	@Command(category = "Owner", help = "Shows you the top 10 biggest guilds this bot is in.", name = "toptenguilds")
+	public static void topTenGuilds(CommandEvent event) {
+		Guild current = null;
+		List<Guild> top = new ArrayList();
+		for (int i : Main.range(Main.getGuilds().size() > 10 ? 10 : Main.getGuilds().size())) {
+			for (Guild guild : Main.getGuilds())
+				if (!top.contains(guild) && (current == null || guild.getMembers().size() > current.getMembers().size())) current = guild;
+			top.add(current);
+			current = null;
+		}
+		int maxLength = 6;
+		for (Guild guild : top)
+			if (guild.getName().length() > maxLength) maxLength = guild.getName().length();
+		String msg = "```\nGuild"+Main.multiplyString(" ", maxLength-5)+"Members\n";
+		for (Guild guild : top)
+			msg += "\n" + guild.getName() + Main.multiplyString(" ", maxLength-guild.getName().length()) + guild.getMembers().size();
+		event.reply(msg + "```");
 	}
 
 }

@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import com.ptsmods.impulse.Main;
 import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.utils.Config;
-import com.ptsmods.impulse.utils.ConsoleColors;
+import com.ptsmods.impulse.utils.ConsoleColours;
 import com.ptsmods.impulse.utils.EventListenerManager;
 
 import net.dv8tion.jda.core.entities.impl.JDAImpl;
@@ -45,7 +45,7 @@ public class EventHandler extends ListenerAdapter {
 			}
 			try (PrintWriter writer = new PrintWriter(new FileWriter("bot.log", false))) {
 				for (String line : lines)
-					writer.println(ConsoleColors.getCleanString(line));
+					writer.println(ConsoleColours.getCleanString(line));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -1,6 +1,5 @@
 package com.ptsmods.impulse.utils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -19,21 +18,20 @@ public class EventListenerManager {
 
 	public static void registerListenersFromClass(Class clazz) {
 		for (Method method : Main.getMethods(clazz))
-			if (method.isAnnotationPresent(SubscribeEvent.class) && method.getParameterCount() == 1 && Main.isSuperClass(method.getParameterTypes()[0], Event.class) && Modifier.isStatic(method.getModifiers()))
-				listeners.put(method.getParameterTypes()[0], Main.add(listeners.getOrDefault(method.getParameterTypes()[0], new ArrayList()), method));
+			registerListener(method);
+	}
+
+	public static void registerListener(Method listener) {
+		if (listener.isAnnotationPresent(SubscribeEvent.class) && listener.getParameterCount() == 1 && Main.isSuperClass(listener.getParameterTypes()[0], Event.class) && Modifier.isStatic(listener.getModifiers()))
+			listeners.put(listener.getParameterTypes()[0], Main.add(listeners.getOrDefault(listener.getParameterTypes()[0], new ArrayList()), listener));
 	}
 
 	public static <E extends Event> void postEvent(E event) {
 		if (Main.done())
-			for (Method method : listeners.getOrDefault(event.getClass(), new ArrayList<>()))
-				try {
-					method.setAccessible(true);
-					method.invoke(null, event);
-				} catch (InvocationTargetException e) {
-					e.getCause().printStackTrace();
-				} catch (IllegalAccessException | IllegalArgumentException e) {
-					e.printStackTrace();
-				}
+			for (Method method : listeners.getOrDefault(event.getClass(), new ArrayList<>())) {
+				method.setAccessible(true);
+				Main.runAsynchronously(null, method, event);
+			}
 	}
 
 }

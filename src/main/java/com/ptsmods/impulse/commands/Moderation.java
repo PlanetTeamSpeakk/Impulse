@@ -1148,6 +1148,7 @@ public class Moderation {
 
 	@SubscribeEvent
 	public static void onMessageReceived(MessageReceivedEvent event) {
+		if (event.getMessage().getRawContent().equals(Main.getSelfUser().getAsMention())) event.getChannel().sendMessageFormat("My prefix here is `%s`.", Main.getPrefix(event.getGuild())).queue();
 		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()}));
 		if (event.getGuild() == null) return;
 		if (filters.containsKey(event.getGuild().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {

@@ -26,10 +26,6 @@ public class SilentCommandEvent extends CommandEvent {
 	@Override
 	public void reply(String message, Object... args) { }
 
-	@Deprecated
-	@Override
-	public void replyFormatted(String message, Object... args) { }
-
 	@Override
 	public void replyInDM(String message, Object... args) { }
 
