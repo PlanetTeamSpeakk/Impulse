@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.ptsmods.impulse.Main;
+import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
 
 import net.dv8tion.jda.core.events.Event;
@@ -27,7 +28,7 @@ public class EventListenerManager {
 	}
 
 	public static <E extends Event> void postEvent(E event) {
-		if (Main.done())
+		if (Main.done() && listeners.containsKey(event.getClass()))
 			for (Method method : listeners.getOrDefault(event.getClass(), new ArrayList<>())) {
 				method.setAccessible(true);
 				Main.runAsynchronously(null, method, event);

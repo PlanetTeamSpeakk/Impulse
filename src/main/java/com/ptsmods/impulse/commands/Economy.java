@@ -19,9 +19,9 @@ import net.dv8tion.jda.core.entities.Message;
 
 public class Economy {
 
-	private static Map bank;
-	private static Map<String, Map<String, Integer>> settings;
-	private static Map cooldowns = new HashMap();
+	private static Map									bank;
+	private static Map<String, Map<String, Integer>>	settings;
+	private static Map									cooldowns	= new HashMap();
 
 	static {
 		try {
@@ -55,30 +55,31 @@ public class Economy {
 		event.reply("Successfully opened an account at the Impulse Bank.");
 	}
 
-	@Subcommand(help = "Set, add or remove credits from your or someone elses bank account.\n\nExamples:\n\t[p]bank set 6900 @PlanetTeamSpeak\n\t[p]bank set +6900 @PlanetTeamSpeak\n\t[p]bank set -6900 @PlanetTeamSpeak.", name = "set", parent = "com.ptsmods.impulse.commands.Economy.bank", arguments = "<amount> [user]", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR})
+	@Subcommand(help = "Set, add or remove credits from your or someone elses bank account.\n\nExamples:\n\t[p]bank set 6900 @PlanetTeamSpeak\n\t[p]bank set +6900 @PlanetTeamSpeak\n\t[p]bank set -6900 @PlanetTeamSpeak.", name = "set", parent = "com.ptsmods.impulse.commands.Economy.bank", arguments = "<amount> [user]", guildOnly = true, userPermissions = { Permission.ADMINISTRATOR })
 	public static void bankSet(CommandEvent event) throws CommandException, IOException {
 		if (!event.getArgs().isEmpty()) {
 			Member member = event.getMember();
-			if (event.getArgs().split(" ").length > 1)
-				if (!event.getMessage().getMentionedUsers().isEmpty()) member = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
-				else {
-					String username = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
-					List<Member> members = event.getGuild().getMembersByName(username, true);
-					if (members.isEmpty()) {
-						event.reply("A user by that name could not be found.");
-						return;
-					} else member = members.get(0);
-				}
+			if (event.getArgs().split(" ").length > 1) if (!event.getMessage().getMentionedUsers().isEmpty())
+				member = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
+			else {
+				String username = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
+				List<Member> members = event.getGuild().getMembersByName(username, true);
+				if (members.isEmpty()) {
+					event.reply("A user by that name could not be found.");
+					return;
+				} else member = members.get(0);
+			}
 			String arg0 = event.getArgs().split(" ")[0];
-			if (!hasAccount(member)) event.reply(member.getUser().getId().equals(event.getAuthor().getId()) ?
-					"You do not have a bank account, you can register one with %sbank register." :
-						"That user does not have a bank account, they can register one with %sbank register.",
-						Main.getPrefix(event.getGuild()));
-			else if (!Main.isInteger(arg0) || !arg0.startsWith("+") && !arg0.startsWith("-") && !Main.isInteger(arg0.substring(1))) Main.sendCommandHelp(event);
+			if (!hasAccount(member))
+				event.reply(member.getUser().getId().equals(event.getAuthor().getId()) ? "You do not have a bank account, you can register one with %sbank register." : "That user does not have a bank account, they can register one with %sbank register.", Main.getPrefix(event.getGuild()));
+			else if (!Main.isInteger(arg0) || !arg0.startsWith("+") && !arg0.startsWith("-") && !Main.isInteger(arg0.substring(1)))
+				Main.sendCommandHelp(event);
 			else {
 				int oldBalance = getBalance(member);
-				if (arg0.startsWith("+")) addBalance(member, Integer.parseInt(arg0.substring(1)));
-				else if (arg0.startsWith("-")) removeBalance(member, Integer.parseInt(arg0.substring(1)));
+				if (arg0.startsWith("+"))
+					addBalance(member, Integer.parseInt(arg0.substring(1)));
+				else if (arg0.startsWith("-"))
+					removeBalance(member, Integer.parseInt(arg0.substring(1)));
 				else setBalance(member, Integer.parseInt(arg0));
 				int newBalance = getBalance(member);
 				event.reply(member.getUser().getId().equals(event.getAuthor().getId()) ? String.format("Your balance has been set from **%s** to **%s**.", oldBalance, newBalance) : String.format("%s's balance has been set from **%s** to **%s**.", member.getAsMention(), oldBalance, newBalance));
@@ -105,7 +106,8 @@ public class Economy {
 	public static void bankTransfer(CommandEvent event) throws Exception {
 		if (!event.getArgs().isEmpty() && event.getArgs().split(" ").length > 1) {
 			Member member = null;
-			if (!event.getMessage().getMentionedUsers().isEmpty()) member = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
+			if (!event.getMessage().getMentionedUsers().isEmpty())
+				member = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
 			else {
 				String username = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
 				List<Member> members = event.getGuild().getMembersByName(username, true);
@@ -115,9 +117,12 @@ public class Economy {
 				} else member = members.get(0);
 			}
 			String arg0 = event.getArgs().split(" ")[0];
-			if (!hasAccount(event.getMember())) event.reply("You do not have a bank account, you can register one with %sbank register.", Main.getPrefix(event.getGuild()));
-			else if (!hasAccount(member)) event.reply("That user does not have a bank account, they can register one with %sbank register.", Main.getPrefix(event.getGuild()));
-			else if (!Main.isInteger(arg0)) Main.sendCommandHelp(event);
+			if (!hasAccount(event.getMember()))
+				event.reply("You do not have a bank account, you can register one with %sbank register.", Main.getPrefix(event.getGuild()));
+			else if (!hasAccount(member))
+				event.reply("That user does not have a bank account, they can register one with %sbank register.", Main.getPrefix(event.getGuild()));
+			else if (!Main.isInteger(arg0))
+				Main.sendCommandHelp(event);
 			else {
 				int oldBalanceAuthor = getBalance(event.getMember());
 				int oldBalanceMember = getBalance(member);
@@ -129,27 +134,20 @@ public class Economy {
 				}
 				int newBalanceAuthor = getBalance(event.getMember());
 				int newBalanceMember = getBalance(member);
-				event.reply("Successfully transferred **%s** credits from %s to %s, %s had **%s** credits and now has **%s** credits and %s had **%s** credits and now has **%s** credits.",
-						Integer.parseInt(arg0),
-						event.getAuthor().getAsMention(),
-						member.getAsMention(),
-						event.getAuthor().getAsMention(),
-						oldBalanceAuthor,
-						newBalanceAuthor,
-						member.getAsMention(),
-						oldBalanceMember,
-						newBalanceMember);
+				event.reply("Successfully transferred **%s** credits from %s to %s, %s had **%s** credits and now has **%s** credits and %s had **%s** credits and now has **%s** credits.", Integer.parseInt(arg0), event.getAuthor().getAsMention(), member.getAsMention(), event.getAuthor().getAsMention(), oldBalanceAuthor, newBalanceAuthor, member.getAsMention(), oldBalanceMember, newBalanceMember);
 			}
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Resets the balance of everyone in this server.", name = "reset", parent = "com.ptsmods.impulse.commands.Economy.bank", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR})
+	@Subcommand(help = "Resets the balance of everyone in this server.", name = "reset", parent = "com.ptsmods.impulse.commands.Economy.bank", guildOnly = true, userPermissions = { Permission.ADMINISTRATOR })
 	public static void bankReset(CommandEvent event) throws IOException {
 		if (bank.containsKey(event.getGuild().getId())) {
 			event.reply("Are you sure you want to unregister %s users? (yes/no)", ((Map) bank.get(event.getGuild().getId())).size());
 			Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000);
-			if (response == null) event.reply("No response gotten, guess not.");
-			else if (!response.getContent().startsWith("ye")) event.reply("Kk, then not.");
+			if (response == null)
+				event.reply("No response gotten, guess not.");
+			else if (!response.getContent().startsWith("ye"))
+				event.reply("Kk, then not.");
 			else {
 				int registeredUsers = ((Map) bank.get(event.getGuild().getId())).size();
 				bank.remove(event.getGuild().getId());
@@ -159,46 +157,50 @@ public class Economy {
 		} else event.reply("No one in this server has a bank account yet.");
 	}
 
-	@Command(category = "Economy", help = "Manage economy bank.", name = "economyset", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
+	@Command(category = "Economy", help = "Manage economy bank.", name = "economyset", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
 	public static void economySet(CommandEvent event) throws CommandException {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "paydaycredits", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
+	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "paydaycredits", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
 	public static void economySetPaydayCredits(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {Integer.parseInt(event.getArgs().split(" ")[0]), 3600, 300, 300}));
-			else ((Map) settings.get(event.getGuild().getId())).put("paydayCredits", Integer.parseInt(event.getArgs().split(" ")[0]));
+			if (!settings.containsKey(event.getGuild().getId()))
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { Integer.parseInt(event.getArgs().split(" ")[0]), 3600, 300, 300 }));
+			else((Map) settings.get(event.getGuild().getId())).put("paydayCredits", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's amount you get when using payday has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of seconds a user should wait before using the payday command.", name = "paydaycooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
+	@Subcommand(help = "Set the amount of seconds a user should wait before using the payday command.", name = "paydaycooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
 	public static void economySetPaydayCooldown(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, Integer.parseInt(event.getArgs().split(" ")[0]), 300, 300}));
-			else ((Map) settings.get(event.getGuild().getId())).put("paydayCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
+			if (!settings.containsKey(event.getGuild().getId()))
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, Integer.parseInt(event.getArgs().split(" ")[0]), 300, 300 }));
+			else((Map) settings.get(event.getGuild().getId())).put("paydayCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's payday cooldown has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of seconds a user should wait before using the slot command.", name = "slotcooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
+	@Subcommand(help = "Set the amount of seconds a user should wait before using the slot command.", name = "slotcooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
 	public static void economySetSlotCooldown(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, Integer.parseInt(event.getArgs().split(" ")[0]), 300}));
-			else ((Map) settings.get(event.getGuild().getId())).put("slotCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
+			if (!settings.containsKey(event.getGuild().getId()))
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, Integer.parseInt(event.getArgs().split(" ")[0]), 300 }));
+			else((Map) settings.get(event.getGuild().getId())).put("slotCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's slot cooldown has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "russianroulettecooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
+	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "russianroulettecooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
 	public static void economySetRussianRouletteCooldown(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, Integer.parseInt(event.getArgs().split(" ")[0])}));
-			else ((Map) settings.get(event.getGuild().getId())).put("russianRouletteCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
+			if (!settings.containsKey(event.getGuild().getId()))
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, 300, Integer.parseInt(event.getArgs().split(" ")[0]) }));
+			else((Map) settings.get(event.getGuild().getId())).put("russianRouletteCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's Russian Roulette cooldown has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
 		} else Main.sendCommandHelp(event);
@@ -207,26 +209,28 @@ public class Economy {
 	@Command(category = "Economy", help = "Free moneyzz!", name = "payday", guildOnly = true)
 	public static void payday(CommandEvent event) throws IOException {
 		if (hasAccount(event.getMember())) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, 300}));
+			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, 300, 300 }));
 			if (!cooldowns.containsKey(event.getGuild().getId())) cooldowns.put(event.getGuild().getId(), new HashMap());
 			Long cooldown = (Long) ((Map) cooldowns.get(event.getGuild().getId())).get(event.getAuthor().getId());
-			if (cooldown == null || System.currentTimeMillis()-cooldown >= Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000) {
+			if (cooldown == null || System.currentTimeMillis() - cooldown >= Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000) {
 				int credits = Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCredits"));
 				if (credits == -1) credits = 360; // for some reason it returns -1 instead of 360 in some occasions.
 				addBalance(event.getMember(), credits);
 				event.reply("It's payday :smile:, you have been given %s credits.", credits);
 				((Map) cooldowns.get(event.getGuild().getId())).put(event.getAuthor().getId(), System.currentTimeMillis());
-			} else event.reply("You cannot do that yet, you have to wait for another " + Main.formatMillis(Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000 - (System.currentTimeMillis()-cooldown)) + ".");
+			} else event.reply("You cannot do that yet, you have to wait for another " + Main.formatMillis(Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000 - (System.currentTimeMillis() - cooldown)) + ".");
 		} else event.reply("You do not have a bank account, you can make one with %sbank register.", Main.getPrefix(event.getGuild()));
 	}
 
 	public static boolean hasAccount(Member member) {
-		if (!bank.containsKey(member.getGuild().getId()) || !((Map) bank.get(member.getGuild().getId())).containsKey(member.getUser().getId())) return false;
+		if (!bank.containsKey(member.getGuild().getId()) || !((Map) bank.get(member.getGuild().getId())).containsKey(member.getUser().getId()))
+			return false;
 		else return true;
 	}
 
 	public static int getBalance(Member member) throws UserHasNoBankAccountException {
-		if (!hasAccount(member)) throw new UserHasNoBankAccountException();
+		if (!hasAccount(member))
+			throw new UserHasNoBankAccountException();
 		else return Main.getIntFromPossibleDouble(((Map) bank.get(member.getGuild().getId())).get(member.getUser().getId()));
 	}
 
@@ -251,7 +255,8 @@ public class Economy {
 
 	public static void register(Member member) throws IOException, UserAlreadyHasABankAccountException {
 		if (!bank.containsKey(member.getGuild().getId())) bank.put(member.getGuild().getId(), new HashMap());
-		if (((Map) bank.get(member.getGuild().getId())).keySet().contains(member.getUser().getId())) throw new UserAlreadyHasABankAccountException();
+		if (((Map) bank.get(member.getGuild().getId())).keySet().contains(member.getUser().getId()))
+			throw new UserAlreadyHasABankAccountException();
 		else {
 			((Map) bank.get(member.getGuild().getId())).put(member.getUser().getId(), 0);
 			saveBank();
@@ -259,9 +264,12 @@ public class Economy {
 	}
 
 	public static void transfer(Member from, Member to, int balance) throws Exception {
-		if (!hasAccount(from) || !hasAccount(to)) throw new UserHasNoBankAccountException();
-		else if (getBalance(from) < balance) throw new UserDoesNotHaveEnoughBalanceException();
-		else if (!from.getGuild().getId().equals(to.getGuild().getId())) throw new Exception("Users are not in the same guild.");
+		if (!hasAccount(from) || !hasAccount(to))
+			throw new UserHasNoBankAccountException();
+		else if (getBalance(from) < balance)
+			throw new UserDoesNotHaveEnoughBalanceException();
+		else if (!from.getGuild().getId().equals(to.getGuild().getId()))
+			throw new Exception("Users are not in the same guild.");
 		else {
 			((Map) bank.get(from.getGuild().getId())).put(from.getUser().getId(), getBalance(from) - balance);
 			((Map) bank.get(from.getGuild().getId())).put(to.getUser().getId(), getBalance(to) + balance);
@@ -270,7 +278,7 @@ public class Economy {
 	}
 
 	public static Map<String, Integer> getSettings(Guild guild) {
-		return settings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, 300}) : settings.get(guild.getId());
+		return settings.get(guild.getId()) == null ? Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, 300, 300 }) : settings.get(guild.getId());
 	}
 
 	public static void putSettings(Guild guild, Map settings) throws CommandException {
@@ -310,30 +318,63 @@ public class Economy {
 	public static class UserHasNoBankAccountException extends RuntimeException { // doesn't have to be catched.
 		private static final long serialVersionUID = -1632246256790292835L;
 
-		public UserHasNoBankAccountException() { super(); }
-		public UserHasNoBankAccountException(String message) { super(message); }
-		public UserHasNoBankAccountException(Throwable cause) { super(cause); }
-		public UserHasNoBankAccountException(String message, Throwable cause) { super(message, cause); }
+		public UserHasNoBankAccountException() {
+			super();
+		}
+
+		public UserHasNoBankAccountException(String message) {
+			super(message);
+		}
+
+		public UserHasNoBankAccountException(Throwable cause) {
+			super(cause);
+		}
+
+		public UserHasNoBankAccountException(String message, Throwable cause) {
+			super(message, cause);
+		}
 
 	}
 
 	public static class UserAlreadyHasABankAccountException extends Exception { // must be catched.
 		private static final long serialVersionUID = 8832996165900822543L;
 
-		public UserAlreadyHasABankAccountException() { super(); }
-		public UserAlreadyHasABankAccountException(String message) { super(message); }
-		public UserAlreadyHasABankAccountException(Throwable cause) { super(cause); }
-		public UserAlreadyHasABankAccountException(String message, Throwable cause) { super(message, cause); }
+		public UserAlreadyHasABankAccountException() {
+			super();
+		}
+
+		public UserAlreadyHasABankAccountException(String message) {
+			super(message);
+		}
+
+		public UserAlreadyHasABankAccountException(Throwable cause) {
+			super(cause);
+		}
+
+		public UserAlreadyHasABankAccountException(String message, Throwable cause) {
+			super(message, cause);
+		}
 
 	}
 
 	public static class UserDoesNotHaveEnoughBalanceException extends Exception {
 		private static final long serialVersionUID = 4539371480275587350L;
 
-		public UserDoesNotHaveEnoughBalanceException() { super(); }
-		public UserDoesNotHaveEnoughBalanceException(String message) { super(message); }
-		public UserDoesNotHaveEnoughBalanceException(Throwable cause) { super(cause); }
-		public UserDoesNotHaveEnoughBalanceException(String message, Throwable cause) { super(message, cause); }
+		public UserDoesNotHaveEnoughBalanceException() {
+			super();
+		}
+
+		public UserDoesNotHaveEnoughBalanceException(String message) {
+			super(message);
+		}
+
+		public UserDoesNotHaveEnoughBalanceException(Throwable cause) {
+			super(cause);
+		}
+
+		public UserDoesNotHaveEnoughBalanceException(String message, Throwable cause) {
+			super(message, cause);
+		}
 
 	}
 

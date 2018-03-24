@@ -140,10 +140,14 @@ public class Random {
 	}
 
 	public static String genKey(int length) {
+		return genKey(length, true);
+	}
+
+	public static String genKey(int length, boolean alphanumeric) {
 		String key = "";
 		for (int i : Main.range(length))
-			key += choice(characters);
-		return key;
+			key += alphanumeric ? Main.fromUnicode(genKey(4, true)) : choice(characters);
+			return key;
 	}
 
 	/**
@@ -154,7 +158,7 @@ public class Random {
 	@SuppressWarnings("deprecation")
 	public static void seed(String key) {
 		callerClass = sun.reflect.Reflection.getCallerClass(2); // 0 is java.lang.Thread, 1 is this class and 2 is the actual caller class.
-		if (!seeds.getOrDefault(callerClass.getName(), new HashMap<>()).containsKey(key)) {
+		if (!seeds.getOrDefault(callerClass.getName(), new HashMap<>()).containsKey(key) || seeds.getOrDefault(callerClass.getName(), new HashMap<>()).get(key) == null) {
 			shouldMakeNewSeed = true;
 			Map callerClassSeeds = seeds.getOrDefault(callerClass.getName(), new HashMap<>());
 			callerClassSeeds.put(key, 0D);
@@ -167,7 +171,7 @@ public class Random {
 		}
 		shouldSeed = true;
 		seedKey = key;
-		lastCalledMillis = new Long(System.currentTimeMillis());
+		lastCalledMillis = System.currentTimeMillis();
 	}
 
 }

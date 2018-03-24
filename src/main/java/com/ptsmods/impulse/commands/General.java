@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.ajbrown.namemachine.Gender;
 import org.ajbrown.namemachine.Name;
@@ -48,12 +47,11 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 
 public class General {
 
-	private static final Map<Integer, String> games = new HashMap();
-	private static final String[] answers = new String[] {
-			"It is certain", "It is decidedly so", "Without a doubt", "Yes definitely", "You may rely on it",						  // positive
-			"As I see it, yes", "Most likely", "Outlook good", "Yes", "Signs point to yes",					  						  // positive
-			"Reply hazy try again", "Ask again later", "Better not tell you now", "Cannot predict now", "Concentrate and ask again",  // neutral
-			"Don't count on it", "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful"};					  // negative
+	private static final Map<Integer, String>	games	= new HashMap();
+	private static final String[]				answers	= new String[] { "It is certain", "It is decidedly so", "Without a doubt", "Yes definitely", "You may rely on it",				// positive
+			"As I see it, yes", "Most likely", "Outlook good", "Yes", "Signs point to yes",																								// positive
+			"Reply hazy try again", "Ask again later", "Better not tell you now", "Cannot predict now", "Concentrate and ask again",													// neutral
+			"Don't count on it", "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful" };																		// negative
 	static {
 		Main.apiKeys.put("steam", "4097EECAE0C75569D595A25BEB4BCB3C");
 		Main.apiKeys.put("wargaming", "a223cd2a48a13e5b2e484f4a9ec80d33");
@@ -84,21 +82,23 @@ public class General {
 	public static void avatar(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
-			if (user == null) event.reply("The given user could not be found.");
+			if (user == null)
+				event.reply("The given user could not be found.");
 			else event.reply(user.getEffectiveAvatarUrl());
 		} else Main.sendCommandHelp(event);
 	}
 
 	@Command(category = "General", help = "Answers the hardest questions life can give you.", name = "8ball", arguments = "<question>")
 	public static void eightBall(CommandEvent event) {
-		if (!event.getArgs().endsWith("?") || event.argsEmpty() || !Main.startsWith(event.getArgs().toLowerCase(), new String[] {"are", "may", "should", "is", "will", "have", "shall", "could", "can", "might", "did", "would", "am"}))
+		if (!event.getArgs().endsWith("?") || event.argsEmpty() || !Main.startsWith(event.getArgs().toLowerCase(), new String[] { "are", "may", "should", "is", "will", "have", "shall", "could", "can", "might", "did", "would", "am" }))
 			event.reply("That does not look like a closed question. (Closed questions can only be answered with yes or no and end with a question mark.)");
 		else event.reply(Random.choice(answers) + ".");
 	}
 
 	@Command(category = "General", help = "Flips text.", name = "flip", arguments = "<text>")
 	public static void flip(CommandEvent event) {
-		if (event.getArgs().isEmpty()) Main.sendCommandHelp(event);
+		if (event.getArgs().isEmpty())
+			Main.sendCommandHelp(event);
 		else event.reply(Main.flipString(event.getArgs()));
 	}
 
@@ -112,14 +112,8 @@ public class General {
 				for (String cmdName : Main.sort(Main.getCommandNames())) {
 					Command cmd = Main.getCommandByName(cmdName).getAnnotation(Command.class);
 					if (cmd == null) continue;
-					if (!event.isOwner() && !event.isCoOwner())
-						if (cmd.category() == null ||
-						cmd.hidden() ||
-						cmd.ownerCommand() ||
-						event.getMember() != null && !event.getMember().hasPermission(cmd.userPermissions()))
-							continue;
-					if (cmd.category() != null && cmd.category().equals(category))
-						msg += "**" + cmd.name() + "**" + (cmd.help() != null && !cmd.help().isEmpty() && !cmd.help().toLowerCase().equals("no help available") ? ": " + cmd.help().split("\n")[0] : "") + "\n\t";
+					if (!event.isOwner() && !event.isCoOwner()) if (cmd.category() == null || cmd.hidden() || cmd.ownerCommand() || event.getMember() != null && !event.getMember().hasPermission(cmd.userPermissions())) continue;
+					if (cmd.category() != null && cmd.category().equals(category)) msg += "**" + cmd.name() + "**" + (cmd.help() != null && !cmd.help().isEmpty() && !cmd.help().toLowerCase().equals("no help available") ? ": " + cmd.help().split("\n")[0] : "") + "\n\t";
 					if (msg.length() >= 1750) {
 						msgs.add(msg);
 						msg = "";
@@ -161,13 +155,9 @@ public class General {
 					for (String cmdName : Main.sort(Main.getCommandNames())) {
 						Command cmd = Main.getCommandByName(cmdName).getAnnotation(Command.class);
 						if (cmd == null || // very unlikely
-								cmd.category() == null ||
-								cmd.hidden() ||
-								cmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) ||
-								event.getMember() != null && !event.getMember().hasPermission(cmd.userPermissions()))
+								cmd.category() == null || cmd.hidden() || cmd.ownerCommand() && !event.getAuthor().getId().equals(Main.getOwner().getId()) || event.getMember() != null && !event.getMember().hasPermission(cmd.userPermissions()))
 							continue;
-						if (cmd.category().equals(category))
-							msg += "**" + cmd.name() + "**" + (cmd.help() != null && !cmd.help().isEmpty() && !cmd.help().toLowerCase().equals("no help available") ? ": " + cmd.help().split("\n")[0] : "") + "\n\t";
+						if (cmd.category().equals(category)) msg += "**" + cmd.name() + "**" + (cmd.help() != null && !cmd.help().isEmpty() && !cmd.help().toLowerCase().equals("no help available") ? ": " + cmd.help().split("\n")[0] : "") + "\n\t";
 						if (msg.length() >= 1750) {
 							msgs.add(msg);
 							msg = "";
@@ -187,14 +177,10 @@ public class General {
 	public static void info(CommandEvent event) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setTitle(event.getJDA().getSelfUser().getName());
-		embed.setColor(new Color(Random.randInt(256*256*256)));
+		embed.setColor(new Color(Random.randInt(256 * 256 * 256)));
 		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
-		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. "
-				+ "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") "
-				+ "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")"
-				+ ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), "
-				+ "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
-		embed.setFooter("PS, the color used is #" + Main.colorToHex(embed.build().getColor()) + ".", null);
+		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. " + "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") " + "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")" + ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), " + "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
+		embed.setFooter("PS, the color used is #" + Main.colourToHex(embed.build().getColor()) + ".", null);
 		event.reply(embed.build());
 	}
 
@@ -207,9 +193,9 @@ public class General {
 	public static void ping(CommandEvent event) {
 		long nanos = System.nanoTime();
 		event.getChannel().sendTyping().complete();
-		long replyTime = Main.getTime(TimeType.MILLISECONDS)/1000-event.getMessage().getCreationTime().toEpochSecond();
+		long replyTime = Main.getTime(TimeType.MILLISECONDS) / 1000 - event.getMessage().getCreationTime().toEpochSecond();
 		replyTime = replyTime < 0 ? 0 : replyTime;
-		event.reply("Ping: **" + (System.nanoTime()-nanos)/1000000F + " milliseconds**, took **" + replyTime + " second" + (replyTime != 1 ? "s" : "") + "** to reply.");
+		event.reply("Ping: **" + (System.nanoTime() - nanos) / 1000000F + " milliseconds**, took **" + replyTime + " second" + (replyTime != 1 ? "s" : "") + "** to reply.");
 	}
 
 	@Command(category = "General", help = "Generates a QR code from the given text.", name = "qrcode", arguments = "<text>")
@@ -238,20 +224,16 @@ public class General {
 
 	@Command(category = "General", help = "Let's the bot say something, this does filter out @\u200Beveryone and @\u200Bhere.", name = "say", arguments = "<text>")
 	public static void say(CommandEvent event) {
-		if (event.getArgs().length() != 0) event.reply(event.getArgs().replaceAll("@everyone", "@\u200Beveryone").replaceAll("@here", "@\u200Bhere"));
+		if (event.getArgs().length() != 0)
+			event.reply(event.getArgs().replaceAll("@everyone", "@\u200Beveryone").replaceAll("@here", "@\u200Bhere"));
 		else Main.sendCommandHelp(event);
 	}
 
 	@Command(category = "General", help = "Tells you in how many servers the bot is in.", name = "servercount")
 	public static void serverCount(CommandEvent event) {
 		if (Main.getShards().size() != 1)
-			event.reply("This shard is currently in **%s** servers and can see **%s** users.\n"
-					+ "This bot is currently in **%s** servers and can see **%s** users.",
-					event.getJDA().getGuilds().size(), event.getJDA().getUsers().size(),
-					Main.getGuilds().size(), Main.getUsers().size());
-		else
-			event.reply("This bot is currently in **%s** servers and can see **%s** users.",
-					event.getJDA().getGuilds().size(), event.getJDA().getUsers().size());
+			event.reply("This shard is currently in **%s** servers and can see **%s** users.\n" + "This bot is currently in **%s** servers and can see **%s** users.", event.getJDA().getGuilds().size(), event.getJDA().getUsers().size(), Main.getGuilds().size(), Main.getUsers().size());
+		else event.reply("This bot is currently in **%s** servers and can see **%s** users.", event.getJDA().getGuilds().size(), event.getJDA().getUsers().size());
 	}
 
 	@Command(category = "General", help = "Tells you which shard this server is on.", name = "shard")
@@ -264,14 +246,15 @@ public class General {
 		if (event.getArgs().length() != 0) {
 			Message msg = event.getChannel().sendMessage("Shortening your URL, please wait...").complete();
 			Response<ShortenResponse> resp = new BitlyClient(Main.apiKeys.get("bitly")).shorten().setLongUrl(event.getArgs()).call();
-			if (resp.status_txt.equals("INVALID_URI")) msg.editMessage("The given URL was invalid, according to bit.ly.").complete();
+			if (resp.status_txt.equals("INVALID_URI"))
+				msg.editMessage("The given URL was invalid, according to bit.ly.").complete();
 			else msg.editMessage("Here you go: <" + resp.data.url + ">").complete();
 		} else Main.sendCommandHelp(event);
 	}
 
 	@Command(category = "General", help = "Tells you how long I've been up for.", name = "uptime")
 	public static void uptime(CommandEvent event) {
-		event.reply("I have been up for " + Main.formatMillis(new Date().getTime()-Main.started.getTime()) + ".");
+		event.reply("I have been up for " + Main.formatMillis(new Date().getTime() - Main.started.getTime()) + ".");
 	}
 
 	@Command(category = "General", help = "Look something up on Urban Dictionary.", name = "urban", arguments = "<query>", cooldown = 30)
@@ -303,12 +286,10 @@ public class General {
 		} else Main.sendCommandHelp(event);
 	}
 
+	// TODO: make this sysinfo and make is show more things.
 	@Command(category = "General", help = "Tells you how much RAM is allocated, how much RAM is used and the amount of processors available.", name = "usage")
 	public static void usage(CommandEvent event) {
-		event.reply("RAM used: **%s**, RAM allocated: **%s**, cores: **%s**.",
-				Main.formatFileSize(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()),
-				Main.formatFileSize(Runtime.getRuntime().totalMemory()),
-				Runtime.getRuntime().availableProcessors());
+		event.reply("RAM used: **%s**, RAM allocated: **%s**, cores: **%s**.", Main.formatFileSize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()), Main.formatFileSize(Runtime.getRuntime().totalMemory()), Runtime.getRuntime().availableProcessors());
 	}
 
 	@Command(category = "General", help = "Tells you who's boss!", name = "botowner")
@@ -324,10 +305,12 @@ public class General {
 	@Subcommand(help = "Gives you a lot of information about a user.", name = "getuserinfo", parent = "com.ptsmods.impulse.commands.General.steam", cooldown = 30, arguments = "<user>")
 	public static void steamGetUserInfo(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
-			if (event.getArgs().contains(" ")) event.reply("Due to a bug in the Steam API, usernames cannot have spaces in them.");
+			if (event.getArgs().contains(" "))
+				event.reply("Due to a bug in the Steam API, usernames cannot have spaces in them.");
 			else {
 				String userid = "";
-				if (Main.isDouble(event.getArgs())) userid = event.getArgs();
+				if (Main.isDouble(event.getArgs()))
+					userid = event.getArgs();
 				else {
 					Map data;
 					try {
@@ -338,8 +321,7 @@ public class General {
 					if ((double) data.get("success") == 42D) {
 						event.reply("That's not a valid username.");
 						return;
-					}
-					else userid = (String) data.get("steamid");
+					} else userid = (String) data.get("steamid");
 				}
 				Map data;
 				List data1;
@@ -348,7 +330,8 @@ public class General {
 				} catch (JsonSyntaxException | IOException e) {
 					throw new CommandException("An unknown error occurred while getting the player summaries.", e);
 				}
-				if (data1.isEmpty()) event.reply("That's not a valid ID.");
+				if (data1.isEmpty())
+					event.reply("That's not a valid ID.");
 				else {
 					data = (Map) data1.get(0);
 					try {
@@ -359,13 +342,7 @@ public class General {
 					List ownedGames = new ArrayList();
 					for (Map game : (List<Map>) data.get("games"))
 						ownedGames.add(String.format("%s (%s)", games.get(Integer.parseInt(game.get("appid").toString().split("\\.")[0])), game.get("appid").toString().split("\\.")[0]));
-					event.reply(String.format("```fix\nUsername: %s\nSteam ID: %s\nProfile URL: %s\nAvatar: %s\nGame count: %s\nGames owned: \n\t%s```",
-							data.get("personaname"),
-							data.get("steamid"),
-							data.get("profileurl"),
-							data.get("avatarfull"),
-							((List) data.get("games")).size(),
-							Main.joinCustomChar("\n\t", ownedGames)));
+					event.reply(String.format("```fix\nUsername: %s\nSteam ID: %s\nProfile URL: %s\nAvatar: %s\nGame count: %s\nGames owned: \n\t%s```", data.get("personaname"), data.get("steamid"), data.get("profileurl"), data.get("avatarfull"), ((List) data.get("games")).size(), Main.joinCustomChar("\n\t", ownedGames)));
 				}
 			}
 		} else Main.sendCommandHelp(event);
@@ -407,15 +384,7 @@ public class General {
 					}
 				}
 			}
-			event.reply("```fix\nID: %s\nName: %s\nDeveloper: %s\nPublisher: %s\nDownloads: %.0f\nURL: https://store.steampowered.com/app/%s\nPrice: $%s.%s```",
-					data.get("appid").toString().split("\\.")[0],
-					data.get("name"),
-					data.get("developer"),
-					data.get("publisher"),
-					data.get("owners"),
-					data.get("appid").toString().split("\\.")[0],
-					(int) Double.parseDouble(data.get("price").toString()) / 100,
-					(int) Double.parseDouble(data.get("price").toString()) % 100);
+			event.reply("```fix\nID: %s\nName: %s\nDeveloper: %s\nPublisher: %s\nDownloads: %.0f\nURL: https://store.steampowered.com/app/%s\nPrice: $%s.%s```", data.get("appid").toString().split("\\.")[0], data.get("name"), data.get("developer"), data.get("publisher"), data.get("owners"), data.get("appid").toString().split("\\.")[0], (int) Double.parseDouble(data.get("price").toString()) / 100, (int) Double.parseDouble(data.get("price").toString()) % 100);
 		} else Main.sendCommandHelp(event);
 	}
 
@@ -463,7 +432,7 @@ public class General {
 
 	@Subcommand(help = "Tells you how many apps are currently on Steam.", name = "appcount", parent = "com.ptsmods.impulse.commands.General.steam")
 	public static void steamAppCount(CommandEvent event) {
-		event.reply("There are currently **%s** apps and games on Steam (latest app: **%s**).", games.size(), games.values().toArray(new String[0])[games.values().size()-1]);
+		event.reply("There are currently **%s** apps and games on Steam (latest app: **%s**).", games.size(), games.values().toArray(new String[0])[games.values().size() - 1]);
 	}
 
 	@Subcommand(help = "Get CS:GO stats from a user.\nExample:\n[p]steam getcsgostats PlanetTeamSpeak (Warning: I am noob)\n[p]steam getcsgostats 76561198187354157 (Same user but with Steam 64 ID)", name = "getcsgostats", parent = "com.ptsmods.impulse.commands.General.steam", cooldown = 30)
@@ -512,22 +481,7 @@ public class General {
 				Map<String, String> data1 = new HashMap();
 				for (int i : Main.range(data.size()))
 					data1.put(((Map) data.get(i)).get("name").toString(), ((Map) data.get(i)).get("value").toString());
-				event.reply("```fix\nUsername: %s\nUser ID: %s\nTotal kills: %s\nTotal deaths: %s\nKDR: %.4f\nTotal time played: %s\nTotal bombs planted: %s\nTotal wins: %s\nTotal damage done: %s\nTotal money earned: %s\nHeadshots done: %s\nTotal shots fired: %s\nTotal shots hit: %s\nHit ratio: %.2f%%\nTotal rounds played: %s```",
-						username,
-						userid,
-						data1.get("total_kills").toString().split("\\.")[0],
-						data1.get("total_deaths").toString().split("\\.")[0],
-						Double.parseDouble(data1.get("total_kills")) / Double.parseDouble(data1.get("total_deaths")),
-						Main.formatMillis(Integer.parseInt(data1.get("total_time_played").toString().split("\\.")[0]) * 1000).replaceAll("\\*", ""),
-						data1.get("total_planted_bombs").toString().split("\\.")[0],
-						data1.get("total_wins").toString().split("\\.")[0],
-						data1.get("total_damage_done").toString().split("\\.")[0],
-						data1.get("total_money_earned").toString().split("\\.")[0],
-						data1.get("total_kills_headshot").toString().split("\\.")[0],
-						data1.get("total_shots_fired").toString().split("\\.")[0],
-						data1.get("total_shots_hit").toString().split("\\.")[0],
-						MathHelper.percentage(Double.parseDouble(data1.get("total_shots_fired")), Double.parseDouble(data1.get("total_shots_hit"))).floatValue(),
-						data1.get("total_rounds_played").toString().split("\\.")[0]);
+				event.reply("```fix\nUsername: %s\nUser ID: %s\nTotal kills: %s\nTotal deaths: %s\nKDR: %.4f\nTotal time played: %s\nTotal bombs planted: %s\nTotal wins: %s\nTotal damage done: %s\nTotal money earned: %s\nHeadshots done: %s\nTotal shots fired: %s\nTotal shots hit: %s\nHit ratio: %.2f%%\nTotal rounds played: %s```", username, userid, data1.get("total_kills").toString().split("\\.")[0], data1.get("total_deaths").toString().split("\\.")[0], Double.parseDouble(data1.get("total_kills")) / Double.parseDouble(data1.get("total_deaths")), Main.formatMillis(Integer.parseInt(data1.get("total_time_played").toString().split("\\.")[0]) * 1000).replaceAll("\\*", ""), data1.get("total_planted_bombs").toString().split("\\.")[0], data1.get("total_wins").toString().split("\\.")[0], data1.get("total_damage_done").toString().split("\\.")[0], data1.get("total_money_earned").toString().split("\\.")[0], data1.get("total_kills_headshot").toString().split("\\.")[0], data1.get("total_shots_fired").toString().split("\\.")[0], data1.get("total_shots_hit").toString().split("\\.")[0], MathHelper.percentage(Double.parseDouble(data1.get("total_shots_fired")), Double.parseDouble(data1.get("total_shots_hit"))).floatValue(), data1.get("total_rounds_played").toString().split("\\.")[0]);
 			}
 		} else Main.sendCommandHelp(event);
 	}
@@ -558,9 +512,10 @@ public class General {
 					if (Main.getIntFromPossibleDouble(((Map) data.get("meta")).get("count")) > 1) {
 						List<Map<String, String>> users = new ArrayList();
 						for (int i : Main.range(((List) data.get("data")).size()))
-							users.add(Main.newHashMap(new String[] {"username", "id"}, new String[] {((Map) ((List) data.get("data")).get(i)).get("nickname").toString(), String.format("%.0f", ((Map) ((List) data.get("data")).get(i)).get("account_id"))}));
+							users.add(Main.newHashMap(new String[] { "username", "id" }, new String[] { ((Map) ((List) data.get("data")).get(i)).get("nickname").toString(), String.format("%.0f", ((Map) ((List) data.get("data")).get(i)).get("account_id")) }));
 						String msg = "Found multiple results, please pick 1:\n";
-						for (int i : Main.range(users.size())) msg += i+1 + ". " + users.get(i).get("username") + "\n";
+						for (int i : Main.range(users.size()))
+							msg += i + 1 + ". " + users.get(i).get("username") + "\n";
 						event.reply(msg.trim());
 						Message response = Main.waitForInput(event.getMember(), event.getChannel(), 15000);
 						if (response == null) {
@@ -574,11 +529,12 @@ public class General {
 							} else if (choice < 1) {
 								event.reply("The chosen number was smaller than 1.");
 								return;
-							} else
-								userid = users.get(choice-1).get("id");
+							} else userid = users.get(choice - 1).get("id");
 						}
-					} else
-						userid = ((Map) ((List) data.get("data")).get(0)).get("account_id").toString();
+					} else if (Main.getIntFromPossibleDouble(((Map) data.get("meta")).get("count")) < 1) {
+						event.reply("Could not find any results for '%s'.", username);
+						return;
+					} else userid = ((Map) ((List) data.get("data")).get(0)).get("account_id").toString();
 					try {
 						data1 = (Map) ((Map) new Gson().fromJson(Main.getHTML("https://api.worldoftanks." + server + "/wot/account/info/?application_id=" + Main.apiKeys.get("wargaming") + "&account_id=" + userid), Map.class).get("data")).get(userid);
 					} catch (JsonSyntaxException | IOException e) {
@@ -590,31 +546,7 @@ public class General {
 					Long lastBattleTime = Main.getLongFromPossibleDouble(data1.get("last_battle_time")) * 1000;
 					Long createdAt = Main.getLongFromPossibleDouble(data1.get("created_at")) * 1000;
 					data1 = (Map) ((Map) data1.get("statistics")).get("all");
-					event.reply("```fix\nUsername: %s\nUser ID: %s\nCreated at: %s (DD/MM/YY)\nLast battle: %s (DD/MM/YY)\nGlobal rating: %s\nClient language: %s\nSpotted: %s\nMax xp earned: %s\nAverage damage blocked: %s\nDirect hits received: %s\nTimes ammoracked player: %s\nPenetrations received: %s\nPenetrations done: %s\nShots: %s\nHits: %s\nHit percentage: %s%%\nFree xp: %s\nBattles done: %s\nSurived battles: %s\nBattles won: %s\nBattles lost: %s\nBattles drawn: %s\nDropped capture points: %s\nTotal damage dealt: %s```",
-							username,
-							userid,
-							new SimpleDateFormat("dd/MM/yyyy").format(new Date(createdAt)),
-							new SimpleDateFormat("dd/MM/yyyy").format(new Date(lastBattleTime)),
-							globalRating,
-							clientLang,
-							data1.get("spotted").toString().split("\\.")[0],
-							data1.get("max_xp").toString().split("\\.")[0],
-							data1.get("avg_damage_blocked"),
-							data1.get("direct_hits_received").toString().split("\\.")[0],
-							data1.get("explosion_hits").toString().split("\\.")[0],
-							data1.get("piercings_received").toString().split("\\.")[0],
-							data1.get("piercings").toString().split("\\.")[0],
-							data1.get("shots").toString().split("\\.")[0],
-							data1.get("hits").toString().split("\\.")[0],
-							MathHelper.percentage((double) data1.get("shots"), (double) data1.get("hits")),
-							data1.get("xp").toString().split("\\.")[0],
-							data1.get("battles").toString().split("\\.")[0],
-							data1.get("survived_battles").toString().split("\\.")[0],
-							data1.get("wins").toString().split("\\.")[0],
-							data1.get("losses").toString().split("\\.")[0],
-							data1.get("draws").toString().split("\\.")[0],
-							data1.get("dropped_capture_points").toString().split("\\.")[0],
-							data1.get("damage_dealt").toString().split("\\.")[0]);
+					event.reply("```fix\nUsername: %s\nUser ID: %s\nCreated at: %s (DD/MM/YY)\nLast battle: %s (DD/MM/YY)\nGlobal rating: %s\nClient language: %s\nSpotted: %s\nMax xp earned: %s\nAverage damage blocked: %s\nDirect hits received: %s\nTimes ammoracked player: %s\nPenetrations received: %s\nPenetrations done: %s\nShots: %s\nHits: %s\nHit percentage: %s%%\nFree xp: %s\nBattles done: %s\nSurived battles: %s\nBattles won: %s\nBattles lost: %s\nBattles drawn: %s\nDropped capture points: %s\nTotal damage dealt: %s```", username, userid, new SimpleDateFormat("dd/MM/yyyy").format(new Date(createdAt)), new SimpleDateFormat("dd/MM/yyyy").format(new Date(lastBattleTime)), globalRating, clientLang, data1.get("spotted").toString().split("\\.")[0], data1.get("max_xp").toString().split("\\.")[0], data1.get("avg_damage_blocked"), data1.get("direct_hits_received").toString().split("\\.")[0], data1.get("explosion_hits").toString().split("\\.")[0], data1.get("piercings_received").toString().split("\\.")[0], data1.get("piercings").toString().split("\\.")[0], data1.get("shots").toString().split("\\.")[0], data1.get("hits").toString().split("\\.")[0], MathHelper.percentage((double) data1.get("shots"), (double) data1.get("hits")), data1.get("xp").toString().split("\\.")[0], data1.get("battles").toString().split("\\.")[0], data1.get("survived_battles").toString().split("\\.")[0], data1.get("wins").toString().split("\\.")[0], data1.get("losses").toString().split("\\.")[0], data1.get("draws").toString().split("\\.")[0], data1.get("dropped_capture_points").toString().split("\\.")[0], data1.get("damage_dealt").toString().split("\\.")[0]);
 				}
 			} else Main.sendCommandHelp(event);
 		} else Main.sendCommandHelp(event);
@@ -637,7 +569,8 @@ public class General {
 					found = true;
 					break;
 				}
-			if (!found) event.reply("A tank with the given name could not be found.");
+			if (!found)
+				event.reply("A tank with the given name could not be found.");
 			else {
 				Map data;
 				try {
@@ -645,31 +578,11 @@ public class General {
 				} catch (JsonSyntaxException | IOException e) {
 					throw new CommandException("An unknown error occurred while getting data for this tank.", e);
 				}
-				if (data.get(Integer.toString(tankID)) == null) event.reply("No data found for that tank.");
+				if (data.get(Integer.toString(tankID)) == null)
+					event.reply("No data found for that tank.");
 				else {
 					data = (Map) data.get(Integer.toString(tankID));
-					event.reply("```fix\nTank name: %s\nTank ID: %s\nTier: %s\nEngine power: %s\nVision radius: %s (metres)\nMax gun penetration: %s (mm)\nMax health: %s\nWeight (tonnes): %s\nRadio distance: %s\nTank type: %s\nChassis rotation speed (degrees per second): %s\nGun name: %s\nMax ammo: %s\nNation: %s\nTurret rotation speed: %s\nIs premium: %s\nGold price: %s\nCredit price: %s\nXp price: %s\nSpeed limit: %s (km/s)\nMax damage: %s\n```",
-							data.get("name_i18n"),
-							tankID,
-							data.get("level").toString().split("\\.")[0],
-							data.get("engine_power").toString().split("\\.")[0],
-							data.get("circular_vision_radius").toString().split("\\.")[0],
-							data.get("gun_piercing_power_max").toString().split("\\.")[0],
-							data.get("max_health").toString().split("\\.")[0],
-							data.get("weight"),
-							data.get("radio_distance").toString().split("\\.")[0],
-							data.get("type_i18n"),
-							data.get("chassis_rotation_speed").toString().split("\\.")[0],
-							data.get("gun_name"),
-							data.get("gun_max_ammo").toString().split("\\.")[0],
-							data.get("nation_i18n"),
-							data.get("turret_rotation_speed").toString().split("\\.")[0],
-							data.get("is_premium"),
-							data.get("price_gold").toString().split("\\.")[0],
-							data.get("price_credit").toString().split("\\.")[0],
-							data.get("price_xp").toString().split("\\.")[0],
-							data.get("speed_limit").toString().split("\\.")[0],
-							data.get("gun_damage_max").toString().split("\\.")[0]);
+					event.reply("```fix\nTank name: %s\nTank ID: %s\nTier: %s\nEngine power: %s\nVision radius: %s (metres)\nMax gun penetration: %s (mm)\nMax health: %s\nWeight (tonnes): %s\nRadio distance: %s\nTank type: %s\nChassis rotation speed (degrees per second): %s\nGun name: %s\nMax ammo: %s\nNation: %s\nTurret rotation speed: %s\nIs premium: %s\nGold price: %s\nCredit price: %s\nXp price: %s\nSpeed limit: %s (km/s)\nMax damage: %s\n```", data.get("name_i18n"), tankID, data.get("level").toString().split("\\.")[0], data.get("engine_power").toString().split("\\.")[0], data.get("circular_vision_radius").toString().split("\\.")[0], data.get("gun_piercing_power_max").toString().split("\\.")[0], data.get("max_health").toString().split("\\.")[0], data.get("weight"), data.get("radio_distance").toString().split("\\.")[0], data.get("type_i18n"), data.get("chassis_rotation_speed").toString().split("\\.")[0], data.get("gun_name"), data.get("gun_max_ammo").toString().split("\\.")[0], data.get("nation_i18n"), data.get("turret_rotation_speed").toString().split("\\.")[0], data.get("is_premium"), data.get("price_gold").toString().split("\\.")[0], data.get("price_credit").toString().split("\\.")[0], data.get("price_xp").toString().split("\\.")[0], data.get("speed_limit").toString().split("\\.")[0], data.get("gun_damage_max").toString().split("\\.")[0]);
 				}
 			}
 		} else Main.sendCommandHelp(event);
@@ -707,15 +620,12 @@ public class General {
 				String address = ((Map) ((List) data.get("results")).get(0)).get("formatted_address").toString();
 				Map data1;
 				try {
-					data1 = new Gson().fromJson(Main.getHTML("https://maps.googleapis.com/maps/api/timezone/json?location=" + lat + "," + lng + "&timestamp=" + new Date().getTime()/1000 +"&key=" + Main.apiKeys.get("timezone")), Map.class);
+					data1 = new Gson().fromJson(Main.getHTML("https://maps.googleapis.com/maps/api/timezone/json?location=" + lat + "," + lng + "&timestamp=" + new Date().getTime() / 1000 + "&key=" + Main.apiKeys.get("timezone")), Map.class);
 				} catch (JsonSyntaxException | IOException e) {
 					throw new CommandException("An unknown error occurred while getting the time and timezone from the Google API.", e);
 				}
 				if (data1.get("status").toString().equals("OK"))
-					event.reply("**%s**\n\t%s (%s)",
-							new SimpleDateFormat("EEEE d MMM y HH:mm:ss").format(new Date(Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis() + Main.getIntFromPossibleDouble(data1.get("dstOffset"))*1000 + Main.getIntFromPossibleDouble(data1.get("rawOffset"))*1000)),
-							address,
-							data1.get("timeZoneName"));
+					event.reply("**%s**\n\t%s (%s)", new SimpleDateFormat("EEEE d MMM y HH:mm:ss").format(new Date(Calendar.getInstance().getTimeInMillis() + Main.getIntFromPossibleDouble(data1.get("dstOffset")) * 1000 + Main.getIntFromPossibleDouble(data1.get("rawOffset")) * 1000)), address, data1.get("timeZoneName"));
 				else event.reply("An unknown error occurred while getting the time and timezone from the Google API.");
 			} else event.reply("An unknown error occurred while getting the longitude and latitude from the Google API.");
 		} else Main.sendCommandHelp(event);
@@ -744,8 +654,7 @@ public class General {
 	public static void serverRoles(CommandEvent event) {
 		List<String> roles = new ArrayList();
 		for (Role role : event.getGuild().getRoles())
-			if (!role.getName().toLowerCase().equals("@everyone") && !role.getName().toLowerCase().equals("@here"))
-				roles.add("**" + role.getName() + "**");
+			if (!role.getName().toLowerCase().equals("@everyone") && !role.getName().toLowerCase().equals("@here")) roles.add("**" + role.getName() + "**");
 		event.reply("This server has the following roles: %s (%s roles)", Main.joinNiceString(roles), roles.size());
 	}
 
@@ -758,9 +667,11 @@ public class General {
 	public static void serverRoleInfo(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			Role role = null;
-			if (!event.getMessage().getMentionedRoles().isEmpty()) role = event.getMessage().getMentionedRoles().get(0);
+			if (!event.getMessage().getMentionedRoles().isEmpty())
+				role = event.getMessage().getMentionedRoles().get(0);
 			else role = event.getGuild().getRolesByName(event.getArgs(), true).isEmpty() ? null : Random.choice(event.getGuild().getRolesByName(event.getArgs(), true));
-			if (role == null) event.reply("The given role could not be found.");
+			if (role == null)
+				event.reply("The given role could not be found.");
 			else {
 				int userCount = 0;
 				for (Member member : event.getGuild().getMembers())
@@ -806,7 +717,7 @@ public class General {
 			if (member.getUser().isBot())
 				bots += 1;
 			else members += 1;
-		event.reply("This server has **%s users** and **%s bots** with a total of **%s members**.", members, bots, members+bots);
+		event.reply("This server has **%s users** and **%s bots** with a total of **%s members**.", members, bots, members + bots);
 	}
 
 	@Subcommand(help = "Shows you the ID of this server and this channel.", name = "id", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
@@ -838,8 +749,8 @@ public class General {
 			embed.addField("Is bot", "" + member.getUser().isBot(), true);
 			embed.addField("Muted in this server", "" + member.getVoiceState().isMuted(), true);
 			embed.addField("Deafened in this server", "" + member.getVoiceState().isDeafened(), true);
-			embed.addField("Joined discord at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getUser().getCreationTime().toEpochSecond()*1000)), true);
-			embed.addField("Joined server at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getJoinDate().toEpochSecond()*1000)), true);
+			embed.addField("Joined discord at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getUser().getCreationTime().toEpochSecond() * 1000)), true);
+			embed.addField("Joined server at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getJoinDate().toEpochSecond() * 1000)), true);
 			embed.addField("Color", "#" + Integer.toHexString(member.getColor() == null ? 0 : member.getColor().getRGB()).substring(2).toUpperCase(), true);
 			embed.addField("Roles", Main.joinNiceString(roles), true);
 			event.reply(embed.build());

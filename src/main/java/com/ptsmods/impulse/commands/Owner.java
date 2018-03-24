@@ -41,31 +41,12 @@ public class Owner {
 
 	static {
 		try {
-			engine.eval("var imports = new JavaImporter(" +
-					"java.io," +
-					"java.lang," +
-					"java.util," +
-					"java.awt," +
-					"Packages.net.dv8tion.jda.core," +
-					"Packages.net.dv8tion.jda.core.entities," +
-					"Packages.net.dv8tion.jda.core.entities.impl," +
-					"Packages.net.dv8tion.jda.core.managers," +
-					"Packages.net.dv8tion.jda.core.managers.impl," +
-					"Packages.net.dv8tion.jda.core.utils," +
-					"Packages.com.ptsmods.impulse," +
-					"Packages.com.ptsmods.impulse.commands," +
-					"Packages.com.ptsmods.impulse.miscellaneous," +
-					"Packages.com.ptsmods.impulse.utils," +
-					"Packages.com.google.gson," +
-					"Packages.java.nio);" +
-					"var Main = com.ptsmods.impulse.Main;" +
-					"var LogType = Main.LogType;");
+			engine.eval("var imports = new JavaImporter(" + "java.io," + "java.lang," + "java.util," + "java.awt," + "Packages.net.dv8tion.jda.core," + "Packages.net.dv8tion.jda.core.entities," + "Packages.net.dv8tion.jda.core.entities.impl," + "Packages.net.dv8tion.jda.core.managers," + "Packages.net.dv8tion.jda.core.managers.impl," + "Packages.net.dv8tion.jda.core.utils," + "Packages.com.ptsmods.impulse," + "Packages.com.ptsmods.impulse.commands," + "Packages.com.ptsmods.impulse.miscellaneous," + "Packages.com.ptsmods.impulse.utils," + "Packages.com.google.gson," + "Packages.java.nio);" + "var Main = com.ptsmods.impulse.Main;" + "var LogType = Main.LogType;");
 		} catch (ScriptException e) {
 			throw new RuntimeException("An error occurred while setting up the imports for the evaluator.", e);
 		}
 		Main.addCommandHook(event -> {
-			if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && Main.devMode())
-				throw new CommandPermissionException("Developer mode is enabled which means only my owner can use commands.");
+			if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && Main.devMode()) throw new CommandPermissionException("Developer mode is enabled which means only my owner can use commands.");
 		});
 	}
 
@@ -79,7 +60,9 @@ public class Owner {
 				try {
 					Main.getSendChannel(guild).sendMessageFormat("%s ~ %s", event.getArgs(), Main.str(event.getAuthor())).queue();
 					succeeded += 1;
-				} catch (Exception ignored) {failed += 1;}
+				} catch (Exception ignored) {
+					failed += 1;
+				}
 			status.editMessageFormat("Successfully sent the announcement to **%s** guilds, could not send the announcement to **%s** guilds.", succeeded, failed).queue();
 		} else Main.sendCommandHelp(event);
 	}
@@ -87,11 +70,7 @@ public class Owner {
 	@Command(category = "Owner", help = "Contact the owner.", name = "contact", cooldown = 60)
 	public static void contact(CommandEvent event) {
 		if (event.getArgs().length() != 0) {
-			Main.sendPrivateMessage(Main.getOwner(), String.format("**%s** (%s) has sent you a message from **%s** (%s):\n\n",
-					Main.str(event.getAuthor()),
-					event.getAuthor().getId(),
-					event.getGuild() == null ? "direct messages" : event.getGuild().getName(),
-							event.getGuild() == null ? "null" : event.getGuild().getId()) + event.getArgs());
+			Main.sendPrivateMessage(Main.getOwner(), String.format("**%s** (%s) has sent you a message from **%s** (%s):\n\n", Main.str(event.getAuthor()), event.getAuthor().getId(), event.getGuild() == null ? "direct messages" : event.getGuild().getName(), event.getGuild() == null ? "null" : event.getGuild().getId()) + event.getArgs());
 			event.reply("Successfully sent your message to my owner!");
 		} else Main.sendCommandHelp(event);
 	}
@@ -99,7 +78,7 @@ public class Owner {
 	@Command(category = "Owner", help = "Compiles and runs Java code.", name = "debug", ownerCommand = true, hidden = true)
 	public static void debug(CommandEvent event) {
 		try {
-			Object out = String.valueOf(Main.compileAndRunJavaCode(event.getArgs(), Main.newHashMap(new String[] {"event"}, new Object[] {event}), null, false));
+			Object out = String.valueOf(Main.compileAndRunJavaCode(event.getArgs(), Main.newHashMap(new String[] { "event" }, new Object[] { event }), null, false));
 			out = out == null ? "null" : out.toString();
 			List<String> messages = new ArrayList<>();
 			while (out.toString().length() > 1990) {
@@ -109,22 +88,22 @@ public class Owner {
 			messages.add(out.toString());
 			event.reply("Input:```java\n" + event.getArgs() + "```\nOutput:```java\n" + messages.get(0) + "```");
 			messages.remove(0);
-			for (String message : messages) event.reply("```java\n" + message + "```");
+			for (String message : messages)
+				event.reply("```java\n" + message + "```");
 		} catch (Throwable e) {
-			if (e.getMessage() != null && e.getMessage().contains("Cannot run program \"javac\"")) event.reply("The Java JDK was either not added to the PATH environment variable or not installed.");
+			if (e.getMessage() != null && e.getMessage().contains("Cannot run program \"javac\""))
+				event.reply("The Java JDK was either not added to the PATH environment variable or not installed.");
 			else {
 				StackTraceElement stElement = null;
 				for (StackTraceElement element : e.getStackTrace())
 					if (element.getFileName() != null && element.getClassName().startsWith("com.ptsmods.impulse.commands")) stElement = element;
-				String output = String.format("A `%s` exception was thrown at line %s in %s while executing the code. Stacktrace:\n```java\n%s```",
-						e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), Main.generateStackTrace(e));
+				String output = String.format("A `%s` exception was thrown at line %s in %s while executing the code. Stacktrace:\n```java\n%s```", e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), Main.generateStackTrace(e));
 				if (output.length() < 1997)
 					event.getChannel().sendMessage(output).queue();
-				else
-					while (output.length() > 1997) {
-						event.getChannel().sendMessage(output.substring(0, 1997) + "```").queue();
-						output = output.substring(1997);
-					}
+				else while (output.length() > 1997) {
+					event.getChannel().sendMessage(output.substring(0, 1997) + "```").queue();
+					output = output.substring(1997);
+				}
 			}
 		}
 	}
@@ -144,7 +123,8 @@ public class Owner {
 		String page = "```css\n[Page 1/%s]\n\t";
 		int id = 0;
 		List<String> guilds = new ArrayList();
-		for (Guild guild : Main.getGuilds()) guilds.add(guild.getName());
+		for (Guild guild : Main.getGuilds())
+			guilds.add(guild.getName());
 		for (String guild : Main.sort(guilds)) {
 			page += guild + "\n\t";
 			counter += 1;
@@ -153,12 +133,13 @@ public class Owner {
 				counter = 0;
 				id += 1;
 				pages.put(id, page.trim() + "```");
-				page = "```css\n[Page " + (id+1) + "/%s]\n\t";
+				page = "```css\n[Page " + (id + 1) + "/%s]\n\t";
 			}
 		}
 		int pageN = 1;
 		if (event.getArgs().length() != 0 && Main.isInteger(event.getArgs().split(" ")[0])) pageN = Integer.parseInt(event.getArgs().split(" ")[0]);
-		if (pageN > pages.size()) event.reply("The maximum page is " + (pages.size()-1) + ".");
+		if (pageN > pages.size())
+			event.reply("The maximum page is " + (pages.size() - 1) + ".");
 		else event.reply(pages.get(pageN), pages.size());
 	}
 
@@ -169,13 +150,7 @@ public class Owner {
 
 	@Subcommand(help = "Set the bot's status.", name = "status", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "<status>", ownerCommand = true)
 	public static void setStatus(CommandEvent event) {
-		if (!event.getArgs().isEmpty() &&
-				event.getArgs().split(" ")[0].equalsIgnoreCase("OFFLINE") ||
-				event.getArgs().split(" ")[0].equalsIgnoreCase("INVISIBLE") ||
-				event.getArgs().split(" ")[0].equalsIgnoreCase("DND") ||
-				event.getArgs().split(" ")[0].equalsIgnoreCase("DO_NOT_DISTURB") ||
-				event.getArgs().split(" ")[0].equalsIgnoreCase("IDLE") ||
-				event.getArgs().split(" ")[0].equalsIgnoreCase("ONLINE")) {
+		if (!event.getArgs().isEmpty() && event.getArgs().split(" ")[0].equalsIgnoreCase("OFFLINE") || event.getArgs().split(" ")[0].equalsIgnoreCase("INVISIBLE") || event.getArgs().split(" ")[0].equalsIgnoreCase("DND") || event.getArgs().split(" ")[0].equalsIgnoreCase("DO_NOT_DISTURB") || event.getArgs().split(" ")[0].equalsIgnoreCase("IDLE") || event.getArgs().split(" ")[0].equalsIgnoreCase("ONLINE")) {
 			Main.setOnlineStatus(Main.getStatusFromString(event.getArgs().split(" ")[0]));
 			event.reply("Successfully set the online status to " + Main.getStatusFromString(event.getArgs().split(" ")[0]).name() + ".");
 		} else Main.sendCommandHelp(event);
@@ -207,7 +182,7 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the bot's nickname.", name = "nickname", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "<nickname>", userPermissions = {Permission.NICKNAME_MANAGE}, botPermissions = {Permission.NICKNAME_CHANGE})
+	@Subcommand(help = "Set the bot's nickname.", name = "nickname", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "<nickname>", userPermissions = { Permission.NICKNAME_MANAGE }, botPermissions = { Permission.NICKNAME_CHANGE })
 	public static void setNickname(CommandEvent event) {
 		event.getGuild().getController().setNickname(event.getGuild().getSelfMember(), event.getArgs()).queue();
 		event.reply(event.getArgs().isEmpty() ? "Successfully reset my nickname." : "Successfully set my nickname to " + event.getArgs() + ".");
@@ -232,8 +207,7 @@ public class Owner {
 	public static void toggleDevMode(CommandEvent event) {
 		Main.devMode(!Main.devMode());
 		Main.setGame(Game.of(Main.devMode() ? "DEVELOPER MODE" : "try " + Config.get("prefix") + "help!"));
-		event.reply("Developer mode has been " + (Main.devMode() ? "enabled" : "disabled") + ", " + (Main.devMode() ? "errors will no longer be sent privately and only you will now be able to use commands." :
-				"errors will once again be sent privately and everyone will be able to use commands again."));
+		event.reply("Developer mode has been " + (Main.devMode() ? "enabled" : "disabled") + ", " + (Main.devMode() ? "errors will no longer be sent privately and only you will now be able to use commands." : "errors will once again be sent privately and everyone will be able to use commands again."));
 	}
 
 	@Command(category = "Owner", help = "Shows you all the permissions this bot has in this channel.", name = "permissionshere", ownerCommand = true, guildOnly = true, hidden = true)
@@ -276,11 +250,9 @@ public class Owner {
 			long millis = System.currentTimeMillis();
 			try {
 				Thread.sleep((long) Float.parseFloat(event.getArgs()) * 1000L);
-			} catch (InterruptedException e) {}
-			status.editMessageFormat("Done! Received **%s** messages in **%s** seconds with an average of **%s** messages per second.",
-					Main.getReceivedMessages().size()-msgs,
-					(System.currentTimeMillis()-millis)/1000,
-					(float) (Main.getReceivedMessages().size()-msgs)/(float) ((System.currentTimeMillis()-millis)/1000)).queue();
+			} catch (InterruptedException e) {
+			}
+			status.editMessageFormat("Done! Received **%s** messages in **%s** seconds with an average of **%s** messages per second.", Main.getReceivedMessages().size() - msgs, (System.currentTimeMillis() - millis) / 1000, (float) (Main.getReceivedMessages().size() - msgs) / (float) ((System.currentTimeMillis() - millis) / 1000)).queue();
 		} else Main.sendCommandHelp(event);
 	}
 
@@ -348,9 +320,9 @@ public class Owner {
 		int maxLength = 6;
 		for (Guild guild : top)
 			if (guild.getName().length() > maxLength) maxLength = guild.getName().length();
-		String msg = "```\nGuild"+Main.multiplyString(" ", maxLength-5)+"Members\n";
+		String msg = "```\nGuild" + Main.multiplyString(" ", maxLength - 5) + "Members\n";
 		for (Guild guild : top)
-			msg += "\n" + guild.getName() + Main.multiplyString(" ", maxLength-guild.getName().length()) + guild.getMembers().size();
+			msg += "\n" + guild.getName() + Main.multiplyString(" ", maxLength - guild.getName().length()) + guild.getMembers().size();
 		event.reply(msg + "```");
 	}
 

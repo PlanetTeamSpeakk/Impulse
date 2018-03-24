@@ -45,10 +45,10 @@ import javafx.stage.Stage;
 
 public class MainJFXGUI extends Application {
 
-	private static volatile TabPane tPane = null;
-	private static volatile TextFlow LTF = null;
-	private static AtomicBoolean isInitialized = new AtomicBoolean(false);
-	private static AtomicBoolean started = new AtomicBoolean(false);
+	private static volatile TabPane		tPane			= null;
+	private static volatile TextFlow	LTF				= null;
+	private static AtomicBoolean		isInitialized	= new AtomicBoolean(false);
+	private static AtomicBoolean		started			= new AtomicBoolean(false);
 
 	public static void start(String[] args) throws IllegalAccessException {
 		if (started.get()) throw new IllegalAccessException("The GUI has already been started.");
@@ -56,7 +56,8 @@ public class MainJFXGUI extends Application {
 		Main.runAsynchronously(() -> {
 			try {
 				launch(args);
-			} catch (RuntimeException shutdownExceptionIgnored) {}
+			} catch (RuntimeException shutdownExceptionIgnored) {
+			}
 		});
 	}
 
@@ -92,7 +93,7 @@ public class MainJFXGUI extends Application {
 			List<Double> scores = Lists.newArrayList(new Double[60]);
 			while (!Main.isShuttingDown()) {
 				double cpuUsage = UsageMonitorer.getSystemCpuLoad().doubleValue();
-				if (cpuUsage > 95 && System.currentTimeMillis()-Main.started.getTime() > 1000*60*3 && !Main.isShuttingDown() && !Main.devMode()) {
+				if (cpuUsage > 95 && System.currentTimeMillis() - Main.started.getTime() > 1000 * 60 * 3 && !Main.isShuttingDown() && !Main.devMode()) {
 					Main.print(LogType.WARN, "System CPU load was above 95%, assuming bot crashed, shutting down.");
 					Main.shutdown(0);
 				}
@@ -136,10 +137,11 @@ public class MainJFXGUI extends Application {
 					for (CommandExecutionHook hook : Main.getCommandHooks())
 						try {
 							hook.run(ccevent);
-						} catch (CommandPermissionException e) {}
+						} catch (CommandPermissionException e) {
+						}
 					Main.runAsynchronously(null, command, ccevent);
 				} else {
-					Text text = new Text("The command '"+consoleInput.getText()+"' could not be found."+System.lineSeparator());
+					Text text = new Text("The command '" + consoleInput.getText() + "' could not be found." + System.lineSeparator());
 					text.setFont(Font.font("Monospaced", 13));
 					text.setStyle("-fx-fill: RED");
 					consoleOutput.getChildren().add(text);
@@ -152,13 +154,13 @@ public class MainJFXGUI extends Application {
 				int i = current.get();
 				if (i > 0 && i <= commands.size()) {
 					current.decrementAndGet();
-					consoleInput.setText(commands.get(i-1));
+					consoleInput.setText(commands.get(i - 1));
 				}
 			} else if (event.getCode() == KeyCode.DOWN) {
 				int i = current.get();
-				if (i >= 0 && i < commands.size()-1) {
+				if (i >= 0 && i < commands.size() - 1) {
 					current.incrementAndGet();
-					consoleInput.setText(commands.get(i+1));
+					consoleInput.setText(commands.get(i + 1));
 				}
 			}
 		});
@@ -174,7 +176,7 @@ public class MainJFXGUI extends Application {
 		consoleOutputSP.setFitToWidth(true);
 		consoleOutputSP.setFitToHeight(true);
 		consoleOutputSP.vvalueProperty().bind(consoleOutput.heightProperty());
-		consoleInput.setPrefSize(1080, consoleInput.getFont().getSize()+4);
+		consoleInput.setPrefSize(1080, consoleInput.getFont().getSize() + 4);
 		consoleInput.setLayoutY(655);
 		consoleInput.setPromptText("Command goes here.");
 		console.getChildren().add(consoleOutputSP);
@@ -195,20 +197,21 @@ public class MainJFXGUI extends Application {
 						shutdownPane.getChildren().add(text);
 						StackPane.setAlignment(text, Pos.TOP_CENTER);
 						if (Main.done()) clicked.set(true);
-					} catch (Exception e) {e.printStackTrace();}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				});
 				if (Main.done())
 					Platform.runLater(() -> {
 						Main.shutdown(0);
 					});
-				else
-					Main.runAsynchronously(() -> {
-						Main.sleep(5000);
-						Platform.runLater(() -> {
-							for (Node child : new ArrayList<>(shutdownPane.getChildren()))
-								if (child instanceof Text) shutdownPane.getChildren().remove(child);
-						});
+				else Main.runAsynchronously(() -> {
+					Main.sleep(5000);
+					Platform.runLater(() -> {
+						for (Node child : new ArrayList<>(shutdownPane.getChildren()))
+							if (child instanceof Text) shutdownPane.getChildren().remove(child);
 					});
+				});
 			}
 		});
 		shutdownPane.getChildren().add(shutdown);
@@ -242,13 +245,12 @@ public class MainJFXGUI extends Application {
 	}
 
 	public static final void logLine(String line, Color color) {
-		if (!Main.isShuttingDown() && LTF != null && isInitialized.get() && line != null && !line.isEmpty())
-			Platform.runLater(() -> {
-				Text text = new Text(line.trim()+System.lineSeparator());
-				text.setFont(Font.font("Monospaced", 13));
-				text.setStyle("-fx-fill: #" + Main.colorToHex(color));
-				LTF.getChildren().add(text);
-			});
+		if (!Main.isShuttingDown() && LTF != null && isInitialized.get() && line != null && !line.isEmpty()) Platform.runLater(() -> {
+			Text text = new Text(line.trim() + System.lineSeparator());
+			text.setFont(Font.font("Monospaced", 13));
+			text.setStyle("-fx-fill: #" + Main.colourToHex(color));
+			LTF.getChildren().add(text);
+		});
 	}
 
 	public static boolean isInitialized() {
