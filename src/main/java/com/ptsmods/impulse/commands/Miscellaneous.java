@@ -243,7 +243,7 @@ public class Miscellaneous {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Open a rift.", name = "open", parent = "com.ptsmods.impulse.commands.Miscellaneous.rift", guildOnly = true, arguments = "<query>", userPermissions = {Permission.MESSAGE_MANAGE}, botPermissions = {Permission.MANAGE_WEBHOOKS})
+	@Subcommand(help = "Open a rift.", name = "open", parent = "com.ptsmods.impulse.commands.Miscellaneous.rift", guildOnly = true, arguments = "<query> [guild]", userPermissions = {Permission.MESSAGE_MANAGE}, botPermissions = {Permission.MANAGE_WEBHOOKS})
 	public static void riftOpen(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			if (rifts.containsKey(event.getChannel().getId())) {
@@ -251,11 +251,12 @@ public class Miscellaneous {
 				return;
 			}
 			String name = event.getArgs().split(" ")[0].toLowerCase();
+			String guild = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
 			int current = 1;
 			String channels = "";
 			List<TextChannel> possibilities = new ArrayList();
 			for (TextChannel channel : Main.getTextChannels())
-				if (channel.getName().contains(name)) {
+				if (channel.getName().contains(name) && channel.getGuild().getName().toLowerCase().contains(guild.toLowerCase())) {
 					possibilities.add(channel);
 					channels += "\n\t" + current++ + ". " + channel.getName() + " (" + channel.getGuild().getName() + ")";
 				}
@@ -276,19 +277,23 @@ public class Miscellaneous {
 				}
 				TextChannel chosenOne = possibilities.get(Integer.parseInt(response.getContent()) - 1);
 				if (rifts.containsKey(chosenOne.getId())) {
-					event.reply("The selected channel already has an open rift.", Main.getPrefix(event.getGuild()));
+					event.reply("The selected channel already has an open rift.");
 					return;
 				}
 				if (chosenOne.canTalk() && chosenOne.getGuild().getSelfMember().hasPermission(Permission.MANAGE_WEBHOOKS)) {
+					if (chosenOne.getId().equals(event.getChannel().getId())) {
+						event.reply("Cannot open a rift from the same channel as it was opened from.");
+						return;
+					}
 					event.reply("Channel '%s' selected, waiting for approval of a user with Manage Messages permissions there...", chosenOne.getName());
 					count = 0;
 					response = null;
-					while ((response == null || !response.getMember().hasPermission(Permission.MESSAGE_MANAGE)) && count < 5) {
+					while ((response == null || !response.getMember().hasPermission(Permission.MESSAGE_MANAGE) && !Main.isOwner(response.getAuthor()) && !Main.isCoOwner(response.getAuthor())) && count < 5) {
 						chosenOne.sendMessageFormat("**%s** has requested to open a rift to this channel from **%s** in the guild **%s**, would you like to accept? (yes/no, user with Manage Messages perm, only)", Main.str(event.getAuthor()), event.getChannel().getName(), event.getGuild().getName()).queue();
 						response = Main.waitForInput(chosenOne, 30000);
 						count += 1;
 					}
-					if (response.getContent().toLowerCase().startsWith("ye")) {
+					if (response != null && response.getContent().toLowerCase().startsWith("ye")) {
 						chosenOne.sendMessageFormat("Rift opened, any messages sent to from this channel will be sent to **%s** in **%s** and vice versa. You can always do %srift close to close the rift.", event.getChannel().getName(), event.getGuild().getName(), Main.getPrefix(chosenOne.getGuild())).queue();
 						event.reply("Rift opened, any messages sent to from this channel will be sent to **%s** and vice versa. You can always do %srift close to close the rift.", event.getChannel().getName(), event.getGuild().getName(), Main.getPrefix(event.getGuild()));
 						try {
@@ -306,7 +311,7 @@ public class Miscellaneous {
 						chosenOne.sendMessage("The offer has been declined, no further action will be taken.").queue();
 					}
 				} else event.reply("I cannot talk there or I don't have the 'Manage Webhooks' permission there.");
-			}
+			} else event.reply("No channels were found.");
 		} else Main.sendCommandHelp(event);
 	}
 
@@ -383,7 +388,7 @@ public class Miscellaneous {
 			}
 			event.getChannel().sendMessage((String) ((Map) settings.get(event.getGuild().getId())).get(event.getMessage().getContent().substring(serverPrefix.length()))).queue();
 		}
-		if (rifts.containsKey(event.getChannel().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMessage().isWebhookMessage()) {
+		if (rifts.containsKey(event.getChannel().getId()) && !event.getMessage().isWebhookMessage()) {
 			if (!riftWebhooks.get(rifts.get(event.getChannel().getId())).containsKey(event.getAuthor().getId())) try {
 				riftWebhooks.get(rifts.get(event.getChannel().getId())).put(event.getAuthor().getId(), Main.getTextChannelById(rifts.get(event.getChannel().getId())).createWebhook(event.getAuthor().getName()).setAvatar(Icon.from(Main.openStream(new URL(event.getAuthor().getEffectiveAvatarUrl())))).complete());
 			} catch (IOException e) {

@@ -137,7 +137,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 9;
-	public static final int							revision				= 0;
+	public static final int							revision				= 1;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -806,12 +806,7 @@ public class Main {
 							sendTyping = annotation.sendTyping();
 						}
 						String errorMsg = "";
-						boolean isCoOwner = false;
-						for (User coOwner : coOwners)
-							if (coOwner != null && event.getAuthor().getId().equals(coOwner.getId())) {
-								isCoOwner = true;
-								break;
-							}
+						boolean isCoOwner = isCoOwner(event.getAuthor());
 						if (!event.getAuthor().getId().equals(Main.getOwner().getId()) && !isCoOwner) if (cooldowns.getOrDefault(event.getAuthor().getId(), new HashMap()).containsKey(command.toString()) && System.currentTimeMillis() - cooldowns.get(event.getAuthor().getId()).get(command.toString()) < cooldown * 1000)
 							errorMsg = "You're still on cooldown, please try again in " + Main.formatMillis((long) (cooldown * 1000 - (System.currentTimeMillis() - cooldowns.get(event.getAuthor().getId()).get(command.toString()))), true, true, true, true, true, false) + ".";
 						else if (event.getGuild() == null && guildOnly)
@@ -894,6 +889,16 @@ public class Main {
 			}
 			if (!output.isEmpty()) Main.sendPrivateMessage(owner, output + "```");
 		}
+	}
+
+	public static boolean isCoOwner(User user) {
+		for (User coOwner : coOwners)
+			if (coOwner != null && user.getId().equals(coOwner.getId())) return true;
+		return false;
+	}
+
+	public static boolean isOwner(User user) {
+		return user.getId().equals(getOwner().getId());
 	}
 
 	public static void deleteCooldown(User user, Method command) {
@@ -1063,7 +1068,7 @@ public class Main {
 	@Nullable
 	public static Message waitForInput(Member author, MessageChannel channel, int timeoutMillis) {
 		long currentMillis = System.currentTimeMillis();
-		long currentSeconds = currentMillis / 1000 + 5;
+		long currentSeconds = currentMillis / 1000;
 		while (true) {
 			if (messages.get().isEmpty()) continue;
 			Message lastMsg = messages.get().get(messages.get().size() - 1);

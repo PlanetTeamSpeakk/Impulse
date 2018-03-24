@@ -20,10 +20,10 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class CommandEvent {
 
-	private final MessageReceivedEvent event;
-	private final Method command;
-	private final String argsOriginal;
-	private String args;
+	private final MessageReceivedEvent	event;
+	private final Method				command;
+	private final String				argsOriginal;
+	private String						args;
 
 	CommandEvent(String args, Method command) {
 		this(null, args, command);
@@ -64,7 +64,8 @@ public class CommandEvent {
 		String boxLang = "";
 		try {
 			boxLang = message.substring(message.indexOf("```") + 3);
-		} catch (StringIndexOutOfBoundsException e) {}
+		} catch (StringIndexOutOfBoundsException e) {
+		}
 		boxLang = boxLang.split("\n")[0];
 		for (char ch : message.toCharArray()) {
 			msg += ch;
@@ -113,8 +114,12 @@ public class CommandEvent {
 		return event.getAuthor().getId().equals(Main.getOwner().getId());
 	}
 
-	public boolean isCoOwner() { // I dunno if I am ever gonna add this.
-		return isOwner();
+	public boolean isCoOwner() {
+		return Main.isCoOwner(getAuthor());
+	}
+
+	public boolean hasOwnerPerms() {
+		return isOwner() || isCoOwner();
 	}
 
 	public Message getMessage() {
