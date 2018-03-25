@@ -162,7 +162,7 @@ public class Moderation {
 			roles.put(role.getId(), Main.cloneRole(role));
 	}
 
-	@Command(category = "Moderation", help = "Ban someone.", name = "ban", arguments = "<user>", botPermissions = { Permission.BAN_MEMBERS }, userPermissions = { Permission.BAN_MEMBERS })
+	@Command(category = "Moderation", help = "Ban someone.", name = "ban", arguments = "<user>", botPermissions = {Permission.BAN_MEMBERS}, userPermissions = {Permission.BAN_MEMBERS})
 	public static void ban(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
@@ -177,7 +177,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Kick a user.", name = "kick", userPermissions = { Permission.KICK_MEMBERS }, botPermissions = { Permission.KICK_MEMBERS })
+	@Command(category = "Moderation", help = "Kick a user.", name = "kick", userPermissions = {Permission.KICK_MEMBERS}, botPermissions = {Permission.KICK_MEMBERS})
 	public static void kick(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
@@ -193,7 +193,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Mute someone.", name = "mute", botPermissions = { Permission.MANAGE_ROLES }, userPermissions = { Permission.MANAGE_ROLES }, guildOnly = true, arguments = "<user>")
+	@Command(category = "Moderation", help = "Mute someone.", name = "mute", botPermissions = {Permission.MANAGE_ROLES}, userPermissions = {Permission.MANAGE_ROLES}, guildOnly = true, arguments = "<user>")
 	public static void mute(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
@@ -209,7 +209,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Unmute someone.", name = "unmute", botPermissions = { Permission.MANAGE_ROLES }, userPermissions = { Permission.MANAGE_ROLES }, guildOnly = true, arguments = "<user>")
+	@Command(category = "Moderation", help = "Unmute someone.", name = "unmute", botPermissions = {Permission.MANAGE_ROLES}, userPermissions = {Permission.MANAGE_ROLES}, guildOnly = true, arguments = "<user>")
 	public static void unmute(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
@@ -244,7 +244,7 @@ public class Moderation {
 			int caseNum = Main.getIntFromPossibleDouble(((Map) ((Map) settings.get(guild.getId())).get("cases")).size()) + 1;
 			if (channel != null) {
 				String messageId = channel.sendMessageFormat("**Case #%s** | %s :%s:\n" + "**User:** %s (%s)\n" + "**Moderator:** %s\n" + "**Reason:** Unknown, type %sreason %s <reason> to add it.", caseNum, actionType, emoji, Main.str(user), user.getId(), moderator == null ? "Unknown" : moderator.getName() + "#" + moderator.getDiscriminator() + " (" + moderator.getId() + ")", Main.getPrefix(guild), caseNum).complete().getId();
-				((Map) ((Map) settings.get(guild.getId())).get("cases")).put("" + caseNum, Main.newHashMap(new String[] { "messageId", "user", "moderator", "reason", "caseNum" }, new Object[] { messageId, user.getId(), moderator == null ? "" : moderator.getId(), "Unknown", caseNum }));
+				((Map) ((Map) settings.get(guild.getId())).get("cases")).put("" + caseNum, Main.newHashMap(new String[] {"messageId", "user", "moderator", "reason", "caseNum"}, new Object[] {messageId, user.getId(), moderator == null ? "" : moderator.getId(), "Unknown", caseNum}));
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
 				} catch (IOException e) {
@@ -254,7 +254,7 @@ public class Moderation {
 		}
 	}
 
-	@Command(category = "Moderation", help = "Give a reason to a case which was created when doing either [p]ban, [p]kick, or [p]mute.", name = "reason", userPermissions = { Permission.KICK_MEMBERS }, arguments = "<casenum> <reason>", guildOnly = true)
+	@Command(category = "Moderation", help = "Give a reason to a case which was created when doing either [p]ban, [p]kick, or [p]mute.", name = "reason", userPermissions = {Permission.KICK_MEMBERS}, arguments = "<casenum> <reason>", guildOnly = true)
 	public static void reason(CommandEvent event) {
 		if (event.getArgs().split(" ").length >= 2 && Main.isInteger(event.getArgs().split(" ")[0])) {
 			if (settings.containsKey(event.getGuild().getId())) {
@@ -375,10 +375,10 @@ public class Moderation {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Add a filter to the list of filters.", name = "add", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = { Permission.MESSAGE_MANAGE }, guildOnly = true)
+	@Subcommand(help = "Add a filter to the list of filters.", name = "add", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true)
 	public static void filterAdd(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
-			if (!filters.containsKey(event.getGuild().getId())) filters.put(event.getGuild().getId(), Main.newHashMap(new String[] { "filtered", "message", "disabled" }, new Object[] { new ArrayList(), "{USER} you're not allowed to say that!", false }));
+			if (!filters.containsKey(event.getGuild().getId())) filters.put(event.getGuild().getId(), Main.newHashMap(new String[] {"filtered", "message", "disabled"}, new Object[] {new ArrayList(), "{USER} you're not allowed to say that!", false}));
 			((List) ((Map) filters.get(event.getGuild().getId())).get("filtered")).add(event.getArgs());
 			try {
 				DataIO.saveJson(filters, "data/mod/filters.json");
@@ -389,7 +389,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Remove a filter from the list of filters.", name = "remove", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = { Permission.MESSAGE_MANAGE }, guildOnly = true)
+	@Subcommand(help = "Remove a filter from the list of filters.", name = "remove", parent = "com.ptsmods.impulse.commands.Moderation.filter", arguments = "<filter>", userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true)
 	public static void filterRemove(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			if (!filters.containsKey(event.getGuild().getId()))
@@ -415,7 +415,7 @@ public class Moderation {
 		else event.reply("Nothing is being filtered in this server.");
 	}
 
-	@Command(category = "Moderation", help = "Give yourself roles.", name = "giveme", guildOnly = true, botPermissions = { Permission.MANAGE_ROLES }, arguments = "<giveme>")
+	@Command(category = "Moderation", help = "Give yourself roles.", name = "giveme", guildOnly = true, botPermissions = {Permission.MANAGE_ROLES}, arguments = "<giveme>")
 	public static void giveme(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			if (!givemeSettings.containsKey(event.getGuild().getId()))
@@ -444,7 +444,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Add givemes, divide the roles with a semi-colon (;).", name = "add", parent = "com.ptsmods.impulse.commands.Moderation.giveme", guildOnly = true, userPermissions = { Permission.MANAGE_ROLES }, arguments = "<roles>")
+	@Subcommand(help = "Add givemes, divide the roles with a semi-colon (;).", name = "add", parent = "com.ptsmods.impulse.commands.Moderation.giveme", guildOnly = true, userPermissions = {Permission.MANAGE_ROLES}, arguments = "<roles>")
 	public static void givemeAdd(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			List<Role> roles = new ArrayList<>();
@@ -500,7 +500,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Remove a giveme from your roles.", name = "getoff", parent = "com.ptsmods.impulse.commands.Moderation.giveme", arguments = "<giveme>", botPermissions = { Permission.MANAGE_ROLES })
+	@Subcommand(help = "Remove a giveme from your roles.", name = "getoff", parent = "com.ptsmods.impulse.commands.Moderation.giveme", arguments = "<giveme>", botPermissions = {Permission.MANAGE_ROLES})
 	public static void givemeGetoff(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			if (!givemeSettings.containsKey(event.getGuild().getId()))
@@ -543,7 +543,7 @@ public class Moderation {
 		} else event.reply("Guess I'll stay.");
 	}
 
-	@Command(category = "Moderation", help = "Manage moderation settings.", name = "modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Command(category = "Moderation", help = "Manage moderation settings.", name = "modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modset(CommandEvent event) {
 		String serverPrefix = "not set";
 		String channel = "not set";
@@ -573,11 +573,11 @@ public class Moderation {
 		Main.sendCommandHelp(event, String.format("**Server prefix**: %s\n**Channel**: %s\n**Ban mention spam**: %s\n**Autorole**: %s\n**Autorole enabled**: %s\n**Greeting**: %s\n**Farewell**: %s\n**Welcome channel**: %s\n**Welcome in DMs**: %s\n**Welcome with an image**: %s", serverPrefix, channel, banMentionSpam, autorole, autoroleEnabled, greeting, farewell, welcomeChannel, toDms, useImage));
 	}
 
-	@Subcommand(help = "Sets this server's prefix.", name = "serverprefix", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Sets this server's prefix.", name = "serverprefix", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetServerPrefix(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			if (!settings.containsKey(event.getGuild().getId()))
-				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, event.getArgs(), "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", new HashMap(), new ArrayList() }));
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, event.getArgs(), "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", new HashMap(), new ArrayList()}));
 			else((Map) settings.get(event.getGuild().getId())).put("serverPrefix", event.getArgs());
 			try {
 				DataIO.saveJson(settings, "data/mod/settings.json");
@@ -588,7 +588,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the channel to which kicks, bans and mutes are logged to.", name = "channel", parent = "com.ptsmods.impulse.commands.Moderation.modset", arguments = "<channel>", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Set the channel to which kicks, bans and mutes are logged to.", name = "channel", parent = "com.ptsmods.impulse.commands.Moderation.modset", arguments = "<channel>", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetChannel(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			TextChannel channel;
@@ -599,7 +599,7 @@ public class Moderation {
 				event.reply("The given channel could not be found.");
 			else {
 				if (!settings.containsKey(event.getGuild().getId()))
-					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { channel.getId(), "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList() }));
+					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {channel.getId(), "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList()}));
 				else((Map) settings.get(event.getGuild().getId())).put("channel", channel.getId());
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
@@ -611,11 +611,11 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Sets if the bot should ban users who sent a message which mentions more than 8 users.", name = "banmentionspam", parent = "com.ptsmods.impulse.commands.Moderation.modset", arguments = "<flag>", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Sets if the bot should ban users who sent a message which mentions more than 8 users.", name = "banmentionspam", parent = "com.ptsmods.impulse.commands.Moderation.modset", arguments = "<flag>", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetBanMentionSpam(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			if (!settings.containsKey(event.getGuild().getId()))
-				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes" }, new Object[] { "", "", true, true, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList() }));
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes"}, new Object[] {"", "", true, true, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList()}));
 			else((Map) settings.get(event.getGuild().getId())).put("banMentionSpam", !(boolean) ((Map) settings.get(event.getGuild().getId())).get("banMentionSpam"));
 			try {
 				DataIO.saveJson(settings, "data/mod/settings.json");
@@ -626,7 +626,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the role members should automatically get assigned when they join.", name = "autorole", parent = "com.ptsmods.impulse.commands.Moderation.modset", guildOnly = true, userPermissions = { Permission.MANAGE_ROLES }, arguments = "<role>")
+	@Subcommand(help = "Set the role members should automatically get assigned when they join.", name = "autorole", parent = "com.ptsmods.impulse.commands.Moderation.modset", guildOnly = true, userPermissions = {Permission.MANAGE_ROLES}, arguments = "<role>")
 	public static void modsetAutorole(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			Role role = null;
@@ -637,7 +637,7 @@ public class Moderation {
 				event.reply("The given role could not be found.");
 			else {
 				if (!settings.containsKey(event.getGuild().getId()))
-					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", role.getId(), true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList() }));
+					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", role.getId(), true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList()}));
 				else((Map) settings.get(event.getGuild().getId())).put("autorole", role.getId());
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
@@ -649,10 +649,10 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Toggle whether new members should automatically get a role assigned when they join.", name = "toggleautorole", parent = "com.ptsmods.impulse.commands.Moderation.modset", guildOnly = true, userPermissions = { Permission.MANAGE_ROLES })
+	@Subcommand(help = "Toggle whether new members should automatically get a role assigned when they join.", name = "toggleautorole", parent = "com.ptsmods.impulse.commands.Moderation.modset", guildOnly = true, userPermissions = {Permission.MANAGE_ROLES})
 	public static void modsetToggleAutorole(CommandEvent event) throws CommandException {
 		if (!settings.containsKey(event.getGuild().getId()))
-			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes" }, new Object[] { "", "", false, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList() }));
+			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "serverPrefix", "cases", "mutes"}, new Object[] {"", "", false, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList()}));
 		else((Map) settings.get(event.getGuild().getId())).put("autoroleEnabled", !(boolean) ((Map) settings.get(event.getGuild().getId())).get("autoroleEnabled"));
 		try {
 			DataIO.saveJson(settings, "data/mod/settings.json");
@@ -662,7 +662,7 @@ public class Moderation {
 		event.reply("Successfully toggled autoroleEnabled to " + ((Map) settings.get(event.getGuild().getId())).get("autoroleEnabled") + ".");
 	}
 
-	@Subcommand(help = "Set the message that should be sent when a new user joins.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "greeting", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Set the message that should be sent when a new user joins.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "greeting", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetGreeting(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			User user = event.getAuthor();
@@ -675,7 +675,7 @@ public class Moderation {
 				event.reply("Answer was not yes, guess not.");
 			else {
 				if (!settings.containsKey(event.getGuild().getId()))
-					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, "", event.getArgs(), "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList() }));
+					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, "", event.getArgs(), "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList()}));
 				else((Map) settings.get(event.getGuild().getId())).put("greeting", event.getArgs());
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
@@ -687,7 +687,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the message that should be sent when an old user leaves.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "farewell", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Set the message that should be sent when an old user leaves.\nYou can use variables in this such as:\nUSER this'll be the user's name and discriminator.\nUSER_MENTION this'll mention the user.\nSERVER this'll be the server's name.", name = "farewell", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetFarewell(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			User user = event.getAuthor();
@@ -700,7 +700,7 @@ public class Moderation {
 				event.reply("Answer was not yes, guess not.");
 			else {
 				if (!settings.containsKey(event.getGuild().getId()))
-					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", event.getArgs(), "", false, false, true, new HashMap(), new ArrayList() }));
+					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", event.getArgs(), "", false, false, true, new HashMap(), new ArrayList()}));
 				else((Map) settings.get(event.getGuild().getId())).put("farewell", event.getArgs());
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
@@ -712,10 +712,10 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Sets whether greetings and farewells should be sent in DMs.", name = "dm", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Sets whether greetings and farewells should be sent in DMs.", name = "dm", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetDm(CommandEvent event) throws CommandException {
 		if (!settings.containsKey(event.getGuild().getId()))
-			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, false, true, new HashMap(), new ArrayList() }));
+			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", true, false, true, new HashMap(), new ArrayList()}));
 		else((Map) settings.get(event.getGuild().getId())).put("dm", !(boolean) ((Map) settings.get(event.getGuild().getId())).get("dm"));
 		try {
 			DataIO.saveJson(settings, "data/mod/settings.json");
@@ -725,10 +725,10 @@ public class Moderation {
 		event.reply("Successfully toggled sending in DMs to " + ((Map) settings.get(event.getGuild().getId())).get("dm") + ".");
 	}
 
-	@Subcommand(help = "Sets whether greetings and farewells should be sent in image form.", name = "useimage", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Sets whether greetings and farewells should be sent in image form.", name = "useimage", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetUseImage(CommandEvent event) throws CommandException {
 		if (!settings.containsKey(event.getGuild().getId()))
-			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, true, true, new HashMap(), new ArrayList() }));
+			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, true, true, new HashMap(), new ArrayList()}));
 		else((Map) settings.get(event.getGuild().getId())).put("image", ((Map) settings.get(event.getGuild().getId())).containsKey("image") ? !(boolean) ((Map) settings.get(event.getGuild().getId())).get("image") : true);
 		try {
 			DataIO.saveJson(settings, "data/mod/settings.json");
@@ -738,7 +738,7 @@ public class Moderation {
 		event.reply("Successfully toggled sending in image format to " + ((Map) settings.get(event.getGuild().getId())).get("image") + ".");
 	}
 
-	@Subcommand(help = "Sets the channel in which the bot should greet and farewell users.", name = "welcomechannel", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Sets the channel in which the bot should greet and farewell users.", name = "welcomechannel", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetWelcomeChannel(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty()) {
 			TextChannel channel = null;
@@ -749,7 +749,7 @@ public class Moderation {
 				event.reply("The given channel could not be found.");
 			else {
 				if (!settings.containsKey(event.getGuild().getId()))
-					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", channel.getId(), false, false, true, new HashMap(), new ArrayList() }));
+					settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", channel.getId(), false, false, true, new HashMap(), new ArrayList()}));
 				else((Map) settings.get(event.getGuild().getId())).put("welcomeChannel", channel.getId());
 				try {
 					DataIO.saveJson(settings, "data/mod/settings.json");
@@ -761,7 +761,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Disable the welcome system.", name = "disable", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Disable the welcome system.", name = "disable", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetDisableGreeting(CommandEvent event) throws CommandException {
 		if (!settings.containsKey(event.getGuild().getId()))
 			event.reply("This server has not yet set up the welcome system.");
@@ -777,10 +777,10 @@ public class Moderation {
 		event.reply("Successfully disabled the welcome system, to enable it again type %smodset welcomechannel <channel>.", Main.getPrefix(event.getGuild()));
 	}
 
-	@Subcommand(help = "Toggles the invite removing system.", name = "toggleinviteremoving", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Subcommand(help = "Toggles the invite removing system.", name = "toggleinviteremoving", parent = "com.ptsmods.impulse.commands.Moderation.modset", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void modsetToggleInviteRemoving(CommandEvent event) throws CommandException {
 		if (!settings.containsKey(event.getGuild().getId()))
-			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, false, new HashMap(), new ArrayList() }));
+			settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, "", "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, false, new HashMap(), new ArrayList()}));
 		else((Map) settings.get(event.getGuild().getId())).put("inviteRemoving", ((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") ? !(boolean) ((Map) settings.get(event.getGuild().getId())).get("inviteRemoving") : false);
 		try {
 			DataIO.saveJson(settings, "data/mod/settings.json");
@@ -814,7 +814,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Renames a user.", name = "rename", arguments = "<user> <newName>", guildOnly = true, userPermissions = { Permission.NICKNAME_MANAGE }, botPermissions = { Permission.NICKNAME_MANAGE })
+	@Command(category = "Moderation", help = "Renames a user.", name = "rename", arguments = "<user> <newName>", guildOnly = true, userPermissions = {Permission.NICKNAME_MANAGE}, botPermissions = {Permission.NICKNAME_MANAGE})
 	public static void rename(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			Member member = Main.getMemberFromInput(event.getMessage());
@@ -833,7 +833,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Reset the warnings of a user.", name = "resetwarns", arguments = "<user>", userPermissions = { Permission.KICK_MEMBERS }, guildOnly = true)
+	@Command(category = "Moderation", help = "Reset the warnings of a user.", name = "resetwarns", arguments = "<user>", userPermissions = {Permission.KICK_MEMBERS}, guildOnly = true)
 	public static void resetWarns(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			if (Main.getUserFromInput(event.getMessage()) == null) {
@@ -865,7 +865,7 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Warn a user for their behavior.", name = "warn", userPermissions = { Permission.KICK_MEMBERS }, botPermissions = { Permission.MANAGE_PERMISSIONS, Permission.KICK_MEMBERS, Permission.BAN_MEMBERS }, arguments = "<user>", guildOnly = true)
+	@Command(category = "Moderation", help = "Warn a user for their behavior.", name = "warn", userPermissions = {Permission.KICK_MEMBERS}, botPermissions = {Permission.MANAGE_PERMISSIONS, Permission.KICK_MEMBERS, Permission.BAN_MEMBERS}, arguments = "<user>", guildOnly = true)
 	public static void warn(CommandEvent event) {
 		if (!event.argsEmpty()) {
 			if (Main.getUserFromInput(event.getMessage()) == null) {
@@ -973,12 +973,12 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Manage settings for the modlog.", name = "modlogset", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
+	@Command(category = "Moderation", help = "Manage settings for the modlog.", name = "modlogset", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void modlogset(CommandEvent event) {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the channel modlog should log to.", name = "channel", parent = "com.ptsmods.impulse.commands.Moderation.modlogset", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true, arguments = "<channel>")
+	@Subcommand(help = "Set the channel modlog should log to.", name = "channel", parent = "com.ptsmods.impulse.commands.Moderation.modlogset", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true, arguments = "<channel>")
 	public static void modlogsetChannel(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
 			TextChannel channel;
@@ -987,7 +987,7 @@ public class Moderation {
 			else channel = Main.getOrDefault(event.getGuild().getTextChannelsByName(event.getArgs(), true), 0, null);
 			if (channel != null) {
 				if (!modlogSettings.containsKey(event.getGuild().getId()))
-					modlogSettings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "enabled" }, new Object[] { channel.getId(), true }));
+					modlogSettings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "enabled"}, new Object[] {channel.getId(), true}));
 				else modlogSettings.get(event.getGuild().getId()).put("channel", channel.getId());
 				try {
 					DataIO.saveJson(modlogSettings, "data/mod/modlog.json");
@@ -999,12 +999,12 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Toggle whether the modlog is enabled.\nThe enabled arg should be either true or false.", name = "toggle", parent = "com.ptsmods.impulse.commands.Moderation.modlogset", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true, arguments = "<enabled>")
+	@Subcommand(help = "Toggle whether the modlog is enabled.\nThe enabled arg should be either true or false.", name = "toggle", parent = "com.ptsmods.impulse.commands.Moderation.modlogset", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true, arguments = "<enabled>")
 	public static void modlogsetToggle(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
 			boolean enabled = Boolean.valueOf(event.getArgs().split(" ")[0]);
 			if (!modlogSettings.containsKey(event.getGuild().getId()))
-				modlogSettings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "channel", "enabled" }, new Object[] { "", true }));
+				modlogSettings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"channel", "enabled"}, new Object[] {"", true}));
 			else modlogSettings.get(event.getGuild().getId()).put("enabled", enabled);
 			try {
 				DataIO.saveJson(modlogSettings, "data/mod/modlog.json");
@@ -1015,12 +1015,12 @@ public class Moderation {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Manage your dashboard settings.", name = "dashboard", guildOnly = true, userPermissions = { Permission.ADMINISTRATOR }, obeyDashboard = false)
+	@Command(category = "Moderation", help = "Manage your dashboard settings.", name = "dashboard", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR}, obeyDashboard = false)
 	public static void dashboard(CommandEvent event) {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Create a key to use on <https://dashboard.impulsebot.com>.", name = "getkey", parent = "com.ptsmods.impulse.commands.Moderation.dashboard", guildOnly = true, userPermissions = { Permission.ADMINISTRATOR }, obeyDashboard = false)
+	@Subcommand(help = "Create a key to use on <https://dashboard.impulsebot.com>.", name = "getkey", parent = "com.ptsmods.impulse.commands.Moderation.dashboard", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR}, obeyDashboard = false)
 	public static void dashboardGetKey(CommandEvent event) throws CommandException {
 		if (!Dashboard.hasKey(event.getMember())) {
 			try {
@@ -1035,7 +1035,7 @@ public class Moderation {
 		}
 	}
 
-	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 99.", name = "purge", botPermissions = { Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY }, userPermissions = { Permission.MESSAGE_MANAGE }, guildOnly = true, arguments = "<amount>")
+	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 99.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
 	public static void purge(CommandEvent event) {
 		if (!event.argsEmpty() && Main.isInteger(event.getArgs()) && Integer.parseInt(event.getArgs()) < 100 && Integer.parseInt(event.getArgs()) > 0) {
 			long minEpoch = System.currentTimeMillis() / 1000 - 86400 * 14; // current time - 2 weeks
@@ -1110,7 +1110,7 @@ public class Moderation {
 	@SubscribeEvent
 	public static void onMessageUpdate(MessageUpdateEvent event) {
 		log(event.getGuild(), "pencil2", "Message Edit", "Member: %s\nChannel: %s\nBefore: %s\nAfter: %s", Main.str(event.getAuthor()), event.getChannel().getName(), loggedMessages.containsKey(event.getMessageId()) ? loggedMessages.get(event.getMessageId()).get("content") : "Unknown", event.getMessage().getContent());
-		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] { "content", "sent", "author" }, new Object[] { event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId() })); // ik it's updating the sent variable, it is supposed to.
+		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()})); // ik it's updating the sent variable, it is supposed to.
 	}
 
 	@SubscribeEvent
@@ -1203,7 +1203,7 @@ public class Moderation {
 	@SubscribeEvent
 	public static void onMessageReceived(MessageReceivedEvent event) {
 		if (event.getMessage().getRawContent().equals(Main.getSelfUser().getAsMention())) event.getChannel().sendMessageFormat("My prefix here is `%s`.", Main.getPrefix(event.getGuild())).queue();
-		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] { "content", "sent", "author" }, new Object[] { event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId() }));
+		loggedMessages.put(event.getMessage().getId(), Main.newHashMap(new String[] {"content", "sent", "author"}, new Object[] {event.getMessage().getRawContent(), System.currentTimeMillis(), event.getAuthor().getId()}));
 		if (event.getGuild() == null) return;
 		if (filters.containsKey(event.getGuild().getId()) && !event.getAuthor().getId().equals(Main.getSelfUser().getId()) && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
 			List<String> filters = new ArrayList<>((List<String>) ((Map) Moderation.filters.get(event.getGuild().getId())).get("filtered"));
@@ -1255,7 +1255,7 @@ public class Moderation {
 	}
 
 	public static Map getSettings(Guild guild) {
-		Map settings = (Map) Moderation.settings.get(guild.getId()) == null ? Main.newHashMap(new String[] { "channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes" }, new Object[] { "", "", true, false, Config.get("prefix"), "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList() }) : (Map) Moderation.settings.get(guild.getId());
+		Map settings = (Map) Moderation.settings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"channel", "autorole", "autoroleEnabled", "banMentionSpam", "serverPrefix", "greeting", "farewell", "welcomeChannel", "dm", "image", "inviteRemoving", "cases", "mutes"}, new Object[] {"", "", true, false, Config.get("prefix"), "Welcome to **SERVER**, **USER_MENTION**!", "**USER_MENTION** has left **SERVER**, bye bye **USER_MENTION**.", "", false, false, true, new HashMap(), new ArrayList()}) : (Map) Moderation.settings.get(guild.getId());
 		try {
 			settings.put("welcomeChannel", settings.get("welcomeChannel").toString().isEmpty() ? "" : guild.getTextChannelById(settings.get("welcomeChannel").toString()) == null ? "" : guild.getTextChannelById(settings.get("welcomeChannel").toString()).getName());
 			settings.put("channel", settings.get("channel").toString().isEmpty() ? "" : guild.getTextChannelById(settings.get("channel").toString()) == null ? "" : guild.getTextChannelById(settings.get("channel").toString()).getName());
@@ -1270,7 +1270,7 @@ public class Moderation {
 	}
 
 	public static Map<String, Object> getModlogSettings(Guild guild) {
-		return modlogSettings.get(guild.getId()) == null ? Main.newHashMap(new String[] { "enabled", "channel" }, new Object[] { true, "" }) : modlogSettings.get(guild.getId());
+		return modlogSettings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"enabled", "channel"}, new Object[] {true, ""}) : modlogSettings.get(guild.getId());
 	}
 
 	public static void putSettings(Guild guild, Map settings) throws IOException {
@@ -1280,7 +1280,7 @@ public class Moderation {
 			modlogSettings.put("channel", guild.getTextChannelsByName(settings.get("logChannel").toString(), true).isEmpty() ? "" : guild.getTextChannelsByName(settings.get("logChannel").toString(), true).get(0).getId());
 			Moderation.modlogSettings.put(guild.getId(), modlogSettings);
 			DataIO.saveJson(Moderation.modlogSettings, "data/mod/modlog.json");
-			settings = Main.removeKeys(settings, new String[] { "enableLogging", "logChannel" });
+			settings = Main.removeKeys(settings, new String[] {"enableLogging", "logChannel"});
 			String[] givemes = settings.get("givemes").toString().split(";");
 			Map<String, String> givemeIds = new HashMap();
 			for (String giveme : givemes)

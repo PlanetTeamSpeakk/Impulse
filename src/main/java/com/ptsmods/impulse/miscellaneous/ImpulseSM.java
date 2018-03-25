@@ -14,4 +14,9 @@ public class ImpulseSM extends SecurityManager {
 		else if (perm instanceof PropertyPermission && perm.getName().equals("user.timezone") && perm.getActions().equals("write")) throw new SecurityException("Cannot override default TimeZone.");
 	}
 
+	@Override
+	public void checkDelete(String file) {
+		if (file.endsWith("config.cfg")) throw new SecurityException("Cannot delete config.cfg.");
+	}
+
 }

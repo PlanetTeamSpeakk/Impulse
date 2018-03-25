@@ -24,34 +24,45 @@ import com.ptsmods.impulse.Main.LogType;
 
 public class DataIO {
 
-	private DataIO() { }
+	private DataIO() {
+	}
 
 	// for sets and lists.
 	public static void saveJson(Collection collection, String path) throws IOException {
+		saveJson(collection, path, true);
+	}
+
+	public static void saveJson(Collection collection, String path, boolean encrypt) throws IOException {
 		int count = 0;
 		Throwable t = new Exception();
 		while (t != null && count < 16)
 			try {
-				saveJson0(new ArrayList<>(collection), path, true);
+				saveJson0(new ArrayList<>(collection), path, encrypt);
 				t = null;
 			} catch (ConcurrentModificationException e) {
 				t = e;
 				count += 1;
+				Main.sleep(50);
 			}
 		if (t != null) throw new IOException(t);
 	}
 
 	// for maps.
 	public static void saveJson(Map map, String path) throws IOException {
+		saveJson(map, path, true);
+	}
+
+	public static void saveJson(Map map, String path, boolean encrypt) throws IOException {
 		int count = 0;
 		Throwable t = new Exception();
 		while (t != null && count < 16)
 			try {
-				saveJson0(new HashMap<>(map), path, true);
+				saveJson0(new HashMap<>(map), path, encrypt);
 				t = null;
 			} catch (ConcurrentModificationException e) {
 				t = e;
 				count += 1;
+				Main.sleep(50);
 			}
 		if (t != null) throw new IOException(t);
 	}
@@ -61,12 +72,12 @@ public class DataIO {
 		if (obj == null) throw new NullPointerException("The object cannot be null.");
 		if (!(obj instanceof Map) && !(obj instanceof List) && !(obj instanceof Set)) Main.print(LogType.WARN, "The given object was not a Map, a List or a Set, this might throw an unexpected StackOverflowError.");
 		String[] directories = path.split("/");
-		directories = Main.removeArg(directories, directories.length-1);
+		directories = Main.removeArg(directories, directories.length - 1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();
 		if (!new File(path).exists()) new File(path).createNewFile();
 		String tmpPath = "data/tmp/" + Random.randDouble(1000, 9999, false) + ".tmp";
 		directories = tmpPath.split("/");
-		directories = Main.removeArg(directories, directories.length-1);
+		directories = Main.removeArg(directories, directories.length - 1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();
 		if (!new File(path).exists()) new File(path).createNewFile();
 		Gson gson = new GsonBuilder().setPrettyPrinting().serializeSpecialFloatingPointValues().setDateFormat("EEEE d MMM y HH:mm:ss").create();
@@ -92,24 +103,27 @@ public class DataIO {
 		}
 	}
 
-
 	/**
-	 * @param path The path to the JSON file.
-	 * @param clazz The class which should be returned.
-	 * @param isEncrypted If the JSON file is encrypted using AES and Base64 using the key given in the config as kryptoKey.
+	 * @param path
+	 *            The path to the JSON file.
+	 * @param clazz
+	 *            The class which should be returned.
+	 * @param isEncrypted
+	 *            If the JSON file is encrypted using AES and Base64 using the key
+	 *            given in the config as kryptoKey.
 	 * @return Null if the file is empty, an instance of the given class otherwise.
 	 * @throws IOException
 	 */
 	@Nullable
 	public static <T> T loadJson(String path, Class<T> clazz, boolean isEncrypted) throws IOException {
 		String[] directories = path.split("/");
-		directories = Main.removeArg(directories, directories.length-1);
+		directories = Main.removeArg(directories, directories.length - 1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();
 		if (!new File(path).exists()) new File(path).createNewFile();
-		if (Files.readAllLines(new File(path).toPath()).isEmpty())
-			return null;
+		if (Files.readAllLines(new File(path).toPath()).isEmpty()) return null;
 		String content = Main.join(Files.readAllLines(new File(path).toPath()));
-		return new Gson().fromJson(isEncrypted && content.startsWith("iEncrypt") ? Krypto.decrypt(Config.get("kryptoKey"), content.substring(8)) : content, new TypeToken<T>(){}.getType());
+		return new Gson().fromJson(isEncrypted && content.startsWith("iEncrypt") ? Krypto.decrypt(Config.get("kryptoKey"), content.substring(8)) : content, new TypeToken<T>() {
+		}.getType());
 	}
 
 	@Nullable
@@ -130,8 +144,9 @@ public class DataIO {
 	}
 
 	public static <T, U extends T> T loadJsonOrDefaultQuietly(String path, Class<T> clazz, U fallback) {
+		T value = null;
 		try {
-			return loadJsonOrDefault(path, clazz, fallback);
+			return (value = loadJsonOrDefault(path, clazz, fallback)) == null ? fallback : value;
 		} catch (Throwable e) {
 			return fallback;
 		}

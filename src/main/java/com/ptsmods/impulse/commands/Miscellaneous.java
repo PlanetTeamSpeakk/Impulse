@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import com.ptsmods.impulse.Main.TimeType;
@@ -37,17 +38,15 @@ import net.dv8tion.jda.core.entities.Message.Attachment;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.entities.Webhook;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.webhook.WebhookClient;
 
 public class Miscellaneous {
 
-	private static Map									settings;
-	private static Map<String, Map<String, String>>		patronEmails;
-	private static Map<String, String>					rifts;
-	private static Map<String, Map<String, Webhook>>	riftWebhooks	= new HashMap();
-	private static List<Map<String, Object>>			reminders;
+	private static Map								settings;
+	private static Map<String, Map<String, String>>	patronEmails;
+	private static Map<String, String>				rifts;
+	private static List<Map<String, Object>>		reminders;
 
 	static {
 		try {
@@ -250,7 +249,15 @@ public class Miscellaneous {
 				event.reply("This channel already has an open rift, you can close it with %srift close.", Main.getPrefix(event.getGuild()));
 				return;
 			}
+			if (event.getTextChannel().getWebhooks().complete().size() > 6) {
+				event.reply("This channel has more than 6 webhooks, please delete some in order to use this feature.");
+				return;
+			}
 			String name = event.getArgs().split(" ")[0].toLowerCase();
+			if (name.equalsIgnoreCase("general")) {
+				event.reply("Please don't do this to me. ;-;");
+				return;
+			}
 			String guild = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
 			int current = 1;
 			String channels = "";
@@ -258,7 +265,7 @@ public class Miscellaneous {
 			for (TextChannel channel : Main.getTextChannels())
 				if (channel.getName().contains(name) && channel.getGuild().getName().toLowerCase().contains(guild.toLowerCase())) {
 					possibilities.add(channel);
-					channels += "\n\t" + current++ + ". " + channel.getName() + " (" + channel.getGuild().getName() + ")";
+					channels += "\n\t" + current++ + ". " + channel.getName().replaceAll("\\*", "\\*") + " (" + channel.getGuild().getName().replaceAll("\\*", "\\*") + ")";
 				}
 			if (!possibilities.isEmpty()) {
 				Message response = null;
@@ -280,35 +287,40 @@ public class Miscellaneous {
 					event.reply("The selected channel already has an open rift.");
 					return;
 				}
+				if (chosenOne.getWebhooks().complete().size() > 6) {
+					event.reply("The selected channel has more than 6 webhooks, they'd first have to delete some in order to use this feature.");
+					return;
+				}
 				if (chosenOne.canTalk() && chosenOne.getGuild().getSelfMember().hasPermission(Permission.MANAGE_WEBHOOKS)) {
 					if (chosenOne.getId().equals(event.getChannel().getId())) {
 						event.reply("Cannot open a rift from the same channel as it was opened from.");
 						return;
 					}
-					event.reply("Channel '%s' selected, waiting for approval of a user with Manage Messages permissions there...", chosenOne.getName());
+					event.reply("Channel '%s' selected, waiting for approval of a user with Manage Messages permissions there... (timeout: 2 minutes and 30 seconds)", chosenOne.getName());
 					count = 0;
 					response = null;
-					while ((response == null || !response.getMember().hasPermission(Permission.MESSAGE_MANAGE) && !Main.isOwner(response.getAuthor()) && !Main.isCoOwner(response.getAuthor())) && count < 5) {
+					while ((response == null || !response.getMember().hasPermission(Permission.MESSAGE_MANAGE) && !Main.hasOwnerPerms(response.getAuthor())) && count < 5) {
 						chosenOne.sendMessageFormat("**%s** has requested to open a rift to this channel from **%s** in the guild **%s**, would you like to accept? (yes/no, user with Manage Messages perm, only)", Main.str(event.getAuthor()), event.getChannel().getName(), event.getGuild().getName()).queue();
 						response = Main.waitForInput(chosenOne, 30000);
 						count += 1;
 					}
 					if (response != null && response.getContent().toLowerCase().startsWith("ye")) {
-						chosenOne.sendMessageFormat("Rift opened, any messages sent to from this channel will be sent to **%s** in **%s** and vice versa. You can always do %srift close to close the rift.", event.getChannel().getName(), event.getGuild().getName(), Main.getPrefix(chosenOne.getGuild())).queue();
-						event.reply("Rift opened, any messages sent to from this channel will be sent to **%s** and vice versa. You can always do %srift close to close the rift.", event.getChannel().getName(), event.getGuild().getName(), Main.getPrefix(event.getGuild()));
+						chosenOne.sendMessageFormat("Rift opened, any messages sent in this channel will be sent to **%s** in **%s** and vice versa. You can always do %srift close to close the rift.", event.getChannel().getName(), event.getGuild().getName(), Main.getPrefix(chosenOne.getGuild())).queue();
+						event.reply("Rift opened, any messages sent in this channel will be sent to **%s** in **%s** and vice versa. You can always do %srift close to close the rift.", chosenOne.getName(), chosenOne.getGuild().getName(), Main.getPrefix(event.getGuild()));
+						rifts.put(chosenOne.getId(), event.getChannel().getId());
+						rifts.put(event.getChannel().getId(), chosenOne.getId());
 						try {
 							DataIO.saveJson(rifts, "data/miscellaneous/rifts.json");
 						} catch (IOException e) {
 							event.reply("The rifts data file could not be saved, this means that this session will be lost if the bot restarts during it.");
 							chosenOne.sendMessage("The rifts data file could not be saved, this means that this session will be lost if the bot restarts during it.").queue();
 						}
-						rifts.put(chosenOne.getId(), event.getChannel().getId());
-						rifts.put(event.getChannel().getId(), chosenOne.getId());
-						riftWebhooks.put(chosenOne.getId(), new HashMap());
-						riftWebhooks.put(event.getChannel().getId(), new HashMap());
-					} else {
+					} else if (response != null) {
 						event.reply("The user **%s** declined the offer.", Main.str(response.getAuthor()));
 						chosenOne.sendMessage("The offer has been declined, no further action will be taken.").queue();
+					} else {
+						event.reply("The offer was ignored.");
+						chosenOne.sendMessage("The offer was ignored, no further action will be taken.").queue();
 					}
 				} else event.reply("I cannot talk there or I don't have the 'Manage Webhooks' permission there.");
 			} else event.reply("No channels were found.");
@@ -320,10 +332,6 @@ public class Miscellaneous {
 		if (rifts.containsKey(event.getChannel().getId())) {
 			String chosenOne = rifts.remove(event.getChannel().getId());
 			rifts.remove(chosenOne);
-			for (Webhook webhook : riftWebhooks.get(event.getChannel().getId()).values())
-				webhook.delete().queue();
-			for (Webhook webhook : riftWebhooks.get(chosenOne).values())
-				webhook.delete().queue();
 			try {
 				DataIO.saveJson(rifts, "data/miscellaneous/rifts.json");
 			} catch (IOException e) {
@@ -358,7 +366,7 @@ public class Miscellaneous {
 				for (Map<String, Object> reminder : new ArrayList<>(reminders)) {
 					User user = null;
 					if (System.currentTimeMillis() >= Main.getLongFromPossibleDouble(reminder.get("at")) && (user = Main.getUserById(reminder.get("owner").toString())) != null) {
-						Main.sendPrivateMessage(user, "At %s you've asked me to remind you this: %s.", new Date(Main.getLongFromPossibleDouble(reminder.get("initiated"))), reminder.get("message"));
+						Main.sendPrivateMessage(user, "At **%s** you've asked me to remind you this: %s.", new Date(Main.getLongFromPossibleDouble(reminder.get("initiated"))), reminder.get("message"));
 						reminders.remove(reminder);
 					}
 				}
@@ -369,7 +377,7 @@ public class Miscellaneous {
 				}
 				Main.sleep(30, TimeUnit.SECONDS);
 			}
-		}, "RemindMe thread").start();
+		}, "Reminder thread").start();
 	}
 
 	@SubscribeEvent
@@ -388,24 +396,33 @@ public class Miscellaneous {
 			}
 			event.getChannel().sendMessage((String) ((Map) settings.get(event.getGuild().getId())).get(event.getMessage().getContent().substring(serverPrefix.length()))).queue();
 		}
-		if (rifts.containsKey(event.getChannel().getId()) && !event.getMessage().isWebhookMessage()) {
-			if (!riftWebhooks.get(rifts.get(event.getChannel().getId())).containsKey(event.getAuthor().getId())) try {
-				riftWebhooks.get(rifts.get(event.getChannel().getId())).put(event.getAuthor().getId(), Main.getTextChannelById(rifts.get(event.getChannel().getId())).createWebhook(event.getAuthor().getName()).setAvatar(Icon.from(Main.openStream(new URL(event.getAuthor().getEffectiveAvatarUrl())))).complete());
+		TextChannel channel = null;
+		if (rifts.containsKey(event.getChannel().getId()) && !event.getMessage().isWebhookMessage() && (channel = Main.getTextChannelById(rifts.get(event.getChannel().getId()))) != null) {
+			WebhookClient client;
+			try {
+				client = channel.createWebhook(Main.str(event.getAuthor())).setAvatar(Icon.from(Main.openStream(new URL(event.getAuthor().getEffectiveAvatarUrl())))).complete().newClient().build();
 			} catch (IOException e) {
 				e.printStackTrace();
+				return;
 			}
-			if (riftWebhooks.get(rifts.get(event.getChannel().getId())).get(event.getAuthor().getId()) != null) {
-				WebhookClient client = riftWebhooks.get(rifts.get(event.getChannel().getId())).get(event.getAuthor().getId()).newClient().build();
-				if (!event.getMessage().getContent().isEmpty()) client.send(event.getMessage().getContent());
-				for (Attachment attachment : event.getMessage().getAttachments()) {
-					File attachmentFile = new File("data/tmp/attachment_" + Random.randInt() + "_" + attachment.getFileName());
-					attachment.download(attachmentFile);
-					client.send(attachmentFile, attachment.getFileName());
-					attachmentFile.delete();
+			if (!event.getMessage().getContent().isEmpty()) client.send(event.getMessage().getRawContent());
+			for (Attachment attachment : event.getMessage().getAttachments()) {
+				File attachmentFile = new File("data/tmp/attachment_" + Random.randInt() + "_" + attachment.getFileName());
+				attachment.download(attachmentFile);
+				try {
+					client.send(attachmentFile, attachment.getFileName()).get(); // synchronous execution so the file can be deleted, it'd be open otherwise
+																					// which means it can't be deleted.
+				} catch (InterruptedException | ExecutionException e) {
+					e.printStackTrace();
 				}
-				if (!event.getMessage().getEmbeds().isEmpty()) client.send(event.getMessage().getEmbeds());
-				client.close();
+				attachmentFile.delete();
 			}
+			if (!event.getMessage().getEmbeds().isEmpty()) client.send(event.getMessage().getEmbeds());
+			client.close();
+			channel.getWebhooks().complete().forEach(w -> {
+				if (w.getIdLong() == client.getIdLong()) w.delete().complete(); // channels can only have a maximum of 10 webhooks, because of this the webhooks
+																				// cannot be saved since only 10 users would be able to use it then.
+			});
 		}
 	}
 

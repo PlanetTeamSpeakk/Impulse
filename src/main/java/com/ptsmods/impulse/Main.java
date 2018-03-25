@@ -137,7 +137,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 9;
-	public static final int							revision				= 1;
+	public static final int							revision				= 2;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -899,6 +899,10 @@ public class Main {
 
 	public static boolean isOwner(User user) {
 		return user.getId().equals(getOwner().getId());
+	}
+
+	public static boolean hasOwnerPerms(User user) {
+		return isOwner(user) || isCoOwner(user);
 	}
 
 	public static void deleteCooldown(User user, Method command) {
