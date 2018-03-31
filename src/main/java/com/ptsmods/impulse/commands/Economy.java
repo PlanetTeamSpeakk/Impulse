@@ -55,7 +55,7 @@ public class Economy {
 		event.reply("Successfully opened an account at the Impulse Bank.");
 	}
 
-	@Subcommand(help = "Set, add or remove credits from your or someone elses bank account.\n\nExamples:\n\t[p]bank set 6900 @PlanetTeamSpeak\n\t[p]bank set +6900 @PlanetTeamSpeak\n\t[p]bank set -6900 @PlanetTeamSpeak.", name = "set", parent = "com.ptsmods.impulse.commands.Economy.bank", arguments = "<amount> [user]", guildOnly = true, userPermissions = { Permission.ADMINISTRATOR })
+	@Subcommand(help = "Set, add or remove credits from your or someone elses bank account.\n\nExamples:\n\t[p]bank set 6900 @PlanetTeamSpeak\n\t[p]bank set +6900 @PlanetTeamSpeak\n\t[p]bank set -6900 @PlanetTeamSpeak.", name = "set", parent = "com.ptsmods.impulse.commands.Economy.bank", arguments = "<amount> [user]", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR})
 	public static void bankSet(CommandEvent event) throws CommandException, IOException {
 		if (!event.getArgs().isEmpty()) {
 			Member member = event.getMember();
@@ -102,6 +102,16 @@ public class Economy {
 		else event.reply(member.getUser().getId().equals(event.getAuthor().getId()) ? String.format("You currently have **%s** credits.", getBalance(member)) : String.format("%s currently has **%s** credits.", member.getEffectiveName(), getBalance(member)));
 	}
 
+	@Command(category = "Economy", help = "Alias for [p]bank balance.", name = "balance", hidden = true, arguments = "[user]", guildOnly = true)
+	public static void balance(CommandEvent event) throws CommandException {
+		bankBalance(event);
+	}
+
+	@Command(category = "Economy", help = "Alias for [p]balance.", name = "bal", hidden = true, arguments = "[user]", guildOnly = true)
+	public static void bal(CommandEvent event) throws CommandException {
+		balance(event);
+	}
+
 	@Subcommand(help = "Transfer balance from your account to another account.", name = "transfer", parent = "com.ptsmods.impulse.commands.Economy.bank", arguments = "<amount> <user>", guildOnly = true)
 	public static void bankTransfer(CommandEvent event) throws Exception {
 		if (!event.getArgs().isEmpty() && event.getArgs().split(" ").length > 1) {
@@ -139,7 +149,7 @@ public class Economy {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Resets the balance of everyone in this server.", name = "reset", parent = "com.ptsmods.impulse.commands.Economy.bank", guildOnly = true, userPermissions = { Permission.ADMINISTRATOR })
+	@Subcommand(help = "Resets the balance of everyone in this server.", name = "reset", parent = "com.ptsmods.impulse.commands.Economy.bank", guildOnly = true, userPermissions = {Permission.ADMINISTRATOR})
 	public static void bankReset(CommandEvent event) throws IOException {
 		if (bank.containsKey(event.getGuild().getId())) {
 			event.reply("Are you sure you want to unregister %s users? (yes/no)", ((Map) bank.get(event.getGuild().getId())).size());
@@ -157,49 +167,49 @@ public class Economy {
 		} else event.reply("No one in this server has a bank account yet.");
 	}
 
-	@Command(category = "Economy", help = "Manage economy bank.", name = "economyset", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
+	@Command(category = "Economy", help = "Manage economy bank.", name = "economyset", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void economySet(CommandEvent event) throws CommandException {
 		Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "paydaycredits", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
+	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "paydaycredits", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void economySetPaydayCredits(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
 			if (!settings.containsKey(event.getGuild().getId()))
-				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { Integer.parseInt(event.getArgs().split(" ")[0]), 3600, 300, 300 }));
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {Integer.parseInt(event.getArgs().split(" ")[0]), 3600, 300, 300}));
 			else((Map) settings.get(event.getGuild().getId())).put("paydayCredits", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's amount you get when using payday has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of seconds a user should wait before using the payday command.", name = "paydaycooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
+	@Subcommand(help = "Set the amount of seconds a user should wait before using the payday command.", name = "paydaycooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void economySetPaydayCooldown(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
 			if (!settings.containsKey(event.getGuild().getId()))
-				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, Integer.parseInt(event.getArgs().split(" ")[0]), 300, 300 }));
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, Integer.parseInt(event.getArgs().split(" ")[0]), 300, 300}));
 			else((Map) settings.get(event.getGuild().getId())).put("paydayCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's payday cooldown has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of seconds a user should wait before using the slot command.", name = "slotcooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
+	@Subcommand(help = "Set the amount of seconds a user should wait before using the slot command.", name = "slotcooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void economySetSlotCooldown(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
 			if (!settings.containsKey(event.getGuild().getId()))
-				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, Integer.parseInt(event.getArgs().split(" ")[0]), 300 }));
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, Integer.parseInt(event.getArgs().split(" ")[0]), 300}));
 			else((Map) settings.get(event.getGuild().getId())).put("slotCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's slot cooldown has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "russianroulettecooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
+	@Subcommand(help = "Set the amount of credits a user should get when using the payday command.", name = "russianroulettecooldown", parent = "com.ptsmods.impulse.commands.Economy.economySet", arguments = "<value>", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void economySetRussianRouletteCooldown(CommandEvent event) throws CommandException {
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs().split(" ")[0])) {
 			if (!settings.containsKey(event.getGuild().getId()))
-				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, 300, Integer.parseInt(event.getArgs().split(" ")[0]) }));
+				settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, Integer.parseInt(event.getArgs().split(" ")[0])}));
 			else((Map) settings.get(event.getGuild().getId())).put("russianRouletteCooldown", Integer.parseInt(event.getArgs().split(" ")[0]));
 			saveSettings();
 			event.reply("This server's Russian Roulette cooldown has been set to " + Integer.parseInt(event.getArgs().split(" ")[0]) + ".");
@@ -209,7 +219,7 @@ public class Economy {
 	@Command(category = "Economy", help = "Free moneyzz!", name = "payday", guildOnly = true)
 	public static void payday(CommandEvent event) throws IOException {
 		if (hasAccount(event.getMember())) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, 300, 300 }));
+			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, 300}));
 			if (!cooldowns.containsKey(event.getGuild().getId())) cooldowns.put(event.getGuild().getId(), new HashMap());
 			Long cooldown = (Long) ((Map) cooldowns.get(event.getGuild().getId())).get(event.getAuthor().getId());
 			if (cooldown == null || System.currentTimeMillis() - cooldown >= Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000) {
@@ -278,7 +288,7 @@ public class Economy {
 	}
 
 	public static Map<String, Integer> getSettings(Guild guild) {
-		return settings.get(guild.getId()) == null ? Main.newHashMap(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }, new Integer[] { 360, 3600, 300, 300 }) : settings.get(guild.getId());
+		return settings.get(guild.getId()) == null ? Main.newHashMap(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}, new Integer[] {360, 3600, 300, 300}) : settings.get(guild.getId());
 	}
 
 	public static void putSettings(Guild guild, Map settings) throws CommandException {

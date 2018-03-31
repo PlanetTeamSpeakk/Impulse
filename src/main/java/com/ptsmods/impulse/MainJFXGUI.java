@@ -91,17 +91,19 @@ public class MainJFXGUI extends Application {
 		JGraphPanel cpu = new JGraphPanel(new ArrayList(), "CPU usage in %", "Seconds ago", true);
 		Main.runAsynchronously(() -> {
 			List<Double> scores = Lists.newArrayList(new Double[60]);
-			while (!Main.isShuttingDown()) {
-				double cpuUsage = UsageMonitorer.getSystemCpuLoad().doubleValue();
-				if (cpuUsage > 95 && System.currentTimeMillis() - Main.started.getTime() > 1000 * 60 * 3 && !Main.isShuttingDown() && !Main.devMode()) {
-					Main.print(LogType.WARN, "System CPU load was above 95%, assuming bot crashed, shutting down.");
-					Main.shutdown(0);
+			while (!Main.isShuttingDown())
+				try {
+					double cpuUsage = UsageMonitorer.getSystemCpuLoad().doubleValue();
+					if (cpuUsage > 95 && System.currentTimeMillis() - Main.started.getTime() > 1000 * 60 * 3 && !Main.isShuttingDown() && !Main.devMode()) {
+						Main.print(LogType.WARN, "System CPU load was above 95%, assuming bot crashed, shutting down.");
+						Main.shutdown(0);
+					}
+					scores.add(cpuUsage);
+					if (scores.size() > 60) scores.remove(0);
+					cpu.setScores(scores);
+					Main.sleep(1, TimeUnit.SECONDS);
+				} catch (Exception ignored) {
 				}
-				scores.add(cpuUsage);
-				if (scores.size() > 60) scores.remove(0);
-				cpu.setScores(scores);
-				Main.sleep(1, TimeUnit.SECONDS);
-			}
 		});
 		TabPane usage = new TabPane();
 		usage.getTabs().add(createTab("RAM", "Shows you the RAM usage of the past 60 seconds.", swingToJFX(ram)));

@@ -19,6 +19,7 @@ import javax.script.ScriptException;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.ptsmods.impulse.Main;
+import com.ptsmods.impulse.Main.CompilationException;
 import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
@@ -60,25 +61,26 @@ public class Owner {
 				try {
 					Main.getSendChannel(guild).sendMessageFormat("%s ~ %s", event.getArgs(), Main.str(event.getAuthor())).queue();
 					succeeded += 1;
-				} catch (Exception ignored) {
+				} catch (Exception ignored) { // this could be caused by Main#getSendChannel(Guild) returning null or not
+												// having the right permissions.
 					failed += 1;
 				}
 			status.editMessageFormat("Successfully sent the announcement to **%s** guilds, could not send the announcement to **%s** guilds.", succeeded, failed).queue();
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Owner", help = "Contact the owner.", name = "contact", cooldown = 60)
+	@Command(category = "Owner", help = "Send a message to my owner.", name = "contact", cooldown = 60, arguments = "<message>")
 	public static void contact(CommandEvent event) {
 		if (event.getArgs().length() != 0) {
 			Main.sendPrivateMessage(Main.getOwner(), String.format("**%s** (%s) has sent you a message from **%s** (%s):\n\n", Main.str(event.getAuthor()), event.getAuthor().getId(), event.getGuild() == null ? "direct messages" : event.getGuild().getName(), event.getGuild() == null ? "null" : event.getGuild().getId()) + event.getArgs());
-			event.reply("Successfully sent your message to my owner!");
+			event.reply("Successfully sent your message to my owner! Maybe you'll even get a response! OwO");
 		} else Main.sendCommandHelp(event);
 	}
 
 	@Command(category = "Owner", help = "Compiles and runs Java code.", name = "debug", ownerCommand = true, hidden = true)
 	public static void debug(CommandEvent event) {
 		try {
-			Object out = String.valueOf(Main.compileAndRunJavaCode(event.getArgs(), Main.newHashMap(new String[] { "event" }, new Object[] { event }), null, false));
+			Object out = String.valueOf(Main.compileAndRunJavaCode(event.getArgs(), Main.newHashMap(new String[] {"event"}, new Object[] {event}), null, false));
 			out = out == null ? "null" : out.toString();
 			List<String> messages = new ArrayList<>();
 			while (out.toString().length() > 1990) {
@@ -90,13 +92,15 @@ public class Owner {
 			messages.remove(0);
 			for (String message : messages)
 				event.reply("```java\n" + message + "```");
+		} catch (CompilationException e) {
+			event.reply("```java\n" + e.toString() + "```");
 		} catch (Throwable e) {
 			if (e.getMessage() != null && e.getMessage().contains("Cannot run program \"javac\""))
 				event.reply("The Java JDK was either not added to the PATH environment variable or not installed.");
 			else {
 				StackTraceElement stElement = null;
 				for (StackTraceElement element : e.getStackTrace())
-					if (element.getFileName() != null && element.getClassName().startsWith("com.ptsmods.impulse.commands")) stElement = element;
+					if (element.getFileName() != null && element.getClassName().startsWith("com.ptsmods.impulse")) stElement = element;
 				String output = String.format("A `%s` exception was thrown at line %s in %s while executing the code. Stacktrace:\n```java\n%s```", e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), Main.generateStackTrace(e));
 				if (output.length() < 1997)
 					event.getChannel().sendMessage(output).queue();
@@ -182,7 +186,7 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the bot's nickname.", name = "nickname", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "<nickname>", userPermissions = { Permission.NICKNAME_MANAGE }, botPermissions = { Permission.NICKNAME_CHANGE })
+	@Subcommand(help = "Set the bot's nickname.", name = "nickname", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "<nickname>", userPermissions = {Permission.NICKNAME_MANAGE}, botPermissions = {Permission.NICKNAME_CHANGE})
 	public static void setNickname(CommandEvent event) {
 		event.getGuild().getController().setNickname(event.getGuild().getSelfMember(), event.getArgs()).queue();
 		event.reply(event.getArgs().isEmpty() ? "Successfully reset my nickname." : "Successfully set my nickname to " + event.getArgs() + ".");

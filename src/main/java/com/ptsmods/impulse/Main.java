@@ -22,6 +22,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.security.CodeSource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.SynchronousQueue;
@@ -137,7 +140,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 9;
-	public static final int							revision				= 2;
+	public static final int							revision				= 3;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -185,7 +188,7 @@ public class Main {
 				@SuppressWarnings("deprecation")
 				@Override
 				public void onPrint(String string, boolean newLine) {
-					originalOut.print(string + (newLine ? System.lineSeparator() : ""));
+					originalOut.print((eclipse ? string : ConsoleColours.getCleanString(string)) + (newLine ? System.lineSeparator() : ""));
 					if (useSwing)
 						MainGUI.logLine(ConsoleColours.getCleanString(string).trim());
 					else MainJFXGUI.logLine(ConsoleColours.getCleanString(string), ConsoleColours.getFirstColour(string).toColour());
@@ -196,7 +199,7 @@ public class Main {
 				@SuppressWarnings("deprecation")
 				@Override
 				public void onPrint(String string, boolean newLine) {
-					originalErr.print(string + (newLine ? System.lineSeparator() : ""));
+					originalErr.print((eclipse ? string : ConsoleColours.getCleanString(string)) + (newLine ? System.lineSeparator() : ""));
 					if (useSwing)
 						MainGUI.logLine(ConsoleColours.getCleanString(string).trim());
 					else MainJFXGUI.logLine(ConsoleColours.getCleanString(string), Color.RED);
@@ -1071,12 +1074,12 @@ public class Main {
 
 	@Nullable
 	public static Message waitForInput(Member author, MessageChannel channel, int timeoutMillis) {
+		int startSize = messages.get().size();
 		long currentMillis = System.currentTimeMillis();
-		long currentSeconds = currentMillis / 1000;
 		while (true) {
 			if (messages.get().isEmpty()) continue;
 			Message lastMsg = messages.get().get(messages.get().size() - 1);
-			if (lastMsg.getCreationTime().toEpochSecond() > currentSeconds && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && (lastMsg.getGuild() == null || lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong()) && lastMsg.getChannel().getIdLong() == channel.getIdLong())
+			if (messages.get().size() > startSize && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && (lastMsg.getGuild() == null || lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong()) && lastMsg.getChannel().getIdLong() == channel.getIdLong())
 				return lastMsg;
 			else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
 			sleep(250);
@@ -1085,12 +1088,12 @@ public class Main {
 
 	@Nullable
 	public static Message waitForInput(MessageChannel channel, int timeoutMillis) {
+		int startSize = messages.get().size();
 		long currentMillis = System.currentTimeMillis();
-		long currentSeconds = currentMillis / 1000;
 		while (true) {
 			if (messages.get().isEmpty()) continue;
 			Message lastMsg = messages.get().get(messages.get().size() - 1);
-			if (lastMsg.getCreationTime().toEpochSecond() > currentSeconds && lastMsg.getChannel().getId().equals(channel.getId()) && !lastMsg.getAuthor().getId().equals(getSelfUser().getId()))
+			if (messages.get().size() > startSize && lastMsg.getChannel().getId().equals(channel.getId()) && !lastMsg.getAuthor().getId().equals(getSelfUser().getId()))
 				return lastMsg;
 			else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
 			sleep(250);
@@ -2220,7 +2223,7 @@ public class Main {
 	 * @author PlanetTeamSpeak
 	 */
 	public static Object compileAndRunJavaCode(String code, Map<String, Object> variables, List<Class> extraImportClasses, boolean beStatic) throws Throwable {
-		AtomicReference process = new AtomicReference();
+		AtomicObject<Process> process = new AtomicObject();
 		AtomicReference returnValue = new AtomicReference();
 		if (!runWithTimeout(15000, () -> {
 			try {
@@ -2234,40 +2237,48 @@ public class Main {
 				for (String var : variables0.keySet())
 					code0 += variables0.get(var).getClass().getName() + " " + var + ", ";
 				code0 = code0.substring(0, code0.length() - 2);
-				code0 += ") {" + (code.contains("return ") ? code.substring(0, code.lastIndexOf("return ")) + "returnValue = " + code.substring(code.lastIndexOf("return ") + 7, code.length()) : code) + ";}}";
+				code0 += ") {\n" + (code.contains("return ") ? code.substring(0, code.lastIndexOf("return ")) + "returnValue = " + code.substring(code.lastIndexOf("return ") + 7, code.length()) : code) + ";\n}}";
 				List<Class> varClasses = Lists.newArrayList(Class.class);
 				for (Object var : variables0.values())
 					varClasses.add(var.getClass());
-				// List<Class> importClasses = new ArrayList();
-				// importClasses.addAll(varClasses);
-				// importClasses.addAll(extraImportClasses0);
-				// importClasses.addAll(new Reflections("com.ptsmods.impulse", new
-				// SubTypesScanner(false)).getSubTypesOf(Object.class));
-				// //importClasses.addAll(new Reflections("net.dv8tion.jda", new
-				// SubTypesScanner(false)).getSubTypesOf(Object.class));
-				// List<Class> importedClasses = new ArrayList();
-				// List<String> blacklist = devMode ?
-				// Lists.newArrayList("net.dv8tion.jda.core.utils.SimpleLog",
-				// "com.ptsmods.impulse.miscellaneous.ConsoleCommandEvent",
-				// "com.ptsmods.impulse.utils.ArrayMap", "com.ptsmods.impulse.utils.ArraySet") :
-				// new ArrayList();
-				// for (Class clazz : importClasses) {
-				// boolean shouldBreak = blacklist.contains(clazz.getName()) ||
-				// clazz.getName().contains("$");
-				// for (Class clazz1 : importedClasses)
-				// if (clazz.getSimpleName().equals(clazz1.getSimpleName()) && clazz != clazz1)
-				// {shouldBreak = true; break;}
-				// if (!shouldBreak) {
-				// code0 = "import " + clazz.getName() + "; " + code0;
-				// importedClasses.add(clazz);
-				// }
-				// }
+				List<Class> importClasses = new ArrayList();
+				importClasses.addAll(varClasses);
+				importClasses.addAll(new Reflections("com.ptsmods.impulse", new SubTypesScanner(false)).getSubTypesOf(Object.class));
+				importClasses.addAll(new Reflections("net.dv8tion.jda", new SubTypesScanner(false)).getSubTypesOf(Object.class));
+				List<Class> importedClasses = new ArrayList();
+				List<String> blacklist = devMode ? Lists.newArrayList("net.dv8tion.jda.core.utils.SimpleLog") : new ArrayList();
+				blacklist.add("com.ptsmods.impulse.MainGUI"); // deprecated class.
+				for (Class clazz : importClasses) {
+					boolean shouldBreak = blacklist.contains(clazz.getName()) || clazz.getName().contains("$");
+					for (Class clazz1 : importedClasses)
+						if (clazz.getSimpleName().equals(clazz1.getSimpleName()) && clazz != clazz1) {
+							shouldBreak = true;
+							break;
+						}
+					if (!shouldBreak) {
+						code0 = "import " + clazz.getName() + "; " + code0;
+						importedClasses.add(clazz);
+					}
+				}
 				Files.write(code0.getBytes("UTF-8"), source);
 				String[] args = new String[] {"-classpath", "\"" + getJarFile().getAbsolutePath() + "\"", "-d", "data/tmp/", "\"" + source.getAbsolutePath() + "\""};
 				process.set(Runtime.getRuntime().exec("javac " + joinCustomChar(" ", args)));
-				((Process) process.get()).waitFor();
+				process.get().waitFor();
+				String error;
+				if (!(error = convertStreamToString(process.get().getErrorStream())).isEmpty()) {
+					char[] chars = error.split("\n")[2].toCharArray();
+					int character = 0;
+					for (int i : range(chars.length))
+						if (chars[i] == '^') {
+							character = i;
+							break;
+						}
+					returnValue.set(new CompilationException(code, character < 0 ? 0 : character, "Error:" + error.split("\n")[0].split(": error:")[1]));
+					source.delete();
+					return;
+				}
 				process.set(Runtime.getRuntime().exec("jar cvf " + fileName + ".jar " + fileName + ".class", null, new File("data/tmp/")));
-				((Process) process.get()).waitFor();
+				process.get().waitFor();
 				addJarToClassPath(new File("data/tmp/" + fileName + ".jar"));
 				List varvs = new ArrayList(variables0.values());
 				varvs.add(0, Class.forName(fileName));
@@ -2283,7 +2294,7 @@ public class Main {
 				e.printStackTrace();
 				returnValue.set(e);
 			}
-		}) && process.get() != null) ((Process) process.get()).destroyForcibly();
+		}) && process.get() != null) process.get().destroyForcibly();
 		if (returnValue.get() instanceof Throwable) throw (Throwable) returnValue.get();
 		return returnValue.get();
 	}
@@ -2294,8 +2305,32 @@ public class Main {
 		method.invoke(ClassLoader.getSystemClassLoader(), new File(jar.getAbsolutePath()).toURI().toURL());
 	}
 
+	@SuppressWarnings("unused") // revision is not 0 in every version and since it's final it'll give a warning.
 	public static File getJarFile() {
-		return new File(devMode ? "E:\\MEGA\\Impulse Java\\Impulse\\build\\libs\\Impulse-1.8.1-stable-all.jar" : ClassLoader.getSystemClassLoader().getResource(".").getPath());
+		if (!devMode)
+			try {
+				CodeSource codeSource = Main.class.getProtectionDomain().getCodeSource();
+				File jarFile;
+				if (codeSource.getLocation() != null)
+					jarFile = new File(codeSource.getLocation().toURI());
+				else {
+					String path = Main.class.getResource(Main.class.getSimpleName() + ".class").getPath();
+					String jarFilePath = path.substring(path.indexOf(":") + 1, path.indexOf("!"));
+					jarFilePath = URLDecoder.decode(jarFilePath, "UTF-8");
+					jarFile = new File(jarFilePath);
+				}
+				return jarFile;
+			} catch (Exception e) {
+				throwCheckedExceptionWithoutDeclaration(e);
+				return null;
+			}
+		else return new File("E:\\MEGA\\Impulse Java\\Impulse\\build\\libs\\Impulse-" + major + "." + (revision == 0 ? minor - 1 : minor) + ".0-stable-all.jar");
+	}
+
+	public static String convertStreamToString(InputStream is) {
+		@SuppressWarnings("resource")
+		Scanner s = new Scanner(is).useDelimiter("\\A");
+		return s.hasNext() ? s.next() : "";
 	}
 
 	public static boolean runWithTimeout(int timeoutMillis, Runnable runnable) {
@@ -2473,6 +2508,50 @@ public class Main {
 		private LogType(String name, ConsoleColours colour) {
 			this.name = name;
 			this.colour = colour;
+		}
+
+	}
+
+	public static class CompilationException extends Exception {
+
+		private static final long	serialVersionUID	= 1234078188854932430L;
+		private final String		line;
+		private final int			character;
+		private final String		message;
+
+		public CompilationException(String line, int character, String message) {
+			super();
+			this.line = line;
+			this.character = character;
+			this.message = message;
+		}
+
+		public String getLine() {
+			return line;
+		}
+
+		public int getCharacter() {
+			return character;
+		}
+
+		@Override
+		public String getMessage() {
+			return message;
+		}
+
+		@Override
+		public String toString() {
+			return message + "\n" + line + "\n" + (character == 0 ? "" : multiplyString(" ", character - 1)) + "^";
+		}
+
+		@Override
+		public void printStackTrace(PrintStream stream) {
+			print(LogType.ERROR, toString());
+		}
+
+		@Override
+		public void printStackTrace(PrintWriter writer) {
+			print(LogType.ERROR, toString());
 		}
 
 	}

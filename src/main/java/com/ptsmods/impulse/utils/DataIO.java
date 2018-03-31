@@ -89,7 +89,7 @@ public class DataIO {
 			IOUtils.closeQuietly(writer);
 		}
 		try {
-			loadJson(tmpPath, obj.getClass());
+			loadJson(tmpPath, obj.getClass(), encrypt);
 		} catch (Throwable e) {
 			throw new IOException("The saved data file was corrupt and could not be read, the actual file has not been changed.", e);
 		} finally {

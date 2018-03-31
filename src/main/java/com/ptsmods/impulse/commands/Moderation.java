@@ -1223,14 +1223,9 @@ public class Moderation {
 				return;
 			}
 		}
-		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && event.getMember() != null && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE) && event.getGuild() != null && settings.containsKey(event.getGuild().getId()) && (!((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") || ((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") && (boolean) ((Map) settings.get(event.getGuild().getId())).get("inviteRemoving"))) {
-			try {
-				event.getMessage().delete().complete();
-			} catch (Throwable e) {
-				return;
-			}
+		if (event.getMessage().getContent().toLowerCase().contains("discord.gg/") && event.getMember() != null && !event.getMember().hasPermission(Permission.MESSAGE_MANAGE) && event.getGuild() != null && settings.containsKey(event.getGuild().getId()) && (!((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") || ((Map) settings.get(event.getGuild().getId())).containsKey("inviteRemoving") && (boolean) ((Map) settings.get(event.getGuild().getId())).get("inviteRemoving"))) event.getMessage().delete().queue(v -> {
 			event.getChannel().sendMessage(event.getAuthor().getAsMention() + " don't advertise other Discord servers!").queue();
-		}
+		});
 		if (settings.containsKey(event.getGuild().getId())) if ((boolean) ((Map) settings.get(event.getGuild().getId())).get("banMentionSpam") && event.getMessage().getMentionedUsers().size() > 10) event.getGuild().getController().ban(event.getAuthor(), 1).queue();
 		messages.put(event.getAuthor().getId(), Main.add(messages.getOrDefault(event.getAuthor().getId(), new ArrayList<Message>()), event.getMessage()));
 	}
