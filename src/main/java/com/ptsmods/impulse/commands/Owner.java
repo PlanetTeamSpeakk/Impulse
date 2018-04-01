@@ -19,7 +19,6 @@ import javax.script.ScriptException;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.ptsmods.impulse.Main;
-import com.ptsmods.impulse.Main.CompilationException;
 import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
@@ -27,6 +26,7 @@ import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.CommandPermissionException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
+import com.ptsmods.impulse.utils.compiler.CompilationException;
 
 import javafx.application.Platform;
 import net.dv8tion.jda.core.JDAInfo;
@@ -80,7 +80,7 @@ public class Owner {
 	@Command(category = "Owner", help = "Compiles and runs Java code.", name = "debug", ownerCommand = true, hidden = true)
 	public static void debug(CommandEvent event) {
 		try {
-			Object out = String.valueOf(Main.compileAndRunJavaCode(event.getArgs(), Main.newHashMap(new String[] {"event"}, new Object[] {event}), null, false));
+			Object out = String.valueOf(Main.compileAndRunJavaCode(event.getArgs(), Main.newHashMap(new String[] {"event"}, new Object[] {event})));
 			out = out == null ? "null" : out.toString();
 			List<String> messages = new ArrayList<>();
 			while (out.toString().length() > 1990) {
@@ -308,7 +308,7 @@ public class Owner {
 		int major = Integer.parseInt(version.split("\\.")[0]);
 		int minor = Integer.parseInt(version.split("\\.")[1].split("-")[0]);
 		int revision = Integer.parseInt(version.split("\\.")[2].split("-")[0]);
-		event.reply(major > Main.major || minor > Main.minor || revision > Main.revision ? String.format("This version of Impulse, **%s**, is outdated. The newest version is **%s**, you can download it here: %s.", Main.version, version, data.get("zipball_url")) : String.format("This version of Impulse, **%s**, is up-to-date.", Main.version));
+		event.reply(major > Main.major || minor > Main.minor || revision > Main.revision ? String.format("This version of Impulse, **%s**, is outdated. The newest version is **%s**, you can download it here: https://github.com/PlanetTeamSpeakk/Impulse/releases/tag/%s.", Main.version, version, version) : String.format("This version of Impulse, **%s**, is up-to-date.", Main.version));
 	}
 
 	@Command(category = "Owner", help = "Shows you the top 10 biggest guilds this bot is in.", name = "toptenguilds")

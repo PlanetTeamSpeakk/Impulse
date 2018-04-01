@@ -72,7 +72,6 @@ import com.gargoylesoftware.htmlunit.html.HTMLParserListener;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.javascript.JavaScriptErrorListener;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandExecutionHook;
@@ -94,6 +93,7 @@ import com.ptsmods.impulse.utils.HookedPrintStream;
 import com.ptsmods.impulse.utils.HookedPrintStream.PrintHook;
 import com.ptsmods.impulse.utils.ImageManipulator;
 import com.ptsmods.impulse.utils.Random;
+import com.ptsmods.impulse.utils.compiler.MemoryJavaCompiler;
 
 import javafx.application.Platform;
 import javafx.scene.Node;
@@ -140,7 +140,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 9;
-	public static final int							revision				= 3;
+	public static final int							revision				= 4;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -1671,6 +1671,11 @@ public class Main {
 		return list;
 	}
 
+	public static <T> List<T> add(List<T> list, T object, int index) {
+		list.add(index, object);
+		return list;
+	}
+
 	public static String getOSName() {
 		return osName;
 	}
@@ -2222,81 +2227,41 @@ public class Main {
 	 * @throws Exception
 	 * @author PlanetTeamSpeak
 	 */
-	public static Object compileAndRunJavaCode(String code, Map<String, Object> variables, List<Class> extraImportClasses, boolean beStatic) throws Throwable {
-		AtomicObject<Process> process = new AtomicObject();
-		AtomicReference returnValue = new AtomicReference();
-		if (!runWithTimeout(15000, () -> {
-			try {
-				final Map<String, Object> variables0 = variables == null ? new HashMap() : variables;
-				new ArrayList();
-				String fileName = "TempClass_" + Random.randInt();
-				while (new File("data/tmp/" + fileName + ".jar").exists())
-					fileName = "TempClass_" + Random.randInt();
-				File source = new File("data/tmp/" + fileName + ".java");
-				String code0 = "public class " + fileName + " {public " + (beStatic ? "static " : "") + "Object returnValue = null; public " + (beStatic ? "static " : "") + "final void run(Class<" + fileName + "> thisClass, ";
-				for (String var : variables0.keySet())
-					code0 += variables0.get(var).getClass().getName() + " " + var + ", ";
-				code0 = code0.substring(0, code0.length() - 2);
-				code0 += ") {\n" + (code.contains("return ") ? code.substring(0, code.lastIndexOf("return ")) + "returnValue = " + code.substring(code.lastIndexOf("return ") + 7, code.length()) : code) + ";\n}}";
-				List<Class> varClasses = Lists.newArrayList(Class.class);
-				for (Object var : variables0.values())
-					varClasses.add(var.getClass());
-				List<Class> importClasses = new ArrayList();
-				importClasses.addAll(varClasses);
-				importClasses.addAll(new Reflections("com.ptsmods.impulse", new SubTypesScanner(false)).getSubTypesOf(Object.class));
-				importClasses.addAll(new Reflections("net.dv8tion.jda", new SubTypesScanner(false)).getSubTypesOf(Object.class));
-				List<Class> importedClasses = new ArrayList();
-				List<String> blacklist = devMode ? Lists.newArrayList("net.dv8tion.jda.core.utils.SimpleLog") : new ArrayList();
-				blacklist.add("com.ptsmods.impulse.MainGUI"); // deprecated class.
-				for (Class clazz : importClasses) {
-					boolean shouldBreak = blacklist.contains(clazz.getName()) || clazz.getName().contains("$");
-					for (Class clazz1 : importedClasses)
-						if (clazz.getSimpleName().equals(clazz1.getSimpleName()) && clazz != clazz1) {
-							shouldBreak = true;
-							break;
-						}
-					if (!shouldBreak) {
-						code0 = "import " + clazz.getName() + "; " + code0;
-						importedClasses.add(clazz);
-					}
+	public static Object compileAndRunJavaCode(String code, Map<String, Object> variables) throws Throwable {
+		if (devMode) System.setProperty("java.home", "E:\\Program Files\\Java\\jdk1.8.0_144");
+		Map<String, Object> variables0 = variables == null ? new HashMap() : variables;
+		String fileName = "TempClass_" + Random.randInt();
+		String code0 = "public class " + fileName + " {public static Object returnValue = null; public static final void run(Class<" + fileName + "> thisClass, ";
+		for (String var : variables0.keySet())
+			code0 += variables0.get(var).getClass().getName() + " " + var + ", ";
+		code0 = code0.substring(0, code0.length() - 2);
+		code0 += ") {\n" + (code.contains("return ") ? code.substring(0, code.lastIndexOf("return ")) + "returnValue = " + code.substring(code.lastIndexOf("return ") + 7, code.length()) : code) + ";\n}}";
+		List<Class> varClasses = Lists.newArrayList(Class.class);
+		for (Object var : variables0.values())
+			varClasses.add(var.getClass());
+		List<Class> importClasses = new ArrayList();
+		importClasses.addAll(varClasses);
+		importClasses.addAll(new Reflections("com.ptsmods.impulse", new SubTypesScanner(false)).getSubTypesOf(Object.class));
+		importClasses.addAll(new Reflections("net.dv8tion.jda", new SubTypesScanner(false)).getSubTypesOf(Object.class));
+		List<Class> importedClasses = new ArrayList();
+		List<String> blacklist = devMode ? Lists.newArrayList("net.dv8tion.jda.core.utils.SimpleLog") : new ArrayList();
+		blacklist.add("com.ptsmods.impulse.MainGUI"); // deprecated class.
+		for (Class clazz : importClasses) {
+			boolean shouldBreak = blacklist.contains(clazz.getName()) || clazz.getName().contains("$") || Modifier.isPrivate(clazz.getModifiers()) || clazz.getSimpleName().equalsIgnoreCase("package-info");
+			for (Class clazz1 : importedClasses)
+				if (clazz.getSimpleName().equals(clazz1.getSimpleName()) && clazz != clazz1) {
+					shouldBreak = true;
+					break;
 				}
-				Files.write(code0.getBytes("UTF-8"), source);
-				String[] args = new String[] {"-classpath", "\"" + getJarFile().getAbsolutePath() + "\"", "-d", "data/tmp/", "\"" + source.getAbsolutePath() + "\""};
-				process.set(Runtime.getRuntime().exec("javac " + joinCustomChar(" ", args)));
-				process.get().waitFor();
-				String error;
-				if (!(error = convertStreamToString(process.get().getErrorStream())).isEmpty()) {
-					char[] chars = error.split("\n")[2].toCharArray();
-					int character = 0;
-					for (int i : range(chars.length))
-						if (chars[i] == '^') {
-							character = i;
-							break;
-						}
-					returnValue.set(new CompilationException(code, character < 0 ? 0 : character, "Error:" + error.split("\n")[0].split(": error:")[1]));
-					source.delete();
-					return;
-				}
-				process.set(Runtime.getRuntime().exec("jar cvf " + fileName + ".jar " + fileName + ".class", null, new File("data/tmp/")));
-				process.get().waitFor();
-				addJarToClassPath(new File("data/tmp/" + fileName + ".jar"));
-				List varvs = new ArrayList(variables0.values());
-				varvs.add(0, Class.forName(fileName));
-				Object instance = beStatic ? null : Class.forName(fileName).newInstance();
-				getMethod(Class.forName(fileName), "run", varClasses.toArray(new Class[0])).invoke(instance, varvs.toArray());
-				returnValue.set(getField(Class.forName(fileName), "returnValue", Object.class).get(instance));
-				source.delete();
-				new File("data/tmp/" + fileName + ".class").delete();
-			} catch (InterruptedException e) {
-			} catch (InvocationTargetException e) {
-				returnValue.set(e.getCause());
-			} catch (Exception e) {
-				e.printStackTrace();
-				returnValue.set(e);
+			if (!shouldBreak) {
+				code0 = "import " + clazz.getName() + "; " + code0;
+				importedClasses.add(clazz);
 			}
-		}) && process.get() != null) process.get().destroyForcibly();
-		if (returnValue.get() instanceof Throwable) throw (Throwable) returnValue.get();
-		return returnValue.get();
+		}
+		Method method = null;
+		(method = new MemoryJavaCompiler().compileStaticMethod("run", fileName, code0)).invoke(null, add(new ArrayList(variables0.values()), method.getDeclaringClass(), 0).toArray(new Object[0]));
+		return getField(method.getDeclaringClass(), "returnValue", Object.class).get(null);
+
 	}
 
 	public static void addJarToClassPath(File jar) throws Exception {
@@ -2508,50 +2473,6 @@ public class Main {
 		private LogType(String name, ConsoleColours colour) {
 			this.name = name;
 			this.colour = colour;
-		}
-
-	}
-
-	public static class CompilationException extends Exception {
-
-		private static final long	serialVersionUID	= 1234078188854932430L;
-		private final String		line;
-		private final int			character;
-		private final String		message;
-
-		public CompilationException(String line, int character, String message) {
-			super();
-			this.line = line;
-			this.character = character;
-			this.message = message;
-		}
-
-		public String getLine() {
-			return line;
-		}
-
-		public int getCharacter() {
-			return character;
-		}
-
-		@Override
-		public String getMessage() {
-			return message;
-		}
-
-		@Override
-		public String toString() {
-			return message + "\n" + line + "\n" + (character == 0 ? "" : multiplyString(" ", character - 1)) + "^";
-		}
-
-		@Override
-		public void printStackTrace(PrintStream stream) {
-			print(LogType.ERROR, toString());
-		}
-
-		@Override
-		public void printStackTrace(PrintWriter writer) {
-			print(LogType.ERROR, toString());
 		}
 
 	}
