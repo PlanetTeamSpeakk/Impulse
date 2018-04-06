@@ -2,4 +2,7 @@
 Source code of the Impulse Discord bot.
 
 ## Dependencies
-If you want to run a version higher than or equal to 1.8 of this bot on Linux you're gonna have to install GTK+, it took me a solid 4 hours to install that so you may want to rethink running this bot on Linux. You can see how to install GTK+ [right here](https://developer.gnome.org/gtk3/stable/gtk-building.html), don't forget the dependencies, and you can download GTK+ [right here](https://www.gtk.org/download/linux.php).
+### Windows/Mac
+Install the latest version of Java 8 which can be found [here](http://www.oracle.com/technetwork/java/javase/downloads/java-archive-javase8-2177648.html).
+### Linux
+On Linux you gotta open a terminal (ctrl+alt+t) and type the following command: `sudo apt-get install openjdk-8-jdk`, once you've installed that make sure to also install JavaFX by running `sudo apt-get install openjfx`.
