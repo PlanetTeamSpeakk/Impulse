@@ -6,46 +6,31 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
  * ClassLoader that loads .class bytes from memory.
  */
-final class MemoryClassLoader extends URLClassLoader {
-	private final Map<String, byte[]> classBytes;
+public class MemoryClassLoader extends URLClassLoader {
 
-	public MemoryClassLoader(Map<String, byte[]> classBytes, String classPath, ClassLoader parent) {
-		super(toURLs(classPath), parent);
-		this.classBytes = classBytes;
+	public MemoryClassLoader() {
+		super(toURLs(System.getProperty("java.class.path")), ClassLoader.getSystemClassLoader());
 	}
 
-	public MemoryClassLoader(Map<String, byte[]> classBytes, String classPath) {
-		this(classBytes, classPath, ClassLoader.getSystemClassLoader());
-	}
-
-	public MemoryClassLoader(Map<String, byte[]> classBytes) {
-		this(classBytes, System.getProperty("java.class.path"), ClassLoader.getSystemClassLoader());
-	}
-
-	public Class load(String className) throws ClassNotFoundException {
-		return loadClass(className);
-	}
-
-	public Iterable<Class> loadAll() throws ClassNotFoundException {
-		List<Class> classes = new ArrayList<>(classBytes.size());
-		for (String name : classBytes.keySet())
-			classes.add(loadClass(name));
-		return classes;
+	public Class loadClassFromBytes(byte[] bytes, String className) {
+		if (bytes == null || className == null || className.isEmpty())
+			return null;
+		else try {
+			return super.findClass(className);
+		} catch (ClassNotFoundException e) {
+			return defineClass(className, bytes, 0, bytes.length);
+		}
 	}
 
 	@Override
-	protected Class findClass(String className) throws ClassNotFoundException {
-		byte[] buf = classBytes.get(className);
-		if (buf != null) {
-			classBytes.put(className, null);
-			return defineClass(className, buf, 0, buf.length);
-		} else return super.findClass(className);
+	public Class loadClass(String name) throws ClassNotFoundException {
+		// Main.print(LogType.DEBUG, "Loaded class", name);
+		return super.loadClass(name);
 	}
 
 	private static URL[] toURLs(String classPath) {

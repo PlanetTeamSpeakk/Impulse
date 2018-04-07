@@ -7,6 +7,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +30,8 @@ import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.CommandPermissionException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.utils.Config;
+import com.ptsmods.impulse.utils.UsageMonitorer;
+import com.ptsmods.impulse.utils.VMManagement;
 import com.ptsmods.impulse.utils.compiler.CompilationException;
 
 import javafx.application.Platform;
@@ -328,6 +334,59 @@ public class Owner {
 		for (Guild guild : top)
 			msg += "\n" + guild.getName() + Main.multiplyString(" ", maxLength - guild.getName().length()) + guild.getMembers().size();
 		event.reply(msg + "```");
+	}
+
+	@Command(category = "Owner", help = "Alias for [p]sysinfo, scheduled to be removed in Impulse v2.0.", name = "usage")
+	public static void usage(CommandEvent event) {
+		event.reply("This command is scheduled to be removed in Impulse v2.0, please use %ssysinfo instead.", Main.getPrefix(event.getGuild()));
+		sysinfo(event);
+	}
+
+	@Command(category = "Owner", help = "Shows you pc information, JVM information, drive information, RAM information and CPU information.", name = "sysinfo")
+	public static void sysinfo(CommandEvent event) {
+		// @formatter:off
+		String output = "**Host PC**:";
+		output += 	"\n\tName: **" + VMManagement.getVMM().getOsName() +
+					"**\n\tVersion: **" + VMManagement.getVMM().getOsVersion() +
+					"**\n\tArchitecture: **" + VMManagement.getVMM().getOsArch();
+		output += 	"**\n\n**JVM**:" +
+					"\n\tLoaded classes: **" + VMManagement.getVMM().getLoadedClassCount() +
+					"**\n\tUnloaded classes: **" + VMManagement.getVMM().getUnloadedClassCount() +
+					"**\n\tTotal classes: **" + VMManagement.getVMM().getTotalClassCount() +
+					"**\n\tClasses initialized: **" + VMManagement.getVMM().getInitializedClassCount() +
+					"**\n\tLive threads: **" + VMManagement.getVMM().getLiveThreadCount() +
+					"**\n\tDaemon threads: **" + VMManagement.getVMM().getDaemonThreadCount() +
+					"**\n\tTotal threads: **" + VMManagement.getVMM().getTotalThreadCount() +
+					"**\n\tPeak livethreadcount: **" + VMManagement.getVMM().getPeakThreadCount();
+		output += "**\n\n**Drives**:";
+		for (Path root : FileSystems.getDefault().getRootDirectories())
+			try {
+				FileStore store = Files.getFileStore(root);
+				output += "\n\t**" + root +
+						"**\n\t\tLeft: **" + Main.formatFileSize(store.getUsableSpace()).split("\\.")[0] + "." + Main.formatFileSize(store.getUsableSpace()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(store.getUsableSpace()).split(" ")[1] +
+						"**\n\t\tUsed: **" + Main.formatFileSize(store.getTotalSpace() - store.getUsableSpace()).split("\\.")[0] + "." + Main.formatFileSize(store.getTotalSpace() - store.getUsableSpace()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(store.getTotalSpace() - store.getUsableSpace()).split(" ")[1] +
+						"**\n\t\tTotal: **" + Main.formatFileSize(store.getTotalSpace()).split("\\.")[0] + "." + Main.formatFileSize(store.getTotalSpace()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(store.getTotalSpace()).split(" ")[1] + "**";
+			} catch (IOException e) {
+			}
+		output += 	"\n\n\tTotal left: **" + Main.formatFileSize(UsageMonitorer.getFreeSpace()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getFreeSpace()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getFreeSpace()).split(" ")[1] +
+					"**\n\tTotal used: **" + Main.formatFileSize(UsageMonitorer.getUsedSpace()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getUsedSpace()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getUsedSpace()).split(" ")[1] +
+					"**\n\tTotal: **" + Main.formatFileSize(UsageMonitorer.getTotalSpace()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getTotalSpace()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getTotalSpace()).split(" ")[1] + "**";
+		output += "\n\n**RAM**:" +
+				"\n\tUsed by process: **" + Main.formatFileSize(UsageMonitorer.getRamUsage()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getRamUsage()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getRamUsage()).split(" ")[1] +
+				"**\n\tAllocated to process: **" + Main.formatFileSize(UsageMonitorer.getRamMax()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getRamMax()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getRamMax()).split(" ")[1] +
+				"**\n\tUsed by host pc: **" + Main.formatFileSize(UsageMonitorer.getSystemRamUsage()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getSystemRamUsage()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getSystemRamUsage()).split(" ")[1] +
+				"**\n\tRAM of host pc: **" + Main.formatFileSize(UsageMonitorer.getSystemRamMax()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getSystemRamMax()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getSystemRamMax()).split(" ")[1] +
+				"**\n\tSwap used by host pc: **" + Main.formatFileSize(UsageMonitorer.getSystemSwapUsage()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getSystemSwapUsage()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getSystemSwapUsage()).split(" ")[1] +
+				"**\n\tSwap of host pc: **" + Main.formatFileSize(UsageMonitorer.getSystemSwapMax()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getSystemSwapMax()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getSystemSwapMax()).split(" ")[1] +
+				"**\n\tTotal RAM used by host pc: **" + Main.formatFileSize(UsageMonitorer.getTotalSystemRamUsage()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getTotalSystemRamUsage()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getTotalSystemRamUsage()).split(" ")[1] +
+				"**\n\tTotal RAM of host pc: **" + Main.formatFileSize(UsageMonitorer.getTotalSystemRamMax()).split("\\.")[0] + "." + Main.formatFileSize(UsageMonitorer.getTotalSystemRamMax()).split("\\.")[1].substring(0, 3).split(" ")[0] + " " + Main.formatFileSize(UsageMonitorer.getTotalSystemRamMax()).split(" ")[1] + "**";
+		output += "\n\n**CPU**:" +
+				"\n\tCores: **" + UsageMonitorer.getProcessorCount() +
+				"**\n\tUsed by process: **" + UsageMonitorer.getProcessCpuLoad() +
+				"**\n\tUsed by system: **" + UsageMonitorer.getSystemCpuLoad() +
+				"**\n\tAverage used by system last minute: **" + UsageMonitorer.getAverageSystemCpuLoad() + "**";
+		event.reply(output);
+		// @formatter:on
 	}
 
 }

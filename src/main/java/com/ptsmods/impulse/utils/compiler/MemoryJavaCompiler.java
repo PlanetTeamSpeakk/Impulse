@@ -24,10 +24,14 @@ import com.ptsmods.impulse.utils.HookedPrintStream.PrintHook;
  * Simple interface to Java compiler using JSR 199 Compiler API.
  */
 public class MemoryJavaCompiler {
-	private JavaCompiler			tool;
-	private StandardJavaFileManager	sjfm;
+	private static JavaCompiler				tool;
+	private static StandardJavaFileManager	sjfm;
+	private static MemoryClassLoader		classLoader	= new MemoryClassLoader();
 
-	public MemoryJavaCompiler() {
+	private MemoryJavaCompiler() {
+	}
+
+	static {
 		tool = ToolProvider.getSystemJavaCompiler();
 		if (tool == null) throw new RuntimeException("Could not get Java compiler. Please, ensure that JDK is used instead of JRE.");
 		sjfm = tool.getStandardFileManager(null, null, null);
@@ -39,11 +43,8 @@ public class MemoryJavaCompiler {
 	 * @throws CompilationException
 	 *             If an error occurs during compilation.
 	 */
-	@SuppressWarnings("resource")
-	public Method compileStaticMethod(final String methodName, final String className, final String source) throws ClassNotFoundException, CompilationException {
-		Map<String, byte[]> classBytes = compile(className + ".java", source);
-		MemoryClassLoader classLoader = new MemoryClassLoader(classBytes);
-		Class clazz = classLoader.loadClass(className);
+	public static Method compileStaticMethod(final String methodName, final String className, final String source) throws ClassNotFoundException, CompilationException {
+		Class clazz = compileClass(className + ".java", source);
 		Method[] methods = clazz.getDeclaredMethods();
 		for (Method method : methods)
 			if (method.getName().equals(methodName)) {
@@ -53,12 +54,11 @@ public class MemoryJavaCompiler {
 		throw new NoSuchMethodError(methodName);
 	}
 
-	@SuppressWarnings("resource")
-	public Class compileClass(String fileName, String source) throws ClassNotFoundException, CompilationException {
-		return new MemoryClassLoader(compile(fileName, source)).loadClass(fileName.split("\\.")[0]);
+	public static Class compileClass(String fileName, String source) throws ClassNotFoundException, CompilationException {
+		return classLoader.loadClassFromBytes(compile(fileName, source), fileName.split("\\.")[0]);
 	}
 
-	public Map<String, byte[]> compile(String fileName, String source) throws CompilationException {
+	public static byte[] compile(String fileName, String source) throws CompilationException {
 		return compile(fileName, source, null, System.getProperty("java.class.path"));
 	}
 
@@ -76,14 +76,14 @@ public class MemoryJavaCompiler {
 	 * @throws CompilationException
 	 *             If an error occurs during the compilation.
 	 */
-	private Map<String, byte[]> compile(String fileName, String source, String sourcePath, String classPath) throws CompilationException {
+	private static byte[] compile(String fileName, String source, String sourcePath, String classPath) throws CompilationException {
 		MemoryJavaFileManager fileManager = new MemoryJavaFileManager(sjfm);
 		List<JavaFileObject> compUnits = new ArrayList<>(1);
 		compUnits.add(fileManager.makeStringSource(fileName, source));
 		return compile(compUnits, fileManager, sourcePath, classPath);
 	}
 
-	private Map<String, byte[]> compile(final List<JavaFileObject> compUnits, final MemoryJavaFileManager fileManager, String sourcePath, String classPath) throws CompilationException {
+	private static byte[] compile(final List<JavaFileObject> compUnits, final MemoryJavaFileManager fileManager, String sourcePath, String classPath) throws CompilationException {
 		DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
 		List<String> options = new ArrayList<>();
 		options.add("-Xlint:all");
@@ -125,6 +125,6 @@ public class MemoryJavaCompiler {
 			fileManager.close();
 		} catch (IOException exp) {
 		}
-		return classBytes;
+		return classBytes.get(new ArrayList(classBytes.keySet()).get(0));
 	}
 }

@@ -75,7 +75,7 @@ public class DataIO {
 		directories = Main.removeArg(directories, directories.length - 1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();
 		if (!new File(path).exists()) new File(path).createNewFile();
-		String tmpPath = "data/tmp/" + Random.randDouble(1000, 9999, false) + ".tmp";
+		String tmpPath = "data/tmp/" + Random.INSTANCE.randDouble(1000, 9999, false) + ".tmp";
 		directories = tmpPath.split("/");
 		directories = Main.removeArg(directories, directories.length - 1);
 		new File(Main.joinCustomChar("/", directories)).mkdirs();

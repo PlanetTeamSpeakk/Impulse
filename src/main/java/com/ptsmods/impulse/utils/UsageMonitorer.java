@@ -8,22 +8,35 @@ import com.sun.management.OperatingSystemMXBean;
 
 public class UsageMonitorer {
 
-	private UsageMonitorer() {}
+	private UsageMonitorer() {
+	}
 
 	public static int getProcessorCount() {
 		return getOSMXB().getAvailableProcessors();
 	}
 
 	public static Percentage getSystemCpuLoad() {
-		return new Percentage(getOSMXB().getSystemCpuLoad() * 100);
+		try {
+			return new Percentage(getOSMXB().getSystemCpuLoad() * 100);
+		} catch (Exception e) {
+			return new Percentage(0);
+		}
 	}
 
 	public static Percentage getAverageSystemCpuLoad() {
-		return new Percentage(getOSMXB().getSystemLoadAverage() * 100);
+		try {
+			return new Percentage(getOSMXB().getSystemLoadAverage() * 100);
+		} catch (Exception e) {
+			return new Percentage(0);
+		}
 	}
 
 	public static Percentage getProcessCpuLoad() {
-		return new Percentage(getOSMXB().getProcessCpuLoad() * 100);
+		try {
+			return new Percentage(getOSMXB().getProcessCpuLoad() * 100);
+		} catch (Exception e) {
+			return new Percentage(0);
+		}
 	}
 
 	public static long getRamUsage() {
@@ -32,6 +45,30 @@ public class UsageMonitorer {
 
 	public static long getRamMax() {
 		return Runtime.getRuntime().maxMemory();
+	}
+
+	public static long getSystemRamUsage() {
+		return getSystemRamMax() - getOSMXB().getFreePhysicalMemorySize();
+	}
+
+	public static long getSystemRamMax() {
+		return getOSMXB().getTotalPhysicalMemorySize();
+	}
+
+	public static long getSystemSwapUsage() {
+		return getSystemSwapMax() - getOSMXB().getFreeSwapSpaceSize();
+	}
+
+	public static long getSystemSwapMax() {
+		return getOSMXB().getTotalSwapSpaceSize();
+	}
+
+	public static long getTotalSystemRamUsage() {
+		return getSystemRamUsage() + getSystemSwapUsage();
+	}
+
+	public static long getTotalSystemRamMax() {
+		return getSystemRamMax() + getSystemSwapMax();
 	}
 
 	public static long getTotalSpace() {
@@ -57,6 +94,14 @@ public class UsageMonitorer {
 		for (File root : File.listRoots())
 			usableSpace += root.getUsableSpace();
 		return usableSpace;
+	}
+
+	public static long getCurrentLoadedClassCount() {
+		return VMManagement.getVMM().getLoadedClassCount();
+	}
+
+	public static long getTotalLoadedClassCount() {
+		return VMManagement.getVMM().getTotalClassCount();
 	}
 
 	private static final OperatingSystemMXBean getOSMXB() {

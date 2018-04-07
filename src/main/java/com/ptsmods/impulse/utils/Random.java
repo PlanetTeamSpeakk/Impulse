@@ -8,23 +8,24 @@ import java.util.Map;
 
 /**
  * Actually random, unlike ThreadLocalRandom, smh. Oracle, pls.
- * 
+ *
  * @author PlanetTeamSpeak
  */
 public class Random {
 
-	private static final Character[]				characters			= {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-	private static Map<String, Map<String, Double>>	seeds;
-	private static boolean							shouldSeed			= false;
-	private static boolean							shouldMakeNewSeed	= false;
-	private static String							seedKey				= "";
-	private static Class							callerClass			= null;
-	private static long								lastCalledMillis	= 0;
+	public static final Random					INSTANCE			= new Random();
+	private final Character[]					characters			= {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+	private Map<String, Map<String, Double>>	seeds;
+	private boolean								shouldSeed			= false;
+	private boolean								shouldMakeNewSeed	= false;
+	private String								seedKey				= "";
+	private Class								callerClass			= null;
+	private long								lastCalledMillis	= 0;
 
 	private Random() {
 	}
 
-	static {
+	{
 		try {
 			seeds = DataIO.loadJsonOrDefault("data/random/seeds.json", Map.class, new HashMap());
 		} catch (IOException e) {
@@ -32,55 +33,55 @@ public class Random {
 		}
 	}
 
-	public static int randInt() {
+	public int randInt() {
 		return randInt(0, Integer.MAX_VALUE);
 	}
 
-	public static int randInt(int max) {
+	public int randInt(int max) {
 		return randInt(0, max);
 	}
 
-	public static int randInt(int min, int max) {
+	public int randInt(int min, int max) {
 		return (int) randDouble(min, max);
 	}
 
-	public static long randLong() {
+	public long randLong() {
 		return randLong(0, Long.MAX_VALUE);
 	}
 
-	public static long randLong(long max) {
+	public long randLong(long max) {
 		return randLong(0, max);
 	}
 
-	public static long randLong(long min, long max) {
+	public long randLong(long min, long max) {
 		return (long) randDouble(min, max);
 	}
 
-	public static short randShort() {
+	public short randShort() {
 		return randShort((short) 0, Short.MAX_VALUE);
 	}
 
-	public static short randShort(short max) {
+	public short randShort(short max) {
 		return randShort((short) 0, max);
 	}
 
-	public static short randShort(short min, short max) {
+	public short randShort(short min, short max) {
 		return (short) randLong(min, max);
 	}
 
-	public static double randDouble() {
+	public double randDouble() {
 		return randDouble(0D, Double.MAX_VALUE);
 	}
 
-	public static double randDouble(double max) {
+	public double randDouble(double max) {
 		return randDouble(0D, max);
 	}
 
-	public static double randDouble(double min, double max) {
+	public double randDouble(double min, double max) {
 		return randDouble(min, max, true);
 	}
 
-	public static double randDouble(double min, double max, boolean useSeeding) {
+	public double randDouble(double min, double max, boolean useSeeding) {
 		double rng = (Math.random() * max + min) * (min < 0D ? (int) (Math.random() * 10) >= 5 ? 1 : -1 : 1);
 		if (shouldSeed && useSeeding && System.currentTimeMillis() - lastCalledMillis <= 100) if (shouldMakeNewSeed) {
 			Map callerClassSeeds = seeds.get(callerClass.getName());
@@ -105,27 +106,27 @@ public class Random {
 		return rng;
 	}
 
-	public static float randFloat() {
+	public float randFloat() {
 		return randFloat(0F, Float.MAX_VALUE);
 	}
 
-	public static float randFloat(float max) {
+	public float randFloat(float max) {
 		return randFloat(0F, max);
 	}
 
-	public static float randFloat(float min, float max) {
+	public float randFloat(float min, float max) {
 		return (float) randDouble(min, max);
 	}
 
-	public static <T> T choice(T... choices) {
+	public <T> T choice(T... choices) {
 		return choices[randInt(choices.length)];
 	}
 
-	public static <T> T choice(List<T> choices) {
+	public <T> T choice(List<T> choices) {
 		return choices.get(randInt(choices.size()));
 	}
 
-	public static <T> void scramble(List<T> list) {
+	public <T> void scramble(List<T> list) {
 		List<T> listCopy = new ArrayList(list);
 		list.clear();
 		List<T> passed = new ArrayList();
@@ -138,11 +139,11 @@ public class Random {
 		}
 	}
 
-	public static String genKey(int length) {
+	public String genKey(int length) {
 		return genKey(length, true);
 	}
 
-	public static String genKey(int length, boolean alphanumeric) {
+	public String genKey(int length, boolean alphanumeric) {
 		String key = "";
 		for (int i : Main.range(length))
 			key += alphanumeric ? choice(characters) : Main.fromUnicode(genKey(4, true));
@@ -155,11 +156,11 @@ public class Random {
 	 * A method of this class which returns a random value should be called within
 	 * 100 milliseconds to return a seeded value, otherwise it'll return a random
 	 * value.
-	 * 
+	 *
 	 * @param key
 	 */
 	@SuppressWarnings("deprecation")
-	public static void seed(String key) {
+	public void seed(String key) {
 		callerClass = sun.reflect.Reflection.getCallerClass(2); // 0 is java.lang.Thread, 1 is this class and 2 is the actual caller class.
 		if (!seeds.getOrDefault(callerClass.getName(), new HashMap<>()).containsKey(key) || seeds.getOrDefault(callerClass.getName(), new HashMap<>()).get(key) == null) {
 			shouldMakeNewSeed = true;

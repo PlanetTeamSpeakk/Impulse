@@ -33,7 +33,7 @@ public class Marriage {
 		}
 	}
 
-	@Command(category = "Marriage", help = "Counts all the couples in this server.", name = "couplecount", guildOnly = true, botPermissions = { Permission.MANAGE_ROLES })
+	@Command(category = "Marriage", help = "Counts all the couples in this server.", name = "couplecount", guildOnly = true, botPermissions = {Permission.MANAGE_ROLES})
 	public static void coupleCount(CommandEvent event) {
 		List<Role> marriageRoles = new ArrayList<>();
 		for (Role role : event.getGuild().getRoles())
@@ -41,7 +41,7 @@ public class Marriage {
 		event.reply("There are currently " + marriageRoles.size() + " married couples in this server.");
 	}
 
-	@Command(category = "Marriage", help = "Divorce your ex.", name = "divorce", guildOnly = true, botPermissions = { Permission.MANAGE_ROLES }, arguments = "<ex>")
+	@Command(category = "Marriage", help = "Divorce your ex.", name = "divorce", guildOnly = true, botPermissions = {Permission.MANAGE_ROLES}, arguments = "<ex>")
 	public static void divorce(CommandEvent event) {
 		if (!event.getArgs().isEmpty() && Main.isLong(event.getArgs().split(" ")[0])) {
 			MessageChannel marriageChannel = null;
@@ -69,7 +69,7 @@ public class Marriage {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Marriage", help = "Forcibly divorce a couple.\\nExample: [p]forcedivorce My homie #1; My homie #36", name = "forcedivorce", userPermissions = { Permission.MANAGE_ROLES }, botPermissions = { Permission.MANAGE_ROLES }, arguments = "<user1>; <user2>", guildOnly = true)
+	@Command(category = "Marriage", help = "Forcibly divorce a couple.\\nExample: [p]forcedivorce My homie #1; My homie #36", name = "forcedivorce", userPermissions = {Permission.MANAGE_ROLES}, botPermissions = {Permission.MANAGE_ROLES}, arguments = "<user1>; <user2>", guildOnly = true)
 	public static void forceDivorce(CommandEvent event) {
 		if (!event.getArgs().isEmpty() && event.getArgs().split(";").length > 1 || event.getArgs().split("; ").length > 1) {
 			String[] usernames = event.getArgs().contains("; ") ? event.getArgs().split("; ") : event.getArgs().split(";");
@@ -103,12 +103,12 @@ public class Marriage {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Marriage", help = "Forcible marry 2 members, you pervert. \nExample: [p]forcemarry @Homie #1 @Homie #36", name = "forcemarry", userPermissions = { Permission.MANAGE_ROLES, Permission.MANAGE_CHANNEL, Permission.CREATE_INSTANT_INVITE, Permission.NICKNAME_CHANGE, Permission.VOICE_CONNECT, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_ATTACH_FILES, Permission.MESSAGE_HISTORY, Permission.MESSAGE_EXT_EMOJI, Permission.VOICE_SPEAK, Permission.VOICE_USE_VAD }, botPermissions = { Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE }, arguments = "<user1> <user2>", guildOnly = true)
+	@Command(category = "Marriage", help = "Forcible marry 2 members, you pervert. \nExample: [p]forcemarry @Homie #1 @Homie #36", name = "forcemarry", userPermissions = {Permission.MANAGE_ROLES, Permission.MANAGE_CHANNEL, Permission.CREATE_INSTANT_INVITE, Permission.NICKNAME_CHANGE, Permission.VOICE_CONNECT, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_ATTACH_FILES, Permission.MESSAGE_HISTORY, Permission.MESSAGE_EXT_EMOJI, Permission.VOICE_SPEAK, Permission.VOICE_USE_VAD}, botPermissions = {Permission.MANAGE_ROLES, Permission.MESSAGE_MANAGE}, arguments = "<user1> <user2>", guildOnly = true)
 	public static void forceMarry(CommandEvent event) {
 		if (!event.getArgs().isEmpty() && event.getMessage().getMentionedUsers().size() > 1) {
 			Member mem1 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
 			Member mem2 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(1));
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "marryLimit", "disabled" }, new Object[] { -1, false }));
+			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
 			MessageChannel marriageChannel = null;
 			boolean isMarriedToMember = false;
 			if (event.getGuild().getTextChannelsByName("marriage", true).isEmpty()) try {
@@ -144,7 +144,7 @@ public class Marriage {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Marriage", help = "Marry your crush.", name = "marry", arguments = "<crush>", botPermissions = { Permission.MANAGE_ROLES, Permission.MANAGE_CHANNEL, Permission.CREATE_INSTANT_INVITE, Permission.NICKNAME_CHANGE, Permission.VOICE_CONNECT, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_ATTACH_FILES, Permission.MESSAGE_HISTORY, Permission.MESSAGE_EXT_EMOJI, Permission.VOICE_SPEAK, Permission.VOICE_USE_VAD }, cooldown = 60, guildOnly = true)
+	@Command(category = "Marriage", help = "Marry your crush.", name = "marry", arguments = "<crush>", botPermissions = {Permission.MANAGE_ROLES, Permission.MANAGE_CHANNEL, Permission.CREATE_INSTANT_INVITE, Permission.NICKNAME_CHANGE, Permission.VOICE_CONNECT, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_ATTACH_FILES, Permission.MESSAGE_HISTORY, Permission.MESSAGE_EXT_EMOJI, Permission.VOICE_SPEAK, Permission.VOICE_USE_VAD}, cooldown = 60, guildOnly = true)
 	public static void marry(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			try {
@@ -157,7 +157,7 @@ public class Marriage {
 			if (member == null)
 				event.reply("The given user could not be found.");
 			else {
-				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "marryLimit", "disabled" }, new Object[] { -1, false }));
+				if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
 				int marryLimit = -1;
 				marryLimit = Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("marryLimit")) + 1;
 				List<Role> marriageRolesOfAuthor = new ArrayList<>();
@@ -197,7 +197,7 @@ public class Marriage {
 					else if (!response.getContent().toLowerCase().contains("ye"))
 						event.reply("%s, the user you tried to marry did not say yes, I'm sorry.", event.getAuthor().getAsMention());
 					else {
-						Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", event.getAuthor().getName(), member.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions(Main.defaultPermissionsArray).complete();
+						Role role = event.getGuild().getController().createRole().setName(String.format("%s " + heart + " %s", event.getAuthor().getName(), member.getUser().getName())).setColor(new Color(Integer.parseInt("FF00EE", 16))).setPermissions(Main.defaultPermissions).complete();
 						event.getGuild().getController().addSingleRoleToMember(event.getMember(), role).queue();
 						event.getGuild().getController().addSingleRoleToMember(member, role).queue();
 						if (marriageChannel != null) marriageChannel.sendMessageFormat("%s married %s, congratulations!", event.getAuthor().getAsMention(), member.getAsMention()).queue();
@@ -224,7 +224,7 @@ public class Marriage {
 		else event.reply("This server's marry limit is currently set to " + Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("marryLimit")) + ".");
 	}
 
-	@Command(category = "Marriage", help = "Divorces everyone in this server.", name = "massdivorce", guildOnly = true, userPermissions = { Permission.MANAGE_ROLES }, botPermissions = { Permission.MANAGE_ROLES })
+	@Command(category = "Marriage", help = "Divorces everyone in this server.", name = "massdivorce", guildOnly = true, userPermissions = {Permission.MANAGE_ROLES}, botPermissions = {Permission.MANAGE_ROLES})
 	public static void massDivorce(CommandEvent event) {
 		List<Role> marriageRoles = new ArrayList<>();
 		for (Role role : event.getGuild().getRoles())
@@ -241,10 +241,10 @@ public class Marriage {
 		event.reply("Successfully deleted %s marriage roles and failed to delete %s marriage roles in this server.", success, failed);
 	}
 
-	@Command(category = "Marriage", help = "Sets this server's marry limit.", name = "setmarrylimit", userPermissions = { Permission.ADMINISTRATOR }, guildOnly = true)
+	@Command(category = "Marriage", help = "Sets this server's marry limit.", name = "setmarrylimit", userPermissions = {Permission.ADMINISTRATOR}, guildOnly = true)
 	public static void setMarryLimit(CommandEvent event) {
 		if (Main.isInteger(event.getArgs().split(" ")[0])) {
-			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "marryLimit", "disabled" }, new Object[] { -1, false }));
+			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
 			((Map) settings.get(event.getGuild().getId())).put("marryLimit", Integer.parseInt(event.getArgs().split(" ")[0]));
 			try {
 				DataIO.saveJson(settings, "data/marriage/settings.json");
@@ -257,9 +257,9 @@ public class Marriage {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Marriage", help = "Toggles whether members can marry each other in this server.", name = "togglemarriages", userPermissions = { Permission.ADMINISTRATOR })
+	@Command(category = "Marriage", help = "Toggles whether members can marry each other in this server.", name = "togglemarriages", userPermissions = {Permission.ADMINISTRATOR})
 	public static void toggleMarriages(CommandEvent event) {
-		if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] { "marryLimit", "disabled" }, new Object[] { -1, false }));
+		if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
 		boolean disabled = (boolean) ((Map) settings.get(event.getGuild().getId())).get("disabled");
 		((Map) settings.get(event.getGuild().getId())).put("disabled", !disabled);
 		try {

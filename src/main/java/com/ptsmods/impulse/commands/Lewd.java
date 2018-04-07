@@ -30,15 +30,15 @@ public class Lewd {
 		}
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Yandere.", name = "yandere")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Yandere.", name = "yandere")
 	public static void yandere(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document yandere;
 			int attempts = 0;
 			try {
-				yandere = Jsoup.connect("https://yande.re/post/random").get();
+				yandere = Jsoup.connect("https://yande.re/post/Random.INSTANCE").get();
 				while (yandere.getElementById("image") == null && attempts < 5) {
-					yandere = Jsoup.connect("https://yande.re/post/random").get();
+					yandere = Jsoup.connect("https://yande.re/post/Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (yandere.getElementById("highres") == null) throw new CommandException("No lewds found.");
@@ -51,15 +51,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Konachan.", name = "konachan")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Konachan.", name = "konachan")
 	public static void konachan(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document konachan;
 			int attempts = 0;
 			try {
-				konachan = Jsoup.connect("https://konachan.com/post/random").get();
+				konachan = Jsoup.connect("https://konachan.com/post/Random.INSTANCE").get();
 				while (konachan.getElementById("image") == null && attempts < 5) {
-					konachan = Jsoup.connect("https://konachan.com/post/random").get();
+					konachan = Jsoup.connect("https://konachan.com/post/Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (konachan.getElementById("highres") == null) throw new CommandException("No lewds found.");
@@ -72,15 +72,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from e621.", name = "e621")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from e621.", name = "e621")
 	public static void e621(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document e621;
 			int attempts = 0;
 			try {
-				e621 = Jsoup.connect("https://e621.net/post/random").get();
+				e621 = Jsoup.connect("https://e621.net/post/Random.INSTANCE").get();
 				while (e621.getElementById("image") == null && attempts < 5) {
-					e621 = Jsoup.connect("https://e621.net/post/random").get();
+					e621 = Jsoup.connect("https://e621.net/post/Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (e621.getElementById("highres") == null) throw new CommandException("No lewds found.");
@@ -93,7 +93,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image or one matching your tags from Rule34.", name = "rule34", arguments = "[tags]")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image or one matching your tags from Rule34.", name = "rule34", arguments = "[tags]")
 	public static void rule34(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			List<String> urls = new ArrayList();
@@ -114,16 +114,16 @@ public class Lewd {
 					} catch (Throwable e) {
 						continue;
 					}
-			} else urls.add("index.php?page=post&s=random");
+			} else urls.add("index.php?page=post&s=Random.INSTANCE");
 			if (urls.isEmpty())
 				event.reply("No results found.");
 			else {
 				Document rule34 = null;
 				try {
-					rule34 = Jsoup.connect("http://rule34.xxx/" + Random.choice(urls)).get();
+					rule34 = Jsoup.connect("http://rule34.xxx/" + Random.INSTANCE.choice(urls)).get();
 					int attempts = 0;
 					while (rule34.getElementById("image") == null && attempts < 5) {
-						rule34 = Jsoup.connect("http://rule34.xxx/" + Random.choice(urls)).get();
+						rule34 = Jsoup.connect("http://rule34.xxx/" + Random.INSTANCE.choice(urls)).get();
 						attempts += 1;
 					}
 					if (rule34.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -137,15 +137,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Danbooru.", name = "danbooru")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Danbooru.", name = "danbooru")
 	public static void danbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document danbooru;
 			int attempts = 0;
 			try {
-				danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/random").get();
+				danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/Random.INSTANCE").get();
 				while (danbooru.getElementById("image") == null && attempts < 5) {
-					danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/random").get();
+					danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (danbooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -158,15 +158,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Gelbooru.", name = "gelbooru")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Gelbooru.", name = "gelbooru")
 	public static void gelbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document gelbooru;
 			int attempts = 0;
 			try {
-				gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=random").get();
+				gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=Random.INSTANCE").get();
 				while (gelbooru.getElementById("image") == null && attempts < 5) {
-					gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=random").get();
+					gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (gelbooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -179,15 +179,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from TBib.", name = "tbib")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from TBib.", name = "tbib")
 	public static void tbib(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document tbib;
 			int attempts = 0;
 			try {
-				tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=random").get();
+				tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=Random.INSTANCE").get();
 				while (tbib.getElementById("image") == null && attempts < 5) {
-					tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=random").get();
+					tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (tbib.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -200,15 +200,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Xbooru.", name = "xbooru")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Xbooru.", name = "xbooru")
 	public static void xbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document xbooru;
 			int attempts = 0;
 			try {
-				xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=random").get();
+				xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=Random.INSTANCE").get();
 				while (xbooru.getElementById("image") == null && attempts < 5) {
-					xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=random").get();
+					xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (xbooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -221,15 +221,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Furrybooru.", name = "furrybooru")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Furrybooru.", name = "furrybooru")
 	public static void furrybooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document furrybooru;
 			int attempts = 0;
 			try {
-				furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=random").get();
+				furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=Random.INSTANCE").get();
 				while (furrybooru.getElementById("image") == null && attempts < 5) {
-					furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=random").get();
+					furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (furrybooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -242,15 +242,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Drunkenpumken.", name = "drunkenpumken")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Drunkenpumken.", name = "drunkenpumken")
 	public static void drunkenpumken(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document drunkenpumken;
 			int attempts = 0;
 			try {
-				drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=random").get();
+				drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=Random.INSTANCE").get();
 				while (drunkenpumken.getElementById("image") == null && attempts < 5) {
-					drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=random").get();
+					drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=Random.INSTANCE").get();
 					attempts += 1;
 				}
 				if (drunkenpumken.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -263,15 +263,15 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Lolibooru.", name = "lolibooru")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Lolibooru.", name = "lolibooru")
 	public static void lolibooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document lolibooru;
 			int attempts = 0;
 			try {
-				lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
+				lolibooru = Jsoup.connect("https://lolibooru.moe/post/Random.INSTANCE/").get();
 				while (lolibooru.getElementById("image") == null && attempts < 5) {
-					lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
+					lolibooru = Jsoup.connect("https://lolibooru.moe/post/Random.INSTANCE/").get();
 					attempts += 1;
 				}
 				if (lolibooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -284,12 +284,12 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Oboobs.", name = "boobs")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Oboobs.", name = "boobs")
 	public static void boobs(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Map boobs;
 			try {
-				boobs = (Map) new Gson().fromJson(Main.getHTML("http://api.oboobs.ru/boobs/" + Random.randInt(oboobsLewds)), List.class).get(0);
+				boobs = (Map) new Gson().fromJson(Main.getHTML("http://api.oboobs.ru/boobs/" + Random.INSTANCE.randInt(oboobsLewds)), List.class).get(0);
 			} catch (IOException e) {
 				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
 			}
@@ -297,12 +297,12 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Obutts.", name = "ass")
+	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Obutts.", name = "ass")
 	public static void ass(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Map ass;
 			try {
-				ass = (Map) new Gson().fromJson(Main.getHTML("http://api.obutts.ru/butts/" + Random.randInt(obuttsLewds)), List.class).get(0);
+				ass = (Map) new Gson().fromJson(Main.getHTML("http://api.obutts.ru/butts/" + Random.INSTANCE.randInt(obuttsLewds)), List.class).get(0);
 			} catch (IOException e) {
 				throw new CommandException("An unknown error occurred while getting your lewd pics.", e);
 			}

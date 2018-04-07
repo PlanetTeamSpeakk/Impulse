@@ -30,11 +30,11 @@ public class Trivia {
 		questionsAmount = questions.size();
 	}
 
-	private final int questionsAmount;
-	private final String category;
-	private final List<TriviaQuestion> questions;
-	private List<TriviaQuestion> passedQuestions = new ArrayList();
-	private static List<Trivia> trivias = new ArrayList();
+	private final int					questionsAmount;
+	private final String				category;
+	private final List<TriviaQuestion>	questions;
+	private List<TriviaQuestion>		passedQuestions	= new ArrayList();
+	private static List<Trivia>			trivias			= new ArrayList();
 
 	static {
 		if (!new File("data/fun/trivias/").isDirectory()) {
@@ -106,9 +106,9 @@ public class Trivia {
 
 	public TriviaQuestion getRandomQuestion() {
 		if (passedQuestions.size() == questionsAmount) return null;
-		TriviaQuestion question = Random.choice(questions);
+		TriviaQuestion question = Random.INSTANCE.choice(questions);
 		while (passedQuestions.contains(question))
-			question = Random.choice(questions);
+			question = Random.INSTANCE.choice(questions);
 		return question;
 	}
 
@@ -127,7 +127,8 @@ public class Trivia {
 			channel.sendMessageFormat("**Question %s of %s**\n%s", counter, getQuestions().size(), question.getQuestion()).complete();
 			int wrongAnswers = 0;
 			Message response = Main.waitForInput(channel, 10000);
-			if (response == null) return new TriviaResult(appendees, true);
+			if (response == null)
+				return new TriviaResult(appendees, true);
 			else if (response.getContent().equalsIgnoreCase("stop trivia")) return new TriviaResult(appendees, false);
 			while (!isCorrect(question, response.getContent())) {
 				wrongAnswers += 1;
@@ -135,8 +136,7 @@ public class Trivia {
 				if (response == null || wrongAnswers == 5) {
 					channel.sendMessageFormat("It was **%s**, of course.", question.getAnswers().get(0)).queue();
 					break;
-				}
-				else if (response.getContent().equalsIgnoreCase("stop trivia")) return new TriviaResult(appendees, false);
+				} else if (response.getContent().equalsIgnoreCase("stop trivia")) return new TriviaResult(appendees, false);
 			}
 			if (response != null && isCorrect(question, response.getContent())) {
 				User appendee = response.getAuthor();
@@ -168,8 +168,8 @@ public class Trivia {
 			this.answers = Collections.unmodifiableList(answers);
 		}
 
-		private final String question;
-		private final List<String> answers;
+		private final String		question;
+		private final List<String>	answers;
 
 		public String getQuestion() {
 			return question;
@@ -183,8 +183,8 @@ public class Trivia {
 
 	public static class TriviaResult {
 
-		private final Map<User, Integer> appendees;
-		private final boolean stoppedCuzNoResponse;
+		private final Map<User, Integer>	appendees;
+		private final boolean				stoppedCuzNoResponse;
 
 		private TriviaResult(Map<User, Integer> appendees, boolean stoppedCuzNoResponse) {
 			this.appendees = Main.sortByValue(appendees);

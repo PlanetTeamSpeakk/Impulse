@@ -1,6 +1,8 @@
 package com.ptsmods.impulse.commands;
 
 import java.awt.Color;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -14,6 +16,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import javax.imageio.ImageIO;
+
+import com.markozajc.akiwrapper.Akiwrapper;
+import com.markozajc.akiwrapper.Akiwrapper.Answer;
+import com.markozajc.akiwrapper.AkiwrapperBuilder;
+import com.markozajc.akiwrapper.core.entities.Guess;
 import com.ptsmods.impulse.Main.TimeType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
@@ -55,6 +63,7 @@ public class Miscellaneous {
 			patronEmails = DataIO.loadJsonOrDefault("data/other/patronEmails.json", Map.class, new HashMap());
 			rifts = DataIO.loadJsonOrDefault("data/miscellaneous/rifts.json", Map.class, new HashMap()); // for when the bot dies in the middle of it.
 			reminders = DataIO.loadJsonOrDefault("data/miscellaneous/reminders.json", List.class, new ArrayList());
+			Main.apiKeys.put("fornite", "4888f3d2-c5d3-4330-ab8e-1e66aa986f04");
 		} catch (IOException e) {
 			throw new RuntimeException("There was an error while loading the data files.", e);
 		}
@@ -148,7 +157,7 @@ public class Miscellaneous {
 	@Subcommand(help = "Tells you the options to log in on any email client.", name = "options", parent = "com.ptsmods.impulse.commands.Miscellaneous.email")
 	public static void emailOptions(CommandEvent event) {
 		if (MailServer.isEnabled())
-			event.reply(new EmbedBuilder().setColor(new Color(Random.randInt(256 * 256 * 256))).addField("Type", Boolean.parseBoolean(Config.get("miabIMAP")) ? "IMAP" : "POP", true).addField("Server", Config.get("miabServer"), true).addField("Incoming port", Config.get("miabIncomingPort"), true).addField("Outgoing port", Config.get("miabOutgoingPort"), true).addField("Incoming security", Config.get("miabIncomingSecurity"), true).addField("Outgoing security", Config.get("miabOutgoingSecurity"), true).addField("SMTP always verify", Config.get("miabSmtpAlwaysVerify"), true).build());
+			event.reply(new EmbedBuilder().setColor(new Color(Random.INSTANCE.randInt(256 * 256 * 256))).addField("Type", Boolean.parseBoolean(Config.get("miabIMAP")) ? "IMAP" : "POP", true).addField("Server", Config.get("miabServer"), true).addField("Incoming port", Config.get("miabIncomingPort"), true).addField("Outgoing port", Config.get("miabOutgoingPort"), true).addField("Incoming security", Config.get("miabIncomingSecurity"), true).addField("Outgoing security", Config.get("miabOutgoingSecurity"), true).addField("SMTP always verify", Config.get("miabSmtpAlwaysVerify"), true).build());
 		else event.reply("This feature has not been enabled by the owner of this bot.");
 	}
 
@@ -360,6 +369,87 @@ public class Miscellaneous {
 		} else Main.sendCommandHelp(event);
 	}
 
+	@Command(category = "Miscellaneous", help = "Shows you a user's Fornite stats.\n\nPlatform has to be ps, xbox or pc.", name = "fortnite", arguments = "<platform> <username>")
+	public static void fortnite(CommandEvent event) throws CommandException {
+		if (!event.argsEmpty() && event.getArgs().split(" ").length >= 2) {
+			String platform = event.getArgs().split(" ")[0].equals("xbox") ? "xbl" : event.getArgs().split(" ")[0].equals("ps") ? "psn" : "pc";
+			String username = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
+			Message msg = event.getChannel().sendMessageFormat("Getting stats, please wait...", event.getArgs()).complete();
+			try {
+				Image capture = Url2Png.captureToImage("https://fortnitetracker.com/profile/" + platform + "/" + username);
+				BufferedImage output = new BufferedImage(capture.getWidth(null) - 80, capture.getHeight(null) - 3290, BufferedImage.TYPE_INT_ARGB);
+				output.createGraphics().drawImage(capture, -40, -900, null);
+				File outputFile = new File("data/tmp/" + Random.INSTANCE.randInt() + ".png");
+				ImageIO.write(output, "png", outputFile);
+				event.getChannel().sendFile(outputFile, "fortnite-stats_" + platform + "_" + username + ".png", null).queue(msg0 -> {
+					msg.delete().queue();
+					outputFile.delete();
+				});
+			} catch (IllegalArgumentException e) {
+				msg.editMessage("The image was too big to be sent.").queue();
+			} catch (IOException e) {
+				if (e.getMessage() != null && e.getMessage().contains("Server returned HTTP response code"))
+					msg.editMessageFormat("The server returned a **%s error**.", e.getMessage().substring(36, 39)).queue();
+				else throw new CommandException("An unknown error occurred while capturing the website.", e);
+			}
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Miscellaneous", help = "Play with Akinator.", name = "akinator")
+	public static void akinator(CommandEvent event) throws CommandException {
+		try {
+			Akiwrapper akinator = new AkiwrapperBuilder().setName("Impulse_" + event.getAuthor().getName()).build();
+			int question = 1;
+			Message response = null;
+			double probability = 0.80;
+			Guess guess = null;
+			while (true) {
+				if (!akinator.getGuessesAboveProbability(probability).isEmpty()) {
+					event.reply("I am thinking of **%s**, is this correct? (yes/no)\n%s", (guess = Random.INSTANCE.choice(akinator.getGuessesAboveProbability(probability))).getName(), guess.getImage());
+					response = Main.waitForInput(event.getAuthor(), event.getChannel(), 15000);
+					if (response == null) {
+						event.reply("No response gotten, let's just hope it's right. :disappointed:");
+						return;
+					} else if (response.getContent().toLowerCase().startsWith("y")) {
+						event.reply("Another one, nice! I love playing with you!");
+						return;
+					} else if (response.getContent().toLowerCase().startsWith("no"))
+						if (probability < 1d)
+							probability += 0.05;
+						else {
+							event.reply("You have beaten me. :pensive:");
+							return;
+						}
+					else return;
+				}
+				event.reply("**Question %s**\n%s\ny = yes, n = no, idk = don't know, p = probably, pn = probably not", question++, akinator.getCurrentQuestion().getQuestion());
+				response = Main.waitForInput(event.getAuthor(), event.getChannel(), 15000);
+				if (response == null || response.getContent().equalsIgnoreCase("stop")) {
+					event.reply("Guess you don't want to play with Akinator.");
+					return;
+				} else switch (response.getContent().toLowerCase()) {
+				case "y":
+					akinator.answerCurrentQuestion(Answer.YES);
+					break;
+				case "n":
+					akinator.answerCurrentQuestion(Answer.NO);
+					break;
+				case "idk":
+					akinator.answerCurrentQuestion(Answer.DONT_KNOW);
+					break;
+				case "p":
+					akinator.answerCurrentQuestion(Answer.PROBABLY);
+					break;
+				default:
+					akinator.answerCurrentQuestion(Answer.PROBABLY_NOT);
+					break;
+				}
+			}
+		} catch (Exception e) {
+			throw new CommandException("An unkown error occurred while playing with Akinator.", e);
+		}
+	}
+
 	@SubscribeEvent
 	public static void onFullyBooted() {
 		new Thread(() -> {
@@ -415,7 +505,7 @@ public class Miscellaneous {
 			if (!event.getMessage().getRawContent().isEmpty()) client.get().send(event.getMessage().getRawContent()).whenComplete((r, t) -> {
 			});
 			for (Attachment attachment : event.getMessage().getAttachments()) {
-				File attachmentFile = new File("data/tmp/attachment_" + Random.randInt() + "_" + attachment.getFileName());
+				File attachmentFile = new File("data/tmp/attachment_" + Random.INSTANCE.randInt() + "_" + attachment.getFileName());
 				attachment.download(attachmentFile);
 				try {
 					client.get().send(attachmentFile, attachment.getFileName()).get(); // synchronous execution so the file can be deleted, it'd be open otherwise

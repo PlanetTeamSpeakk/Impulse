@@ -182,11 +182,11 @@ public class Dashboard {
 					if (args.containsKey("key")) {
 						if (dashboardData.containsKey(args.get("key"))) {
 							if (args.containsKey("data")) {
-								if (Main.containsKeys(data, new String[] { "modules", "modSettings", "economySettings", "marriageSettings" })) {
+								if (Main.containsKeys(data, new String[] {"modules", "modSettings", "economySettings", "marriageSettings"})) {
 									if (data.get("modules") instanceof List && data.get("modSettings") instanceof Map && data.get("economySettings") instanceof Map && data.get("marriageSettings") instanceof Map) {
-										if (Main.containsKeys((Map) data.get("modSettings"), new String[] { "serverPrefix", "autorole", "autoroleEnabled", "banMentionSpam", "channel", "welcomeChannel", "greeting", "farewell", "dm", "disabled", "givemes", "logChannel", "enableLogging" })) {
-											if (Main.containsKeys((Map) data.get("economySettings"), new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" })) {
-												if (Main.containsKeys((Map) data.get("marriageSettings"), new String[] { "marryLimit" })) {
+										if (Main.containsKeys((Map) data.get("modSettings"), new String[] {"serverPrefix", "autorole", "autoroleEnabled", "banMentionSpam", "channel", "welcomeChannel", "greeting", "farewell", "dm", "disabled", "givemes", "logChannel", "enableLogging"})) {
+											if (Main.containsKeys((Map) data.get("economySettings"), new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"})) {
+												if (Main.containsKeys((Map) data.get("marriageSettings"), new String[] {"marryLimit"})) {
 													Guild guild = Main.getGuildById(dashboardData.get(args.get("key")).get("guild"));
 													try {
 														Moderation.putSettings(guild, (Map) data.get("modSettings"));
@@ -204,8 +204,8 @@ public class Dashboard {
 													} catch (Exception e) {
 													}
 												} else writeString(he, "{\"success\": false, \"errorMsg\": \"The Map 'marriageSettings' should contain the key marryLimit.\"}");
-											} else writeString(he, "{\"success\": false, \"errorMsg\": \"The Map 'economySettings' should contain the keys %s.\"}", Main.joinNiceString(new String[] { "paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown" }));
-										} else writeString(he, "{\"success\": false, \"errorMsg\": \"The Map 'modSettings' should contain the keys %s.\"}", Main.joinNiceString(new String[] { "serverPrefix", "autorole", "autoroleEnabled", "banMentionSpam", "channel", "welcomeChannel", "greeting", "farewell", "dm", "disabled", "givemes", "logChannel", "enableLogging" }));
+											} else writeString(he, "{\"success\": false, \"errorMsg\": \"The Map 'economySettings' should contain the keys %s.\"}", Main.joinNiceString(new String[] {"paydayCredits", "paydayCooldown", "slotCooldown", "russianRouletteCooldown"}));
+										} else writeString(he, "{\"success\": false, \"errorMsg\": \"The Map 'modSettings' should contain the keys %s.\"}", Main.joinNiceString(new String[] {"serverPrefix", "autorole", "autoroleEnabled", "banMentionSpam", "channel", "welcomeChannel", "greeting", "farewell", "dm", "disabled", "givemes", "logChannel", "enableLogging"}));
 									} else writeString(he, "{\"success\": false, \"errorMsg\": \"All arguments except for modules must be an instance of Map, modules must be an instance of List.\"}");
 								} else writeString(he, "{\"success\": false, \"errorMsg\": \"The data parameter should contain args with the names 'modules', 'modSettings', 'economySettings', and 'marriageSettings'.\"}");
 							} else writeString(he, "{\"success\": false, \"errorMsg\": \"The parameter data was not present.\"}");
@@ -269,8 +269,8 @@ public class Dashboard {
 				enabledModules.put(member.getGuild().getId(), Lists.newArrayList("economy", "fun", "general", "lewd", "marriage", "miscellaneous", "moderation", "owner"));
 				DataIO.saveJson(enabledModules, "data/dashboard/enabledModules.json");
 			}
-			String key = Random.genKey(32);
-			dashboardData.put(key, Main.newHashMap(new String[] { "guild", "user" }, new String[] { member.getGuild().getId(), member.getUser().getId() }));
+			String key = Random.INSTANCE.genKey(32);
+			dashboardData.put(key, Main.newHashMap(new String[] {"guild", "user"}, new String[] {member.getGuild().getId(), member.getUser().getId()}));
 			DataIO.saveJson(dashboardData, "data/dashboard/data.json");
 			return key;
 		} else return getKey(member);
@@ -294,11 +294,11 @@ public class Dashboard {
 		Map modlogSettings = Moderation.getModlogSettings(guild);
 		Map<String, Integer> economySettings = Economy.getSettings(guild);
 		data.put("modules", enabledModules.get(guild.getId()));
-		data.put("modSettings", Main.newHashMap(new String[] { "serverPrefix", "autorole", "autoroleEnabled", "banMentionSpam", "channel", "welcomeChannel", "greeting", "farewell", "dm", "disabled", "givemes", "logChannel", "enableLogging" }, new Object[] { Main.getPrefix(guild) == null ? Config.get("prefix") : Main.getPrefix(guild), modSettings.get("autorole") == null ? "" : modSettings.get("autorole").toString(), modSettings.get("autoroleEnabled") == null ? false : (boolean) modSettings.get("autoroleEnabled"), modSettings.get("banMentionSpam") == null ? false : (boolean) modSettings.get("banMentionSpam"), modSettings.get("channel") == null ? "" : modSettings.get("channel").toString(), modSettings.get("welcomeChannel") == null ? "" : modSettings.get("welcomeChannel").toString(), modSettings.get("greeting") == null ? "" : modSettings.get("greeting").toString(), modSettings.get("farewell") == null ? "" : modSettings.get("farewell").toString(), modSettings.get("dm") == null ? false : (boolean) modSettings.get("dm"), modSettings.get("welcomeChannel") == null || modSettings.get("welcomeChannel").toString().isEmpty(), new ArrayList(Moderation.getGivemeSettings(guild).keySet()), modlogSettings.get("channel") == null ? "" : modlogSettings.get("channel").toString(), modlogSettings.get("enabled") == null ? false : (boolean) modlogSettings.get("enabled") }
+		data.put("modSettings", Main.newHashMap(new String[] {"serverPrefix", "autorole", "autoroleEnabled", "banMentionSpam", "channel", "welcomeChannel", "greeting", "farewell", "dm", "disabled", "givemes", "logChannel", "enableLogging"}, new Object[] {Main.getPrefix(guild) == null ? Config.get("prefix") : Main.getPrefix(guild), modSettings.get("autorole") == null ? "" : modSettings.get("autorole").toString(), modSettings.get("autoroleEnabled") == null ? false : (boolean) modSettings.get("autoroleEnabled"), modSettings.get("banMentionSpam") == null ? false : (boolean) modSettings.get("banMentionSpam"), modSettings.get("channel") == null ? "" : modSettings.get("channel").toString(), modSettings.get("welcomeChannel") == null ? "" : modSettings.get("welcomeChannel").toString(), modSettings.get("greeting") == null ? "" : modSettings.get("greeting").toString(), modSettings.get("farewell") == null ? "" : modSettings.get("farewell").toString(), modSettings.get("dm") == null ? false : (boolean) modSettings.get("dm"), modSettings.get("welcomeChannel") == null || modSettings.get("welcomeChannel").toString().isEmpty(), new ArrayList(Moderation.getGivemeSettings(guild).keySet()), modlogSettings.get("channel") == null ? "" : modlogSettings.get("channel").toString(), modlogSettings.get("enabled") == null ? false : (boolean) modlogSettings.get("enabled")}
 		// that's just Eclipse being weird, alright.
 		));
 		data.put("economySettings", economySettings);
-		data.put("marriageSettings", Main.newHashMap(new String[] { "marryLimit" }, new Integer[] { Marriage.getMarryLimit(guild) }));
+		data.put("marriageSettings", Main.newHashMap(new String[] {"marryLimit"}, new Integer[] {Marriage.getMarryLimit(guild)}));
 		return data;
 	}
 
@@ -323,7 +323,7 @@ public class Dashboard {
 	/**
 	 * Supports JavaScript CORS requests by default, logs any traffic gotten, pretty
 	 * prints JSON, and sends any errors to the owner.
-	 * 
+	 *
 	 * @author PlanetTeamSpeak
 	 */
 	public static abstract class DefaultHttpHandler implements HttpHandler {

@@ -1066,7 +1066,7 @@ public class Moderation {
 			MessageChannel channel = (boolean) ((Map) settings.get(event.getGuild().getId())).get("dm") ? event.getUser().openPrivateChannel().complete() : event.getGuild().getTextChannelById(((Map) settings.get(event.getGuild().getId())).get("welcomeChannel").toString());
 			boolean cont = true;
 			if (((Map) settings.get(event.getGuild().getId())).containsKey("image") && (boolean) ((Map) settings.get(event.getGuild().getId())).get("image")) {
-				File file = new File("data/tmp/welcome_" + Random.randInt() + ".png");
+				File file = new File("data/tmp/welcome_" + Random.INSTANCE.randInt() + ".png");
 				try {
 					ImageIO.write(ImageManipulator.toBufferedImage(ImageManipulator.generateWelcomeImage(event.getMember())), "png", file);
 					channel.sendFile(file, new MessageBuilder().append(((Map) settings.get(event.getGuild().getId())).get("greeting").toString().replaceAll("USER_MENTION", event.getUser().getAsMention()).replaceAll("USER", Main.str(event.getUser())).replaceAll("SERVER", Main.str(event.getGuild()))).build()).complete();

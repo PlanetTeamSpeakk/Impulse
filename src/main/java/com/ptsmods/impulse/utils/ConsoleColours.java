@@ -72,28 +72,31 @@ public enum ConsoleColours {
 	RESET("\u001b[0m"),
 	UNKNOWN("");
 
-	private final String ansiColourCode;
-	private final String name;
-	private final Color colour;
+	private final String	ansiColourCode;
+	private final String	name;
+	private final Color		colour;
 
 	private ConsoleColours(String ansiColourCode) {
 		this.ansiColourCode = ansiColourCode;
 		String name = "";
 		String id = ansiColourCode.isEmpty() ? "" : ansiColourCode.substring(2).split(";")[0];
 		String code = ansiColourCode.isEmpty() ? "" : ansiColourCode.substring(2).split(";").length > 1 ? ansiColourCode.substring(2).split(";")[1] : "";
-		int code1 = ansiColourCode.isEmpty() ? -1 : code.isEmpty() ? Integer.parseInt(id.substring(0, id.length()-1)) : Integer.parseInt(code.substring(0, code.length()-1));
+		int code1 = ansiColourCode.isEmpty() ? -1 : code.isEmpty() ? Integer.parseInt(id.substring(0, id.length() - 1)) : Integer.parseInt(code.substring(0, code.length() - 1));
 		int id1 = id.isEmpty() ? -2 : Main.isInteger(id) ? Integer.parseInt(id) : -1;
-		if (id.equals("0m")) name = "reset";
+		if (id.equals("0m"))
+			name = "reset";
 		else {
 			switch (id1) {
 			case -1:
 				name = "background ";
 			case 0:
-				if (code1 >= 100) name = "background highintensity ";
+				if (code1 >= 100)
+					name = "background highintensity ";
 				else if (code1 >= 90) name = "highintensity ";
 				break;
 			case 1:
-				if (code1 >= 90) name = "bold highintensity ";
+				if (code1 >= 90)
+					name = "bold highintensity ";
 				else if (code1 >= 30) name = "bold ";
 				break;
 			case 4:
@@ -103,37 +106,80 @@ public enum ConsoleColours {
 				name = "unknown";
 				break;
 			}
-			switch (code1%10) {
-			case 0: {name += "black"; break;}
-			case 1: {name += "red"; break;}
-			case 2: {name += "green"; break;}
-			case 3: {name += "yellow"; break;}
-			case 4: {name += "blue"; break;}
-			case 5: {name += "purple"; break;}
-			case 6: {name += "cyan"; break;}
-			case 7: {name += "white"; break;}
-			default: break;
+			switch (code1 % 10) {
+			case 0: {
+				name += "black";
+				break;
+			}
+			case 1: {
+				name += "red";
+				break;
+			}
+			case 2: {
+				name += "green";
+				break;
+			}
+			case 3: {
+				name += "yellow";
+				break;
+			}
+			case 4: {
+				name += "blue";
+				break;
+			}
+			case 5: {
+				name += "purple";
+				break;
+			}
+			case 6: {
+				name += "cyan";
+				break;
+			}
+			case 7: {
+				name += "white";
+				break;
+			}
+			default:
+				break;
 			}
 		}
 		this.name = Main.encase(name);
-		if 		(name.contains("highintensity black")) 	colour = Color.getHSBColor(0.000f, 0.000f, 0.502f);
-		else if (name.contains("highintensity red")) 	colour = Color.getHSBColor(0.000f, 1.000f, 1.000f);
-		else if (name.contains("highintensity blue")) 	colour = Color.getHSBColor(0.667f, 1.000f, 1.000f);
-		else if (name.contains("highintensity purple")) colour = Color.getHSBColor(0.833f, 1.000f, 1.000f);
-		else if (name.contains("highintensity green")) 	colour = Color.getHSBColor(0.333f, 1.000f, 1.000f);
-		else if (name.contains("highintensity yellow")) colour = Color.getHSBColor(0.167f, 1.000f, 1.000f);
-		else if (name.contains("highintensity cyan")) 	colour = Color.getHSBColor(0.500f, 1.000f, 1.000f);
-		else if (name.contains("highintensity white")) 	colour = Color.getHSBColor(0.000f, 0.000f, 1.000f);
-		else if (name.contains("reset"))			 	colour = Color.getHSBColor(0.000f, 0.000f, 1.000f);
-		else if	(name.contains("black")) 				colour = Color.getHSBColor(0.000f, 0.000f, 0.000f);
-		else if (name.contains("black")) 				colour = Color.getHSBColor(0.000f, 0.000f, 0.000f);
-		else if (name.contains("red")) 					colour = Color.getHSBColor(0.000f, 1.000f, 0.502f);
-		else if (name.contains("blue")) 				colour = Color.getHSBColor(0.667f, 1.000f, 0.502f);
-		else if (name.contains("purple")) 				colour = Color.getHSBColor(0.833f, 1.000f, 0.502f);
-		else if (name.contains("green")) 				colour = Color.getHSBColor(0.333f, 1.000f, 0.502f);
-		else if (name.contains("yellow")) 				colour = Color.getHSBColor(0.167f, 1.000f, 0.502f);
-		else if (name.contains("cyan")) 				colour = Color.getHSBColor(0.500f, 1.000f, 0.502f);
-		else if (name.contains("white")) 				colour = Color.getHSBColor(0.000f, 0.000f, 0.753f);
+		if (name.contains("highintensity black"))
+			colour = Color.getHSBColor(0.000f, 0.000f, 0.502f);
+		else if (name.contains("highintensity red"))
+			colour = Color.getHSBColor(0.000f, 1.000f, 1.000f);
+		else if (name.contains("highintensity blue"))
+			colour = Color.getHSBColor(0.667f, 1.000f, 1.000f);
+		else if (name.contains("highintensity purple"))
+			colour = Color.getHSBColor(0.833f, 1.000f, 1.000f);
+		else if (name.contains("highintensity green"))
+			colour = Color.getHSBColor(0.333f, 1.000f, 1.000f);
+		else if (name.contains("highintensity yellow"))
+			colour = Color.getHSBColor(0.167f, 1.000f, 1.000f);
+		else if (name.contains("highintensity cyan"))
+			colour = Color.getHSBColor(0.500f, 1.000f, 1.000f);
+		else if (name.contains("highintensity white"))
+			colour = Color.getHSBColor(0.000f, 0.000f, 1.000f);
+		else if (name.contains("reset"))
+			colour = Color.getHSBColor(0.000f, 0.000f, 1.000f);
+		else if (name.contains("black"))
+			colour = Color.getHSBColor(0.000f, 0.000f, 0.000f);
+		else if (name.contains("black"))
+			colour = Color.getHSBColor(0.000f, 0.000f, 0.000f);
+		else if (name.contains("red"))
+			colour = Color.getHSBColor(0.000f, 1.000f, 0.502f);
+		else if (name.contains("blue"))
+			colour = Color.getHSBColor(0.667f, 1.000f, 0.502f);
+		else if (name.contains("purple"))
+			colour = Color.getHSBColor(0.833f, 1.000f, 0.502f);
+		else if (name.contains("green"))
+			colour = Color.getHSBColor(0.333f, 1.000f, 0.502f);
+		else if (name.contains("yellow"))
+			colour = Color.getHSBColor(0.167f, 1.000f, 0.502f);
+		else if (name.contains("cyan"))
+			colour = Color.getHSBColor(0.500f, 1.000f, 0.502f);
+		else if (name.contains("white"))
+			colour = Color.getHSBColor(0.000f, 0.000f, 0.753f);
 		else colour = null;
 	}
 
@@ -155,7 +201,8 @@ public enum ConsoleColours {
 	}
 
 	public static void println(String s) {
-		if (s == null) println();
+		if (s == null)
+			println();
 		else AnsiConsole.out().println(s);
 	}
 

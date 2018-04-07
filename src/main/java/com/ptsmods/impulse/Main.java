@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TimeZone;
@@ -64,10 +65,12 @@ import org.w3c.css.sac.CSSException;
 import org.w3c.css.sac.CSSParseException;
 import org.w3c.css.sac.ErrorHandler;
 
+import com.gargoylesoftware.htmlunit.AjaxController;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.IncorrectnessListener;
 import com.gargoylesoftware.htmlunit.ScriptException;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.WebRequest;
 import com.gargoylesoftware.htmlunit.html.HTMLParserListener;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.javascript.JavaScriptErrorListener;
@@ -93,6 +96,7 @@ import com.ptsmods.impulse.utils.HookedPrintStream;
 import com.ptsmods.impulse.utils.HookedPrintStream.PrintHook;
 import com.ptsmods.impulse.utils.ImageManipulator;
 import com.ptsmods.impulse.utils.Random;
+import com.ptsmods.impulse.utils.compiler.CompilationException;
 import com.ptsmods.impulse.utils.compiler.MemoryJavaCompiler;
 
 import javafx.application.Platform;
@@ -139,8 +143,8 @@ import sun.reflect.Reflection;
 public class Main {
 
 	public static final int							major					= 1;
-	public static final int							minor					= 9;
-	public static final int							revision				= 4;
+	public static final int							minor					= 10;
+	public static final int							revision				= 0;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -235,9 +239,9 @@ public class Main {
 			main0(args);
 		} catch (Throwable e) {
 			try {
-				print(LogType.ERROR, "An unknown error occured, please contact PlanetTeamSpeak#4157.");
+				print(LogType.ERROR, "An unknown error occured, please contact PlanetTeamSpeak#4157.", e);
 			} catch (Throwable e1) {
-				System.err.println("An unknown error occurred, please contact PlanetTeamSpeak#4157");
+				System.err.println("An unknown error occurred, please contact PlanetTeamSpeak#4157 " + e1 + "\n" + e);
 			}
 			e.printStackTrace();
 			System.exit(1);
@@ -306,7 +310,7 @@ public class Main {
 				Config.addComment("If you don't know what shards are, maybe you should learn some stuff about computers before making your own Discord bot.");
 				Config.put("shards", "1");
 				Config.addComment("The key used to encrypt the JSON files, this should *never* be changed as it'll make the JSON files unreadable. This has to be 16 characters.");
-				Config.put("kryptoKey", Random.genKey(16));
+				Config.put("kryptoKey", Random.INSTANCE.genKey(16));
 				Config.addComment("The key used to send bot stats to https://carbinotex.net");
 				Config.put("carbonitexKey", "");
 				Config.addComment("The key used to send bot stats to https://discordbots.org");
@@ -1074,14 +1078,22 @@ public class Main {
 
 	@Nullable
 	public static Message waitForInput(Member author, MessageChannel channel, int timeoutMillis) {
+		return waitForInput(author.getUser(), channel, timeoutMillis);
+	}
+
+	@Nullable
+	public static Message waitForInput(User author, MessageChannel channel, int timeoutMillis) {
 		int startSize = messages.get().size();
+		int previousSize = startSize;
 		long currentMillis = System.currentTimeMillis();
 		while (true) {
-			if (messages.get().isEmpty()) continue;
-			Message lastMsg = messages.get().get(messages.get().size() - 1);
-			if (messages.get().size() > startSize && lastMsg.getAuthor().getIdLong() == author.getUser().getIdLong() && (lastMsg.getGuild() == null || lastMsg.getGuild().getIdLong() == author.getGuild().getIdLong()) && lastMsg.getChannel().getIdLong() == channel.getIdLong())
-				return lastMsg;
-			else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
+			if (!messages.get().isEmpty() && messages.get().size() != previousSize) for (int i : range(messages.get().size() - previousSize)) {
+				Message lastMsg = messages.get().get(previousSize + i);
+				if (messages.get().size() > startSize && lastMsg.getAuthor().getIdLong() == author.getIdLong() && lastMsg.getChannel().getIdLong() == channel.getIdLong())
+					return lastMsg;
+				else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
+				previousSize = messages.get().size();
+			}
 			sleep(250);
 		}
 	}
@@ -1089,13 +1101,16 @@ public class Main {
 	@Nullable
 	public static Message waitForInput(MessageChannel channel, int timeoutMillis) {
 		int startSize = messages.get().size();
+		int previousSize = startSize;
 		long currentMillis = System.currentTimeMillis();
 		while (true) {
-			if (messages.get().isEmpty()) continue;
-			Message lastMsg = messages.get().get(messages.get().size() - 1);
-			if (messages.get().size() > startSize && lastMsg.getChannel().getId().equals(channel.getId()) && !lastMsg.getAuthor().getId().equals(getSelfUser().getId()))
-				return lastMsg;
-			else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
+			if (!messages.get().isEmpty() && messages.get().size() != previousSize) for (int i : range(messages.get().size() - previousSize)) {
+				Message lastMsg = messages.get().get(previousSize + i);
+				if (messages.get().size() > startSize && lastMsg.getChannel().getIdLong() == channel.getIdLong())
+					return lastMsg;
+				else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
+				previousSize = messages.get().size();
+			}
 			sleep(250);
 		}
 	}
@@ -1328,10 +1343,16 @@ public class Main {
 	}
 
 	public static String getHTML(String url) throws IOException {
+		return getHTML(url, new HashMap());
+	}
+
+	public static String getHTML(String url, Map<String, String> requestProperties) throws IOException {
 		StringBuilder result = new StringBuilder();
 		URL URL = new URL(url);
 		URLConnection connection = URL.openConnection();
 		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+		if (requestProperties != null) for (Entry<String, String> property : requestProperties.entrySet())
+			connection.setRequestProperty(property.getKey(), property.getValue());
 		BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 		String line;
 		while ((line = rd.readLine()) != null)
@@ -2069,6 +2090,14 @@ public class Main {
 			public void warning(String message, URL url, String html, int line, int column, String key) {
 			}
 		});
+		client.setAjaxController(new AjaxController() {
+			private static final long serialVersionUID = 7739773024960187330L;
+
+			@Override
+			public boolean processSynchron(HtmlPage page, WebRequest request, boolean async) {
+				return true;
+			}
+		});
 		client.getOptions().setCssEnabled(false);
 		client.getOptions().setThrowExceptionOnScriptError(false);
 		client.getOptions().setThrowExceptionOnFailingStatusCode(false);
@@ -2228,9 +2257,9 @@ public class Main {
 	 * @author PlanetTeamSpeak
 	 */
 	public static Object compileAndRunJavaCode(String code, Map<String, Object> variables) throws Throwable {
-		if (devMode) System.setProperty("java.home", "E:\\Program Files\\Java\\jdk1.8.0_144");
+		if (devMode) System.setProperty("java.home", "E:\\Program Files\\Java\\jdk1.8.0_162");
 		Map<String, Object> variables0 = variables == null ? new HashMap() : variables;
-		String fileName = "TempClass_" + Random.randInt();
+		String fileName = "TempClass_" + Random.INSTANCE.randInt();
 		String code0 = "public class " + fileName + " {public static Object returnValue = null; public static final void run(Class<" + fileName + "> thisClass, ";
 		for (String var : variables0.keySet())
 			code0 += variables0.get(var).getClass().getName() + " " + var + ", ";
@@ -2259,7 +2288,11 @@ public class Main {
 			}
 		}
 		Method method = null;
-		(method = new MemoryJavaCompiler().compileStaticMethod("run", fileName, code0)).invoke(null, add(new ArrayList(variables0.values()), method.getDeclaringClass(), 0).toArray(new Object[0]));
+		try {
+			(method = MemoryJavaCompiler.compileStaticMethod("run", fileName, code0)).invoke(null, add(new ArrayList(variables0.values()), method.getDeclaringClass(), 0).toArray(new Object[0]));
+		} catch (InvocationTargetException e) {
+			throw new CompilationException(e.getCause().toString());
+		}
 		return getField(method.getDeclaringClass(), "returnValue", Object.class).get(null);
 
 	}
@@ -2270,7 +2303,7 @@ public class Main {
 		method.invoke(ClassLoader.getSystemClassLoader(), new File(jar.getAbsolutePath()).toURI().toURL());
 	}
 
-	@SuppressWarnings("unused") // revision is not 0 in every version and since it's final it'll give a warning.
+	@SuppressWarnings("all") // revision is not 0 in every version and since it's final it'll give a warning.
 	public static File getJarFile() {
 		if (!devMode)
 			try {
@@ -2385,7 +2418,7 @@ public class Main {
 	 * @throws InstantiationException
 	 *             Idk when this is thrown, Unsafe secrets, ig.
 	 */
-	public <T> T getInstanceWithoutConstructor(Class<T> clazz) throws InstantiationException {
+	public static <T> T getInstanceWithoutConstructor(Class<T> clazz) throws InstantiationException {
 		return (T) theUnsafe.allocateInstance(clazz);
 	}
 
@@ -2396,7 +2429,7 @@ public class Main {
 	 * @return
 	 */
 	@Deprecated
-	public Unsafe getUnsafe() {
+	public static Unsafe getUnsafe() {
 		return theUnsafe;
 	}
 

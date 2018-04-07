@@ -20,6 +20,10 @@ public class CompilationException extends Exception {
 		this.error = error;
 	}
 
+	public CompilationException(String error) {
+		this(null, -1, error);
+	}
+
 	public String getLine() {
 		return line;
 	}
@@ -34,7 +38,7 @@ public class CompilationException extends Exception {
 
 	@Override
 	public String toString() {
-		return getError() + "\n" + getLine() + "\n" + Main.multiplyString(" ", character == 0 ? 0 : character - 1) + '^';
+		return getLine() == null ? getError() : getError() + "\n" + getLine() + "\n" + Main.multiplyString(" ", character == 0 ? 0 : character - 1) + '^';
 	}
 
 	@Override

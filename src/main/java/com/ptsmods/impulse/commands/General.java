@@ -48,10 +48,10 @@ import net.swisstech.bitly.model.v3.ShortenResponse;
 public class General {
 
 	private static final Map<Integer, String>	games	= new HashMap();
-	private static final String[]				answers	= new String[] { "It is certain", "It is decidedly so", "Without a doubt", "Yes definitely", "You may rely on it",				// positive
+	private static final String[]				answers	= new String[] {"It is certain", "It is decidedly so", "Without a doubt", "Yes definitely", "You may rely on it",				// positive
 			"As I see it, yes", "Most likely", "Outlook good", "Yes", "Signs point to yes",																								// positive
 			"Reply hazy try again", "Ask again later", "Better not tell you now", "Cannot predict now", "Concentrate and ask again",													// neutral
-			"Don't count on it", "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful" };																		// negative
+			"Don't count on it", "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful"};																		// negative
 	static {
 		Main.apiKeys.put("steam", "4097EECAE0C75569D595A25BEB4BCB3C");
 		Main.apiKeys.put("wargaming", "a223cd2a48a13e5b2e484f4a9ec80d33");
@@ -90,9 +90,9 @@ public class General {
 
 	@Command(category = "General", help = "Answers the hardest questions life can give you.", name = "8ball", arguments = "<question>")
 	public static void eightBall(CommandEvent event) {
-		if (!event.getArgs().endsWith("?") || event.argsEmpty() || !Main.startsWith(event.getArgs().toLowerCase(), new String[] { "are", "may", "should", "is", "will", "have", "shall", "could", "can", "might", "did", "would", "am" }))
+		if (!event.getArgs().endsWith("?") || event.argsEmpty() || !Main.startsWith(event.getArgs().toLowerCase(), new String[] {"are", "may", "should", "is", "will", "have", "shall", "could", "can", "might", "did", "would", "am"}))
 			event.reply("That does not look like a closed question. (Closed questions can only be answered with yes or no and end with a question mark.)");
-		else event.reply(Random.choice(answers) + ".");
+		else event.reply(Random.INSTANCE.choice(answers) + ".");
 	}
 
 	@Command(category = "General", help = "Flips text.", name = "flip", arguments = "<text>")
@@ -177,7 +177,7 @@ public class General {
 	public static void info(CommandEvent event) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setTitle(event.getJDA().getSelfUser().getName());
-		embed.setColor(new Color(Random.randInt(256 * 256 * 256)));
+		embed.setColor(new Color(Random.INSTANCE.randInt(256 * 256 * 256)));
 		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
 		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. " + "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") " + "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")" + ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), " + "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
 		embed.setFooter("PS, the color used is #" + Main.colourToHex(embed.build().getColor()) + ".", null);
@@ -203,7 +203,7 @@ public class General {
 		if (!event.getArgs().isEmpty()) {
 			DownloadResult result;
 			try {
-				int rng = Random.randInt(1000, 9999);
+				int rng = Random.INSTANCE.randInt(1000, 9999);
 				result = Downloader.downloadFile("https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=" + Main.percentEncode(event.getArgs()), "data/general/" + rng + ".png");
 				event.getChannel().sendFile(new File(result.getFileLocation()), new MessageBuilder().append("Here you go:").build()).complete();
 				new File(result.getFileLocation()).delete();
@@ -219,7 +219,7 @@ public class General {
 		int max = 100;
 		if (!event.getArgs().isEmpty() && Main.isInteger(event.getArgs())) max = Integer.parseInt(event.getArgs());
 		if (max < 1) max = 1;
-		event.reply(String.format("You rolled **%s**.", Random.randInt(max)));
+		event.reply(String.format("You rolled **%s**.", Random.INSTANCE.randInt(max)));
 	}
 
 	@Command(category = "General", help = "Let's the bot say something, this does filter out @\u200Beveryone and @\u200Bhere.", name = "say", arguments = "<text>")
@@ -512,7 +512,7 @@ public class General {
 					if (Main.getIntFromPossibleDouble(((Map) data.get("meta")).get("count")) > 1) {
 						List<Map<String, String>> users = new ArrayList();
 						for (int i : Main.range(((List) data.get("data")).size()))
-							users.add(Main.newHashMap(new String[] { "username", "id" }, new String[] { ((Map) ((List) data.get("data")).get(i)).get("nickname").toString(), String.format("%.0f", ((Map) ((List) data.get("data")).get(i)).get("account_id")) }));
+							users.add(Main.newHashMap(new String[] {"username", "id"}, new String[] {((Map) ((List) data.get("data")).get(i)).get("nickname").toString(), String.format("%.0f", ((Map) ((List) data.get("data")).get(i)).get("account_id"))}));
 						String msg = "Found multiple results, please pick 1:\n";
 						for (int i : Main.range(users.size()))
 							msg += i + 1 + ". " + users.get(i).get("username") + "\n";
@@ -595,10 +595,10 @@ public class General {
 		else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "General", help = "Generates a name for the given gender.\nGender can either be male, female, or random.\nType can either be first, last, or both.", name = "genname", arguments = "[gender] [type]")
+	@Command(category = "General", help = "Generates a name for the given gender.\nGender can either be male, female, or Random.INSTANCE.\nType can either be first, last, or both.", name = "genname", arguments = "[gender] [type]")
 	public static void genName(CommandEvent event) {
 		int type = event.argsEmpty() || event.getArgs().split(" ").length < 2 || event.getArgs().split(" ")[1].equalsIgnoreCase("both") ? 0 : event.getArgs().split(" ")[1].equalsIgnoreCase("last") ? 2 : 1;
-		Gender gender = event.argsEmpty() || event.getArgs().split(" ")[0].equalsIgnoreCase("random") ? Random.choice(Gender.values()) : event.getArgs().split(" ")[0].equalsIgnoreCase("female") ? Gender.FEMALE : Gender.MALE;
+		Gender gender = event.argsEmpty() || event.getArgs().split(" ")[0].equalsIgnoreCase("Random.INSTANCE") ? Random.INSTANCE.choice(Gender.values()) : event.getArgs().split(" ")[0].equalsIgnoreCase("female") ? Gender.FEMALE : Gender.MALE;
 		Name name = new NameGenerator().generateName(gender);
 		event.reply("Gender: **%s**\nName: **%s**", name.getGender().name(), type == 0 ? name.toString() : type == 1 ? name.getFirstName() : name.getLastName());
 	}
@@ -669,7 +669,7 @@ public class General {
 			Role role = null;
 			if (!event.getMessage().getMentionedRoles().isEmpty())
 				role = event.getMessage().getMentionedRoles().get(0);
-			else role = event.getGuild().getRolesByName(event.getArgs(), true).isEmpty() ? null : Random.choice(event.getGuild().getRolesByName(event.getArgs(), true));
+			else role = event.getGuild().getRolesByName(event.getArgs(), true).isEmpty() ? null : Random.INSTANCE.choice(event.getGuild().getRolesByName(event.getArgs(), true));
 			if (role == null)
 				event.reply("The given role could not be found.");
 			else {
