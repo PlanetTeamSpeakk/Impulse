@@ -144,7 +144,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 10;
-	public static final int							revision				= 0;
+	public static final int							revision				= 1;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -1087,8 +1087,8 @@ public class Main {
 		int previousSize = startSize;
 		long currentMillis = System.currentTimeMillis();
 		while (true) {
-			if (!messages.get().isEmpty() && messages.get().size() != previousSize) for (int i : range(messages.get().size() - previousSize)) {
-				Message lastMsg = messages.get().get(previousSize + i);
+			if (!messages.get().isEmpty() && messages.get().size() != previousSize) for (int i : range(messages.get().size() - previousSize - 1)) {
+				Message lastMsg = messages.get().get(previousSize + i - 1);
 				if (messages.get().size() > startSize && lastMsg.getAuthor().getIdLong() == author.getIdLong() && lastMsg.getChannel().getIdLong() == channel.getIdLong())
 					return lastMsg;
 				else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
@@ -1105,7 +1105,7 @@ public class Main {
 		long currentMillis = System.currentTimeMillis();
 		while (true) {
 			if (!messages.get().isEmpty() && messages.get().size() != previousSize) for (int i : range(messages.get().size() - previousSize)) {
-				Message lastMsg = messages.get().get(previousSize + i);
+				Message lastMsg = messages.get().get(previousSize + i - 1);
 				if (messages.get().size() > startSize && lastMsg.getChannel().getIdLong() == channel.getIdLong())
 					return lastMsg;
 				else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
@@ -1697,6 +1697,11 @@ public class Main {
 		return list;
 	}
 
+	public static <T> List<T> addAll(List<T> list, T... objects) {
+		list.addAll(Lists.newArrayList(objects));
+		return list;
+	}
+
 	public static String getOSName() {
 		return osName;
 	}
@@ -2274,7 +2279,7 @@ public class Main {
 		importClasses.addAll(new Reflections("net.dv8tion.jda", new SubTypesScanner(false)).getSubTypesOf(Object.class));
 		List<Class> importedClasses = new ArrayList();
 		List<String> blacklist = devMode ? Lists.newArrayList("net.dv8tion.jda.core.utils.SimpleLog") : new ArrayList();
-		blacklist.add("com.ptsmods.impulse.MainGUI"); // deprecated class.
+		addAll(blacklist, "com.ptsmods.impulse.MainGUI", "net.dv8tion.jda.core.requests.restaction.PermOverrideData"); // deprecated class, private class
 		for (Class clazz : importClasses) {
 			boolean shouldBreak = blacklist.contains(clazz.getName()) || clazz.getName().contains("$") || Modifier.isPrivate(clazz.getModifiers()) || clazz.getSimpleName().equalsIgnoreCase("package-info");
 			for (Class clazz1 : importedClasses)
