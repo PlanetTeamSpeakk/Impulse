@@ -144,7 +144,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 10;
-	public static final int							revision				= 1;
+	public static final int							revision				= 2;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -1088,7 +1088,7 @@ public class Main {
 		long currentMillis = System.currentTimeMillis();
 		while (true) {
 			if (!messages.get().isEmpty() && messages.get().size() != previousSize) for (int i : range(messages.get().size() - previousSize - 1)) {
-				Message lastMsg = messages.get().get(previousSize + i - 1);
+				Message lastMsg = messages.get().get(previousSize + i - 2);
 				if (messages.get().size() > startSize && lastMsg.getAuthor().getIdLong() == author.getIdLong() && lastMsg.getChannel().getIdLong() == channel.getIdLong())
 					return lastMsg;
 				else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
@@ -1105,7 +1105,7 @@ public class Main {
 		long currentMillis = System.currentTimeMillis();
 		while (true) {
 			if (!messages.get().isEmpty() && messages.get().size() != previousSize) for (int i : range(messages.get().size() - previousSize)) {
-				Message lastMsg = messages.get().get(previousSize + i - 1);
+				Message lastMsg = messages.get().get(previousSize + i - 2);
 				if (messages.get().size() > startSize && lastMsg.getChannel().getIdLong() == channel.getIdLong())
 					return lastMsg;
 				else if (System.currentTimeMillis() - currentMillis >= timeoutMillis) return null;
