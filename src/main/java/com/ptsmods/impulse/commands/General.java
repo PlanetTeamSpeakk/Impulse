@@ -33,8 +33,10 @@ import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.MessageBuilder;
+import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Emote;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.Role;
@@ -727,7 +729,7 @@ public class General {
 
 	@Subcommand(help = "Tells you what the default channel of this server is.", name = "defaultchannel", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
 	public static void serverDefaultChannel(CommandEvent event) {
-		event.reply("This server's default channel is %s.", event.getGuild().getDefaultChannel().getAsMention());
+		event.reply("This server's default channel is %s.", event.getGuild().getDefaultChannel() == null ? "deleted" : event.getGuild().getDefaultChannel().getAsMention());
 	}
 
 	@Subcommand(help = "Tells you some information about the given user.", name = "userinfo", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true, arguments = "<user>")
@@ -751,10 +753,51 @@ public class General {
 			embed.addField("Deafened in this server", "" + member.getVoiceState().isDeafened(), true);
 			embed.addField("Joined discord at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getUser().getCreationTime().toEpochSecond() * 1000)), true);
 			embed.addField("Joined server at", new SimpleDateFormat("E d MMM y HH:mm:ss").format(new Date(member.getJoinDate().toEpochSecond() * 1000)), true);
-			embed.addField("Color", "#" + Integer.toHexString(member.getColor() == null ? 0 : member.getColor().getRGB()).substring(2).toUpperCase(), true);
+			embed.addField("Color", "#" + Integer.toHexString(member.getColor() == null ? -16777216 : member.getColor().getRGB()).substring(2).toUpperCase(), true);
 			embed.addField("Roles", Main.joinNiceString(roles), true);
 			event.reply(embed.build());
 		} else Main.sendCommandHelp(event);
+	}
+
+	@Subcommand(help = "Some general information about this server.", name = "info", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)
+	public static void serverInfo(CommandEvent event) {
+		Guild guild = event.getGuild();
+		int bots = 0;
+		int botsOnline = 0;
+		int members = 0;
+		int membersOnline = 0;
+		for (Member member : guild.getMembers())
+			if (member.getUser().isBot()) {
+				bots += 1;
+				if (member.getOnlineStatus() != OnlineStatus.OFFLINE) botsOnline += 1;
+			} else {
+				members += 1;
+				if (member.getOnlineStatus() != OnlineStatus.OFFLINE) membersOnline += 1;
+			}
+		EmbedBuilder embed = new EmbedBuilder();
+		embed.setTitle("Server info");
+		embed.setColor(Color.CYAN);
+		embed.addField("Name", guild.getName(), true);
+		embed.addField("ID", guild.getId(), true);
+		embed.addField("Region", guild.getRegion().getName(), true);
+		embed.addField("Verification level", guild.getVerificationLevel().name(), true);
+		embed.addField("Created at", new Date(guild.getCreationTime().toEpochSecond() * 1000).toString(), true);
+		embed.addField("Roles", "" + guild.getRoles().size(), true);
+		embed.addBlankField(false);
+		embed.addField("Owner", Main.str(guild.getOwner()), true);
+		embed.addBlankField(true);
+		embed.addField("Owner ID", guild.getOwner().getUser().getId(), true);
+		embed.addBlankField(false);
+		embed.addField("Bots", "" + bots, true);
+		embed.addField("Members", "" + members, true);
+		embed.addField("Total users", "" + (bots + members), true);
+		embed.addField("Bots percentage", MathHelper.percentage(bots + members, bots).toString(), true);
+		embed.addField("Bots online", "" + botsOnline, true);
+		embed.addField("Bots online percentage", MathHelper.percentage(bots, botsOnline).toString(), true);
+		embed.addField("Members online", "" + membersOnline, true);
+		embed.addBlankField(true);
+		embed.addField("Members online percentage", MathHelper.percentage(members, membersOnline).toString(), true);
+		event.reply(embed.build());
 	}
 
 	@Subcommand(help = "Shows you all of the channels in this server.", name = "channels", parent = "com.ptsmods.impulse.commands.General.server", guildOnly = true)

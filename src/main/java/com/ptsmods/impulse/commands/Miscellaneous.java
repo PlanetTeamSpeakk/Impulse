@@ -22,6 +22,7 @@ import com.markozajc.akiwrapper.Akiwrapper;
 import com.markozajc.akiwrapper.Akiwrapper.Answer;
 import com.markozajc.akiwrapper.AkiwrapperBuilder;
 import com.markozajc.akiwrapper.core.entities.Guess;
+import com.markozajc.akiwrapper.core.exceptions.StatusException;
 import com.ptsmods.impulse.Main.TimeType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
@@ -405,7 +406,7 @@ public class Miscellaneous {
 			Guess guess = null;
 			while (true) {
 				if (!akinator.getGuessesAboveProbability(probability).isEmpty()) {
-					event.reply("I am thinking of **%s**, is this correct? (yes/no)\n%s", (guess = Random.INSTANCE.choice(akinator.getGuessesAboveProbability(probability))).getName(), guess.getImage());
+					event.reply("I am thinking of **%s** ranked **#%s**, is this correct? (yes/no)\n%s", (guess = Random.INSTANCE.choice(akinator.getGuessesAboveProbability(probability))).getName(), guess.getId(), guess.getImage());
 					response = Main.waitForInput(event.getAuthor(), event.getChannel(), 15000);
 					if (response == null) {
 						event.reply("No response gotten, let's just hope it's right. :disappointed:");
@@ -445,6 +446,8 @@ public class Miscellaneous {
 					break;
 				}
 			}
+		} catch (StatusException e) {
+			event.reply("You have beaten me. :pensive:");
 		} catch (Exception e) {
 			throw new CommandException("An unkown error occurred while playing with Akinator.", e);
 		}

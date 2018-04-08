@@ -144,7 +144,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 10;
-	public static final int							revision				= 3;
+	public static final int							revision				= 4;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -358,7 +358,7 @@ public class Main {
 						} catch (ClassNotFoundException e) {
 							print(LogType.DEBUG, "Found a subcommand that has an invalid parent.", method.toString());
 						}
-					else print(LogType.DEBUG, "Found a command that requires more than only a CommandEvent.", method.toString());
+					else print(LogType.DEBUG, "Found a subcommand that requires more than only a CommandEvent.", method.toString());
 			}
 			for (Method subcommand : subcommands) {
 				Method parentCommand = getParentCommand(subcommand.getAnnotation(Subcommand.class));
@@ -515,7 +515,7 @@ public class Main {
 						while (!bool.get() && System.currentTimeMillis() - currentMillis < timeout)
 							sleep(250); // trying not to use too much CPU.
 						if (!bool.get()) {
-							print(LogType.WARN, "Execution of a hook took longer than", timeout, " milliseconds, this is abnormal. Hook:", thread.getName());
+							print(LogType.WARN, "Execution of a hook took longer than", timeout, "milliseconds, this is abnormal. Hook:", thread.getName());
 							executionThread.interrupt();
 						}
 					}
@@ -741,6 +741,16 @@ public class Main {
 		return roles.size() == 0 ? null : roles.get(0);
 	}
 
+	public static TextChannel getTextChannelByName(Guild guild, String name, boolean ignoreCase) {
+		List<TextChannel> channels = guild.getTextChannelsByName(name, ignoreCase);
+		return channels.size() == 0 ? null : channels.get(0);
+	}
+
+	public static VoiceChannel getVoiceChannelByName(Guild guild, String name, boolean ignoreCase) {
+		List<VoiceChannel> channels = guild.getVoiceChannelsByName(name, ignoreCase);
+		return channels.size() == 0 ? null : channels.get(0);
+	}
+
 	public static void executeCommand(MessageReceivedEvent event) {
 		commandsExecutor.execute(() -> {
 			try {
@@ -894,7 +904,7 @@ public class Main {
 				Main.sendPrivateMessage(owner, output.substring(0, 1997) + "```");
 				output = output.substring(1997);
 			}
-			if (!output.isEmpty()) Main.sendPrivateMessage(owner, output + "```");
+			if (!output.isEmpty()) Main.sendPrivateMessage(owner, "```java\n" + output + "```");
 		}
 	}
 

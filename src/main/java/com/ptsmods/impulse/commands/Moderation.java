@@ -594,7 +594,7 @@ public class Moderation {
 			TextChannel channel;
 			if (!event.getMessage().getMentionedChannels().isEmpty())
 				channel = event.getMessage().getMentionedChannels().get(0);
-			else channel = event.getGuild().getTextChannelsByName(event.getArgs(), true).get(0);
+			else channel = Main.getTextChannelByName(event.getGuild(), event.getArgs(), true);
 			if (channel == null)
 				event.reply("The given channel could not be found.");
 			else {
@@ -1035,7 +1035,7 @@ public class Moderation {
 		}
 	}
 
-	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 99.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
+	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 99.\n\nKeep in mind that messages older than 2 weeks cannot be massdeleted.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
 	public static void purge(CommandEvent event) {
 		if (!event.argsEmpty() && Main.isInteger(event.getArgs()) && Integer.parseInt(event.getArgs()) < 100 && Integer.parseInt(event.getArgs()) > 0) {
 			long minEpoch = System.currentTimeMillis() / 1000 - 86400 * 14; // current time - 2 weeks
@@ -1045,6 +1045,18 @@ public class Moderation {
 			});
 			event.getTextChannel().deleteMessagesByIds(ids).queue();
 			event.reply("Successfully deleted %s messages.", ids.size() - 1);
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Moderation", help = "Moves all users connected to the 'from' channel to the 'to' channel.", name = "massmove", arguments = "<from> <to>", userPermissions = {Permission.VOICE_MOVE_OTHERS}, botPermissions = {Permission.VOICE_MOVE_OTHERS})
+	public static void massmove(CommandEvent event) {
+		if (!event.argsEmpty() && event.getArgs().split(" ").length >= 2) {
+			VoiceChannel from = Main.getVoiceChannelByName(event.getGuild(), event.getArgs().split(" ")[0], true);
+			VoiceChannel to = Main.getVoiceChannelByName(event.getGuild(), event.getArgs().split(" ")[1], true);
+			int users = from.getMembers().size();
+			for (Member member : from.getMembers())
+				event.getGuild().getController().moveVoiceMember(member, to).queue();
+			event.reply("Successfully moved %s user%s.", users, users == 1 ? "" : "s");
 		} else Main.sendCommandHelp(event);
 	}
 

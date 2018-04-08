@@ -59,7 +59,7 @@ public class MemoryJavaCompiler {
 	}
 
 	public static byte[] compile(String fileName, String source) throws CompilationException {
-		return compile(fileName, source, null, System.getProperty("java.class.path"));
+		return compile(fileName, source, System.getProperty("java.class.path"));
 	}
 
 	/**
@@ -76,23 +76,18 @@ public class MemoryJavaCompiler {
 	 * @throws CompilationException
 	 *             If an error occurs during the compilation.
 	 */
-	private static byte[] compile(String fileName, String source, String sourcePath, String classPath) throws CompilationException {
+	private static byte[] compile(String fileName, String source, String classPath) throws CompilationException {
 		MemoryJavaFileManager fileManager = new MemoryJavaFileManager(sjfm);
 		List<JavaFileObject> compUnits = new ArrayList<>(1);
 		compUnits.add(fileManager.makeStringSource(fileName, source));
-		return compile(compUnits, fileManager, sourcePath, classPath);
+		return compile(compUnits, fileManager, classPath);
 	}
 
-	private static byte[] compile(final List<JavaFileObject> compUnits, final MemoryJavaFileManager fileManager, String sourcePath, String classPath) throws CompilationException {
+	private static byte[] compile(final List<JavaFileObject> compUnits, final MemoryJavaFileManager fileManager, String classPath) throws CompilationException {
 		DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
 		List<String> options = new ArrayList<>();
 		options.add("-Xlint:all");
 		options.add("-deprecation");
-		if (sourcePath != null) {
-			options.add("-sourcepath");
-			options.add(sourcePath);
-		}
-
 		if (classPath != null) {
 			options.add("-classpath");
 			options.add(classPath);
@@ -108,7 +103,7 @@ public class MemoryJavaCompiler {
 				error.set(error.get() + string + (newLine ? "\n" : ""));
 			}
 		})), fileManager, diagnostics, options, null, compUnits);
-		if (task.call() == false) {
+		if (task.call() == false) try {
 			for (Diagnostic diagnostic : diagnostics.getDiagnostics())
 				error.set(error.get() + diagnostic);
 			char[] chars = error.get().split("\n")[2].toCharArray();
@@ -119,6 +114,10 @@ public class MemoryJavaCompiler {
 					break;
 				}
 			throw new CompilationException(error.get().split("\n")[1], character, "Error:" + error.get().split("\n")[0].split(": error:")[1]);
+		} catch (Exception e) {
+			if (e instanceof CompilationException)
+				throw e;
+			else throw new CompilationException(error.get());
 		}
 		Map<String, byte[]> classBytes = fileManager.getClassBytes();
 		try {

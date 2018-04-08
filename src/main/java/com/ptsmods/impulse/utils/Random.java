@@ -13,19 +13,19 @@ import java.util.Map;
  */
 public class Random {
 
-	public static final Random					INSTANCE			= new Random();
-	private final Character[]					characters			= {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-	private Map<String, Map<String, Double>>	seeds;
-	private boolean								shouldSeed			= false;
-	private boolean								shouldMakeNewSeed	= false;
-	private String								seedKey				= "";
-	private Class								callerClass			= null;
-	private long								lastCalledMillis	= 0;
+	public static final Random						INSTANCE			= new Random();
+	private final Character[]						characters			= {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+	private static Map<String, Map<String, Double>>	seeds;
+	private boolean									shouldSeed			= false;
+	private boolean									shouldMakeNewSeed	= false;
+	private String									seedKey				= "";
+	private Class									callerClass			= null;
+	private long									lastCalledMillis	= 0;
 
 	private Random() {
 	}
 
-	{
+	static {
 		try {
 			seeds = DataIO.loadJsonOrDefault("data/random/seeds.json", Map.class, new HashMap());
 		} catch (IOException e) {
@@ -159,9 +159,8 @@ public class Random {
 	 *
 	 * @param key
 	 */
-	@SuppressWarnings("deprecation")
 	public void seed(String key) {
-		callerClass = sun.reflect.Reflection.getCallerClass(2); // 0 is java.lang.Thread, 1 is this class and 2 is the actual caller class.
+		callerClass = Main.getCallerClass();
 		if (!seeds.getOrDefault(callerClass.getName(), new HashMap<>()).containsKey(key) || seeds.getOrDefault(callerClass.getName(), new HashMap<>()).get(key) == null) {
 			shouldMakeNewSeed = true;
 			Map callerClassSeeds = seeds.getOrDefault(callerClass.getName(), new HashMap<>());
@@ -170,7 +169,7 @@ public class Random {
 			try {
 				DataIO.saveJson(seeds, "data/random/seeds.json");
 			} catch (IOException e) {
-				throw new RuntimeException("There was an error while saving the seeding file.", e);
+				Main.throwCheckedExceptionWithoutDeclaration(new IOException("There was an error while saving the seeding file.", e));
 			}
 		}
 		shouldSeed = true;
