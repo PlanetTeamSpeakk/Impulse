@@ -36,9 +36,9 @@ public class Lewd {
 			Document yandere;
 			int attempts = 0;
 			try {
-				yandere = Jsoup.connect("https://yande.re/post/Random.INSTANCE").get();
+				yandere = Jsoup.connect("https://yande.re/post/random").get();
 				while (yandere.getElementById("image") == null && attempts < 5) {
-					yandere = Jsoup.connect("https://yande.re/post/Random.INSTANCE").get();
+					yandere = Jsoup.connect("https://yande.re/post/random").get();
 					attempts += 1;
 				}
 				if (yandere.getElementById("highres") == null) throw new CommandException("No lewds found.");
@@ -57,9 +57,9 @@ public class Lewd {
 			Document konachan;
 			int attempts = 0;
 			try {
-				konachan = Jsoup.connect("https://konachan.com/post/Random.INSTANCE").get();
+				konachan = Jsoup.connect("https://konachan.com/post/random").get();
 				while (konachan.getElementById("image") == null && attempts < 5) {
-					konachan = Jsoup.connect("https://konachan.com/post/Random.INSTANCE").get();
+					konachan = Jsoup.connect("https://konachan.com/post/random").get();
 					attempts += 1;
 				}
 				if (konachan.getElementById("highres") == null) throw new CommandException("No lewds found.");
@@ -78,9 +78,9 @@ public class Lewd {
 			Document e621;
 			int attempts = 0;
 			try {
-				e621 = Jsoup.connect("https://e621.net/post/Random.INSTANCE").get();
+				e621 = Jsoup.connect("https://e621.net/post/random").get();
 				while (e621.getElementById("image") == null && attempts < 5) {
-					e621 = Jsoup.connect("https://e621.net/post/Random.INSTANCE").get();
+					e621 = Jsoup.connect("https://e621.net/post/random").get();
 					attempts += 1;
 				}
 				if (e621.getElementById("highres") == null) throw new CommandException("No lewds found.");
@@ -114,7 +114,7 @@ public class Lewd {
 					} catch (Throwable e) {
 						continue;
 					}
-			} else urls.add("index.php?page=post&s=Random.INSTANCE");
+			} else urls.add("index.php?page=post&s=random");
 			if (urls.isEmpty())
 				event.reply("No results found.");
 			else {
@@ -143,9 +143,9 @@ public class Lewd {
 			Document danbooru;
 			int attempts = 0;
 			try {
-				danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/Random.INSTANCE").get();
+				danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/random").get();
 				while (danbooru.getElementById("image") == null && attempts < 5) {
-					danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/Random.INSTANCE").get();
+					danbooru = Jsoup.connect("http://danbooru.donmai.us/posts/random").get();
 					attempts += 1;
 				}
 				if (danbooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -164,9 +164,9 @@ public class Lewd {
 			Document gelbooru;
 			int attempts = 0;
 			try {
-				gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=Random.INSTANCE").get();
+				gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=random").get();
 				while (gelbooru.getElementById("image") == null && attempts < 5) {
-					gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=Random.INSTANCE").get();
+					gelbooru = Jsoup.connect("http://www.gelbooru.com/index.php?page=post&s=random").get();
 					attempts += 1;
 				}
 				if (gelbooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -185,9 +185,9 @@ public class Lewd {
 			Document tbib;
 			int attempts = 0;
 			try {
-				tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=Random.INSTANCE").get();
+				tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=random").get();
 				while (tbib.getElementById("image") == null && attempts < 5) {
-					tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=Random.INSTANCE").get();
+					tbib = Jsoup.connect("http://www.tbib.org/index.php?page=post&s=random").get();
 					attempts += 1;
 				}
 				if (tbib.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -206,9 +206,9 @@ public class Lewd {
 			Document xbooru;
 			int attempts = 0;
 			try {
-				xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=Random.INSTANCE").get();
+				xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=random").get();
 				while (xbooru.getElementById("image") == null && attempts < 5) {
-					xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=Random.INSTANCE").get();
+					xbooru = Jsoup.connect("http://xbooru.com/index.php?page=post&s=random").get();
 					attempts += 1;
 				}
 				if (xbooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -227,9 +227,9 @@ public class Lewd {
 			Document furrybooru;
 			int attempts = 0;
 			try {
-				furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=Random.INSTANCE").get();
+				furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=random").get();
 				while (furrybooru.getElementById("image") == null && attempts < 5) {
-					furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=Random.INSTANCE").get();
+					furrybooru = Jsoup.connect("http://furry.booru.org/index.php?page=post&s=random").get();
 					attempts += 1;
 				}
 				if (furrybooru.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -248,9 +248,9 @@ public class Lewd {
 			Document drunkenpumken;
 			int attempts = 0;
 			try {
-				drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=Random.INSTANCE").get();
+				drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=random").get();
 				while (drunkenpumken.getElementById("image") == null && attempts < 5) {
-					drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=Random.INSTANCE").get();
+					drunkenpumken = Jsoup.connect("http://drunkenpumken.booru.org/index.php?page=post&s=random").get();
 					attempts += 1;
 				}
 				if (drunkenpumken.getElementById("image") == null) throw new CommandException("No lewds found.");
@@ -269,9 +269,9 @@ public class Lewd {
 			Document lolibooru;
 			int attempts = 0;
 			try {
-				lolibooru = Jsoup.connect("https://lolibooru.moe/post/Random.INSTANCE/").get();
+				lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
 				while (lolibooru.getElementById("image") == null && attempts < 5) {
-					lolibooru = Jsoup.connect("https://lolibooru.moe/post/Random.INSTANCE/").get();
+					lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
 					attempts += 1;
 				}
 				if (lolibooru.getElementById("image") == null) throw new CommandException("No lewds found.");
