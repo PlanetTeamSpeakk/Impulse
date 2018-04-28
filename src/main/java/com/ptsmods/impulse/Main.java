@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.nio.file.Files;
 import java.security.CodeSource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -85,6 +86,7 @@ import com.ptsmods.impulse.miscellaneous.ImpulseSM;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
 import com.ptsmods.impulse.utils.ArrayMap;
+import com.ptsmods.impulse.utils.ArraySet;
 import com.ptsmods.impulse.utils.AtomicObject;
 import com.ptsmods.impulse.utils.Config;
 import com.ptsmods.impulse.utils.ConsoleColours;
@@ -96,6 +98,7 @@ import com.ptsmods.impulse.utils.HookedPrintStream;
 import com.ptsmods.impulse.utils.HookedPrintStream.PrintHook;
 import com.ptsmods.impulse.utils.ImageManipulator;
 import com.ptsmods.impulse.utils.Random;
+import com.ptsmods.impulse.utils.UsageMonitorer;
 import com.ptsmods.impulse.utils.compiler.CompilationException;
 import com.ptsmods.impulse.utils.compiler.MemoryJavaCompiler;
 
@@ -104,6 +107,7 @@ import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import net.dv8tion.jda.client.entities.Group;
 import net.dv8tion.jda.core.AccountType;
+import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
@@ -117,6 +121,7 @@ import net.dv8tion.jda.core.entities.Icon;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.entities.PermissionOverride;
 import net.dv8tion.jda.core.entities.PrivateChannel;
 import net.dv8tion.jda.core.entities.Role;
@@ -143,8 +148,8 @@ import sun.reflect.Reflection;
 public class Main {
 
 	public static final int							major					= 1;
-	public static final int							minor					= 10;
-	public static final int							revision				= 4;
+	public static final int							minor					= 11;
+	public static final int							revision				= 0;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -229,12 +234,33 @@ public class Main {
 		else theUnsafe = null;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static final void main(String[] args) {
 		List<String> argsList = Lists.newArrayList(args);
 		devMode = argsList.contains("-devMode");
 		eclipse = argsList.contains("-eclipse");
 		headless = argsList.contains("-headless") || argsList.contains("-noGui");
 		useSwing = argsList.contains("-useSwing") || argsList.contains("-noJfx");
+		if (eclipse) {
+			int lines = 0;
+			for (File file : getFilesInDir(new File("src/main/java")))
+				try {
+					lines += Files.readAllLines(file.toPath()).size();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			print(LogType.DEBUG, "Impulse is currently made up of", lines, "lines of code! Woah!");
+		}
+		runAsynchronously(() -> {
+			while (true) {
+				for (Thread thread : getThreads())
+					if (UsageMonitorer.getThreadCPUUsage(thread).floatValue() >= 25 && thread != mainThread) {
+						thread.stop();
+						print(LogType.WARN, "Thread '" + thread.getName() + "' with an ID of", thread.getId(), "was killed as its CPU usage,", UsageMonitorer.getThreadCPUUsage(thread).floatValue() + "%, was greater than or equal to 25%.");
+					}
+				sleep(1000); // the values get updated every second
+			}
+		});
 		try {
 			main0(args);
 		} catch (Throwable e) {
@@ -388,6 +414,7 @@ public class Main {
 			for (int i : range(shardAmount)) {
 				JDA shard = new JDABuilder(AccountType.BOT).setToken(Config.get("token")).addEventListener(eventHandler).useSharding(shards.size(), shardAmount).setReconnectQueue(new SessionReconnectQueue()).setShardedRateLimiter(rateLimiter).setGame(Game.of("Starting...")).buildBlocking();
 				shards.add(shard);
+
 				if (i != shardAmount - 1) {
 					print(LogType.INFO, "Started shard " + i + ", waiting 5 seconds before starting shard " + (i + 1) + "/" + shardAmount + ".");
 					Thread.sleep(5000);
@@ -970,6 +997,15 @@ public class Main {
 		return true;
 	}
 
+	public static boolean isHexInteger(String s) {
+		try {
+			Integer.parseInt(s, 16);
+		} catch (Throwable e) {
+			return false;
+		}
+		return true;
+	}
+
 	public static boolean isLong(String s) {
 		try {
 			Long.parseLong(s);
@@ -1395,7 +1431,7 @@ public class Main {
 	}
 
 	public static List<JDA> getShards() {
-		return shards;
+		return Collections.unmodifiableList(shards);
 	}
 
 	public static <K, V> HashMap<K, V> newHashMap(K[] keys, V[] values) {
@@ -1405,28 +1441,34 @@ public class Main {
 		return map;
 	}
 
-	public static Integer getIntFromPossibleDouble(Object d) {
-		if (d instanceof Double)
-			return ((Double) d).intValue();
-		else if (d instanceof Integer)
-			return (Integer) d;
-		else try {
-			return (int) d;
-		} catch (Throwable e) {
-			return -1;
+	public static <T extends Number> T toNumber(Class<T> clazz, Object obj) {
+		Object returnValue = null;
+		if (obj instanceof Number) switch (clazz.getSimpleName()) {
+		case "Short":
+			returnValue = ((Number) obj).shortValue();
+			break;
+		case "Integer":
+			returnValue = ((Number) obj).intValue();
+			break;
+		case "Long":
+			returnValue = ((Number) obj).longValue();
+			break;
+		case "Float":
+			returnValue = ((Number) obj).floatValue();
+			break;
+		default:
+			returnValue = 0;
+			break;
 		}
+		return (T) returnValue;
+	}
+
+	public static Integer getIntFromPossibleDouble(Object d) {
+		return toNumber(Integer.class, d);
 	}
 
 	public static Long getLongFromPossibleDouble(Object d) {
-		if (d instanceof Double)
-			return ((Double) d).longValue();
-		else if (d instanceof Long)
-			return (Long) d;
-		else try {
-			return (long) d;
-		} catch (Throwable e) {
-			return -1L;
-		}
+		return toNumber(Long.class, d);
 	}
 
 	public static boolean isValidURL(String url) {
@@ -1497,6 +1539,7 @@ public class Main {
 	}
 
 	public static String multiplyString(String string, int times) {
+		if (times <= 0) return "";
 		String original = new String(string);
 		for (int i : range(times))
 			string += original;
@@ -1565,9 +1608,7 @@ public class Main {
 		case "INVISIBLE": {
 			return OnlineStatus.INVISIBLE;
 		}
-		case "DND": {
-			return OnlineStatus.DO_NOT_DISTURB;
-		}
+		case "DND":
 		case "DO_NOT_DISTURB": {
 			return OnlineStatus.DO_NOT_DISTURB;
 		}
@@ -2466,6 +2507,30 @@ public class Main {
 
 	public static boolean hasPermissions(TextChannel channel, User user, Permission... permissions) {
 		return channel.getPermissionOverride(channel.getGuild().getMember(user)) == null ? channel.getGuild().getMember(user).hasPermission(permissions) : channel.getPermissionOverride(channel.getGuild().getMember(user)).getAllowed().containsAll(Lists.newArrayList(permissions)) || channel.getGuild().getMember(user).hasPermission(permissions);
+	}
+
+	public static MessageEmbed getInfoEmbed() {
+		EmbedBuilder embed = new EmbedBuilder();
+		embed.setTitle(shards.get(0).getSelfUser().getName());
+		embed.setColor(new Color(Random.INSTANCE.randInt(256 * 256 * 256)));
+		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
+		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. " + "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") " + "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")" + ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), " + "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
+		embed.setFooter("PS, the color used is #" + Main.colourToHex(embed.build().getColor()) + ".", null);
+		return embed.build();
+	}
+
+	public static ArraySet<Thread> getThreads() {
+		return new ArraySet(Thread.getAllStackTraces().keySet());
+	}
+
+	public static List<File> getFilesInDir(File dir) {
+		if (!dir.isDirectory()) return new ArraySet();
+		List<File> files = new ArraySet();
+		for (File file : dir.listFiles())
+			if (file.isDirectory())
+				files.addAll(getFilesInDir(file));
+			else files.add(file);
+		return Collections.unmodifiableList(files);
 	}
 
 	public enum TimeType {

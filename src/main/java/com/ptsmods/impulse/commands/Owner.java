@@ -231,7 +231,7 @@ public class Owner {
 	@Command(category = "Owner", help = "Execute a command on the command line.", name = "terminal", ownerCommand = true, hidden = true)
 	public static void terminal(CommandEvent event) throws CommandException {
 		if (!event.argsEmpty()) {
-			Message msg = event.getTextChannel().sendMessage("Executing the given command on the command line...").complete();
+			Message msg = event.getChannel().sendMessage("Executing the given command on the command line...").complete();
 			if (Main.isWindows()) event.setArgs("cmd /c " + event.getArgs());
 			Process process;
 			try {

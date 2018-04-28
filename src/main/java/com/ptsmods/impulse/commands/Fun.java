@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import com.google.common.collect.Lists;
+import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
@@ -22,13 +23,13 @@ import com.ptsmods.impulse.miscellaneous.Subcommand;
 import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
 import com.ptsmods.impulse.miscellaneous.Trivia;
 import com.ptsmods.impulse.miscellaneous.Trivia.TriviaResult;
+import com.ptsmods.impulse.utils.AtomicObject;
 import com.ptsmods.impulse.utils.DataIO;
 import com.ptsmods.impulse.utils.ImageManipulator;
 import com.ptsmods.impulse.utils.LaughingMao;
 import com.ptsmods.impulse.utils.Random;
 
 import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
@@ -59,6 +60,7 @@ public class Fun {
 	private static Map<String, Map<String, Map<String, Object>>>	garden;
 	private static List<String>										sadMaos;
 	private static Map<String, Integer>								easterEgg		= new HashMap();
+	private static List<String>										gameSessions	= new ArrayList();
 
 	static {
 		try {
@@ -93,7 +95,7 @@ public class Fun {
 		event.reply(String.format(Random.INSTANCE.choice(ears), String.format(Random.INSTANCE.choice(eyes), Random.INSTANCE.choice(mouth))));
 	}
 
-	@Command(category = "Fun", help = "Tells you the size of someone's penis.\n\nThis is 100% accurate.", name = "penis")
+	@Command(category = "Fun", help = "Tells you the size of someone's penis.\n\nThis is 100% accurate.", name = "penis", arguments = "[user]")
 	public static void penis(CommandEvent event) {
 		if (!event.getArgs().isEmpty()) {
 			User user = Main.getUserFromInput(event.getMessage());
@@ -108,6 +110,11 @@ public class Fun {
 
 	@Command(category = "Fun", help = "Play that old game called Battleship with the bot!", name = "battleship", cooldown = 300, guildOnly = true)
 	public static void battleship(CommandEvent event) {
+		if (gameSessions.contains(event.getAuthor().getId())) {
+			event.reply("You are already playing a game, please finish that one first.");
+			return;
+		}
+		gameSessions.add(event.getAuthor().getId());
 		Message status = event.getChannel().sendMessage("Generating my sea...").complete();
 		List<String> botSea = new ArrayList<>();
 		for (int x : Main.range(10)) {
@@ -166,6 +173,7 @@ public class Fun {
 						bombm.delete().complete();
 					} catch (Throwable e) {
 					}
+					gameSessions.remove(event.getAuthor().getId());
 					return;
 				} else if (!Arrays.asList(positions).contains(bombm.getContent().toUpperCase()) || bombm.getContent().toUpperCase().equals("HELP")) {
 					String bombExample = positions[Random.INSTANCE.randInt(positions.length)];
@@ -190,6 +198,7 @@ public class Fun {
 						}
 					} else {
 						status.editMessage("You've hit my last ship! You win!").queue();
+						gameSessions.remove(event.getAuthor().getId());
 						return;
 					}
 				} else {
@@ -218,6 +227,7 @@ public class Fun {
 						bombm.delete();
 					} catch (Throwable e) {
 					}
+					gameSessions.remove(event.getAuthor().getId());
 					return;
 				} else if (!Arrays.asList(positions).contains(bombm.getContent().toUpperCase()) || bombm.getContent().toUpperCase().equals("HELP")) {
 					String example = positions[Random.INSTANCE.randInt(positions.length)];
@@ -241,6 +251,7 @@ public class Fun {
 						}
 					} else {
 						status.editMessage("You've hit my last ship! You win!").complete();
+						gameSessions.remove(event.getAuthor().getId());
 						return;
 					}
 				} else {
@@ -269,6 +280,7 @@ public class Fun {
 						}
 					} else {
 						status.editMessage(String.format("I've hit your last ship! I hit %s, so I win. I had **%s** left (%s ships)", bomb, Main.joinCustomChar("**, **", botSea.toArray(new String[0])), botSea.size())).complete();
+						gameSessions.remove(event.getAuthor().getId());
 						return;
 					}
 				} else {
@@ -435,7 +447,7 @@ public class Fun {
 				if (response == null || !response.getContent().startsWith("y"))
 					event.reply("Kk, then not.");
 				else {
-					Economy.removeBalance(event.getMember(), (int) plants.get(event.getArgs()).get("price"));
+					Economy.subtractBalance(event.getMember(), (int) plants.get(event.getArgs()).get("price"));
 					if (!garden.containsKey(event.getGuild().getId())) garden.put(event.getGuild().getId(), new HashMap());
 					if (!garden.get(event.getGuild().getId()).containsKey(event.getAuthor().getId())) garden.get(event.getGuild().getId()).put(event.getAuthor().getId(), Main.newHashMap(new String[] {"items"}, new Map[] {new HashMap()}));
 					garden.get(event.getGuild().getId()).get(event.getAuthor().getId()).put(event.getArgs(), (double) System.currentTimeMillis());
@@ -646,7 +658,7 @@ public class Fun {
 				boolean shot = rrPlay(event, bullets, event.getChannel().sendMessageFormat("You've made a bet for %s credits that you'll survive with %s bullets in the barrel. You load up %s bullets and start spinning the barrel...", bet, bullets, bullets).complete());
 				int oldBalance = Economy.getBalance(event.getMember());
 				if (shot)
-					Economy.removeBalance(event.getMember(), bet);
+					Economy.subtractBalance(event.getMember(), bet);
 				else Economy.addBalance(event.getMember(), bet);
 				event.reply("%s credits have been %s %s your bank account, old balance: **%s** credits, new balance: **%s** credits.", bet, shot ? "removed" : "added", shot ? "from" : "to", oldBalance, Economy.getBalance(event.getMember()));
 			}
@@ -732,8 +744,195 @@ public class Fun {
 		} else Main.sendCommandHelp(event);
 	}
 
+	@Command(category = "Fun", help = "Play four-in-a-row with the bot!", name = "4row", botPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true)
+	public static void fourRow(CommandEvent event) {
+		try {
+			if (gameSessions.contains(event.getAuthor().getId())) {
+				event.reply("You are already playing a game, please finish that one first before starting a new one.");
+				return;
+			}
+			gameSessions.add(event.getAuthor().getId());
+		// @formatter:off
+		int[][] board = {
+				{
+					0, 0, 0, 0, 0, 0
+				},
+				{
+					0, 0, 0, 0, 0, 0
+				},
+				{
+					0, 0, 0, 0, 0, 0
+				},
+				{
+					0, 0, 0, 0, 0, 0
+				},
+				{
+					0, 0, 0, 0, 0, 0
+				},
+				{
+					0, 0, 0, 0, 0, 0
+				},
+				{
+					0, 0, 0, 0, 0, 0
+				},
+		}; // 7 wide, 6 high. 7 columns of 6 spaces per column.
+		// -1 indicates bot's space, 0 indicates not used, 1 indicates user's space.
+		// @formatter:on
+			AtomicObject<String> boardString = new AtomicObject("");
+			AtomicObject<Message> boardMsg = new AtomicObject();
+			class FourRowHelper {
+				public boolean canPutCoin(int column) {
+					if (column > 6) column = 6;
+					for (int i = 5; i >= 0; i--)
+						if (board[column][i] == 0) return true;
+					return false;
+				}
+
+				public int putCoin(int column, boolean bot) {
+					if (column > 6) column = 7;
+					column -= 1;
+					for (int i = 5; i >= 0; i--)
+						if (board[column][i] == 0) {
+							board[column][i] = bot ? -1 : 1;
+							break;
+						}
+					generateBoardString();
+					for (int c = 0; c <= 6; c++)
+						for (int r = 0; r <= 5; r++) { // checking if anyone won.
+							if (r + 3 < 6 && board[c][r] != 0 && board[c][r + 1] == board[c][r] && board[c][r + 2] == board[c][r] && board[c][r + 3] == board[c][r]) return board[c][r]; // checking vertical
+							if (c + 3 < 7 && board[c][r] != 0 && board[c + 1][r] == board[c][r] && board[c + 2][r] == board[c][r] && board[c + 3][r] == board[c][r]) return board[c][r]; // checking horizontal
+							if (c - 3 > 0 && r - 3 > 0 && board[c][r] != 0 && board[c - 1][r - 1] == board[c][r] && board[c - 2][r - 2] == board[c][r] && board[c - 3][r - 3] == board[c][r]) return board[c][r]; // checking diagonal-up
+							if (r + 3 < 6 && c + 3 < 7 && board[c][r] != 0 && board[c + 1][r + 1] == board[c][r] && board[c + 2][r + 2] == board[c][r] && board[c + 3][r + 3] == board[c][r]) return board[c][r]; // checking diagonal-down
+						}
+					return 0;
+				}
+
+				public void generateBoardString() {
+					int[][] boardRows = new int[6][7];
+					for (int i = 0; i < 6; i++)
+						for (int x = 0; x < 7; x++)
+							boardRows[i][x] = board[x][i]; // converting a column-based board to a row-based board.
+					boardString.set("");
+					for (int[] row : boardRows) {
+						for (int column : row)
+							boardString.set(boardString.get() + (column == 0 ? ":o:" : column == 1 ? ":grimacing:" : ":robot:"));
+						boardString.set(boardString.get() + "\n");
+					}
+					boardString.set(boardString.get().trim());
+					if (boardMsg.get() == null)
+						boardMsg.set(event.getChannel().sendMessage(boardString.get()).complete());
+					else boardMsg.get().editMessage(boardString.get()).queue();
+				}
+
+				public int pickColumn() {
+					int column = -1;
+					for (int c = 0; c <= 6; c++)
+						for (int r = 0; r <= 5; r++) { // ai system, so the player won't win too easily.
+							if (r + 2 < 6 && board[c][r] != 0 && board[c][r + 1] == board[c][r] && canWin(c, r, 0) && Random.INSTANCE.choice(true, false)) column = c; // checking vertical
+							if (c + 2 < 7 && board[c][r] != 0 && board[c + 1][r] == board[c][r] && canWin(c, r, 1)) column = board[c + 2][r] != 0 && c + 3 < 7 ? c + 3 : c + 2; // checking horizontal left to right
+							if (c - 2 >= 0 && board[c][r] != 0 && board[c - 1][r] == board[c][r] && canWin(c, r, 2)) column = board[c - 2][r] != 0 && c - 3 >= 0 ? c - 3 : c - 2; // checking horizontal right to left
+							if (c + 2 < 7 && r - 2 >= 0 && board[c][r] != 0 && board[c + 1][r - 1] == board[c][r] && canWin(c, r, 3)) column = board[c + 2][r - 2] != 0 && c + 3 < 7 && r - 3 >= 0 ? c + 3 : c - 2; // checking diagonal-up
+							if (r + 2 < 6 && c + 2 >= 0 && board[c][r] != 0 && board[c + 1][r + 1] == board[c][r] && canWin(c, r, 4)) column = board[c + 2][r + 2] != 0 && c + 3 < 7 && r + 3 < 6 ? c + 3 : c + 2; // checking diagonal-down
+						}
+					if (column < 0 || column > 6) column = Random.INSTANCE.randInt(0, 6);
+					while (!canPutCoin(column))
+						column = Random.INSTANCE.randInt(0, 6);
+					return column + 1;
+				}
+
+				private boolean canWin(int c, int r, int w) {
+					switch (w) {
+					case 0:
+						return r - 1 >= 0 && board[c][r - 1] == 0 || r - 2 >= 0 && board[c][r - 2] == 0;
+					case 1:
+						return c + 2 < 7 && board[c + 2][r] == 0 || c + 3 < 7 && board[c + 3][r] == 0;
+					case 2:
+						return c - 2 >= 0 && board[c - 2][r] == 0 || c - 3 >= 0 && board[c - 3][r] == 0;
+					case 3:
+						return c + 2 < 7 && r - 2 >= 0 && board[c + 2][r - 2] == 0 || c + 3 < 7 && r - 3 >= 0 && board[c + 3][r - 3] == 0;
+					case 4:
+						return c + 2 < 7 && r + 2 < 6 && board[c + 2][r + 2] == 0 || c + 3 < 7 && r + 3 < 6 && board[c + 3][r + 3] == 0;
+					default:
+						return false;
+					}
+				}
+
+				public boolean isBoardFull() {
+					for (int c = 0; c < 7; c++)
+						for (int r = 0; r < 6; r++)
+							if (board[c][r] == 0) return false;
+					return true;
+				}
+
+			}
+			FourRowHelper helper = new FourRowHelper();
+			Main.print(LogType.DEBUG, helper.canWin(1, 5, 3));
+			Message status = null;
+			helper.generateBoardString();
+			if (Random.INSTANCE.choice(true, false)) {
+				status = event.getChannel().sendMessage("I'll start.").complete();
+				Main.sleep(5000);
+				helper.putCoin(Random.INSTANCE.randInt(1, 7), true);
+				status.editMessage("Your turn, type a number ranging from 1 to 7 to select a column.").complete();
+			} else status = event.getChannel().sendMessage("Your turn, type a number ranging from 1 to 7 to select a column.").complete();
+			Message response = null;
+			while (true) {
+				response = Main.waitForInput(event.getAuthor(), event.getChannel(), 15000);
+				if (response == null || response.getContent().equalsIgnoreCase("stop")) {
+					event.reply("Alright, quitting.");
+					gameSessions.remove(event.getAuthor().getId());
+					return;
+				} else {
+					int column = -1;
+					while (!Main.isInteger(response.getContent()) || (column = Integer.parseInt(response.getContent())) < 0 || column > 7 || !helper.canPutCoin(column)) {
+						status.editMessage("The response gotten wasn't an integer ranging from 1 to 7 or that column is full, please try again.").complete();
+						response.delete().queue();
+						response = Main.waitForInput(event.getAuthor(), event.getChannel(), 15000);
+						if (response == null || response.getContent().equalsIgnoreCase("stop")) {
+							event.reply("Alright, quitting.");
+							gameSessions.remove(event.getAuthor().getId());
+							return;
+						}
+					}
+					response.delete().queue();
+					int winner = helper.putCoin(column, false);
+					if (winner == -1) {
+						status.editMessage("I won!").complete();
+						gameSessions.remove(event.getAuthor().getId());
+						return;
+					} else if (winner == 1) {
+						status.editMessage("You won, gg!").complete();
+						gameSessions.remove(event.getAuthor().getId());
+						return;
+					} else {
+						status.editMessage("My turn!").complete();
+						Main.sleep(5000);
+						winner = helper.putCoin(helper.pickColumn(), true);
+						if (winner == -1) {
+							status.editMessage("I won!").complete();
+							gameSessions.remove(event.getAuthor().getId());
+							return;
+						} else if (winner == 1) {
+							status.editMessage("You won, gg!").complete();
+							gameSessions.remove(event.getAuthor().getId());
+							return;
+						} else if (helper.isBoardFull()) {
+							status.editMessage("Board is full, but nobody won. Maybe next time!").complete();
+							return;
+						} else status.editMessage("Your turn, type a number ranging from 1 to 7 to select a column.").complete();
+					}
+				}
+			}
+		} catch (Exception e) {
+			// This should never happen, but if the command errors the user is most likely
+			// still in the gameSessions List and won't be able to play games until restart.
+			gameSessions.remove(event.getAuthor().getId());
+			throw e;
+		}
+	}
+
 	private static boolean rrPlay(CommandEvent event, int bullets, Message message) {
-		if (message == null) message = event.getChannel().sendMessage(new MessageBuilder().append("You load up ").append(bullets).append(" bullets and start spinning the barrel...").build()).complete();
+		if (message == null) message = event.getChannel().sendMessage("You load up " + bullets + " bullets and start spinning the barrel...").complete();
 		try {
 			Thread.sleep(4000);
 		} catch (InterruptedException e) {

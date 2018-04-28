@@ -24,6 +24,7 @@ public class CommandEvent {
 	private final Method				command;
 	private final String				argsOriginal;
 	private String						args;
+	private Message						response;
 
 	CommandEvent(String args, Method command) {
 		this(null, args, command);
@@ -75,7 +76,7 @@ public class CommandEvent {
 				msg = inBox ? "```" + boxLang + "\n" : "";
 			}
 		}
-		sendMessage(event.getChannel(), msg);
+		sendMessage(event.getChannel(), msg.replaceAll("@everyone", "@\u200Beveryone").replaceAll("@here", "@\u200Bhere"));
 	}
 
 	public void reply(Message message, Object... args) {
@@ -172,6 +173,18 @@ public class CommandEvent {
 
 	public Method getCommand() {
 		return command;
+	}
+
+	public Message waitForInput(int timeoutMillis) {
+		return response = Main.waitForInput(getAuthor(), getChannel(), timeoutMillis);
+	}
+
+	public Message getResponse() {
+		return response;
+	}
+
+	public Message sendCommandHelp() {
+		return Main.sendCommandHelp(this);
 	}
 
 }

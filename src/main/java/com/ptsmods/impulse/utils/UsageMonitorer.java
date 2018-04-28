@@ -2,13 +2,29 @@ package com.ptsmods.impulse.utils;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadInfo;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.ptsmods.impulse.utils.MathHelper.Percentage;
 import com.sun.management.OperatingSystemMXBean;
+import com.sun.management.ThreadMXBean;
 
 public class UsageMonitorer {
 
+	private static Map<Long, Long>	threadInitialCPU	= new HashMap<>();
+	private static Map<Long, Float>	threadCPUUsage		= new HashMap<>();
+	private static long				initialUptime		= ManagementFactory.getRuntimeMXBean().getUptime();
+
 	private UsageMonitorer() {
+	}
+
+	static {
+		Main.runAsynchronously(() -> {
+			while (true)
+				updateThreadCPUUsages();
+		});
 	}
 
 	public static int getProcessorCount() {
@@ -102,6 +118,43 @@ public class UsageMonitorer {
 
 	public static long getTotalLoadedClassCount() {
 		return VMManagement.getVMM().getTotalClassCount();
+	}
+
+	public static Percentage getThreadCPUUsage(Thread thread) {
+		return getThreadCPUUsage(thread.getId());
+	}
+
+	public static Percentage getThreadCPUUsage(long threadId) {
+		if (!threadCPUUsage.containsKey(threadId)) updateThreadCPUUsages();
+		Float usage = threadCPUUsage.get(threadId);
+		if (usage == null)
+			return new Percentage(0);
+		else return new Percentage(usage);
+	}
+
+	public static void updateThreadCPUUsages() {
+		ThreadMXBean threadMxBean = (ThreadMXBean) ManagementFactory.getThreadMXBean();
+		RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+		OperatingSystemMXBean osMxBean = getOSMXB();
+		ThreadInfo[] threadInfos = threadMxBean.dumpAllThreads(false, false);
+		for (ThreadInfo info : threadInfos)
+			threadInitialCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()));
+		Main.sleep(1000);
+		long upTime = runtimeMxBean.getUptime();
+		Map<Long, Long> threadCurrentCPU = new HashMap<>();
+		threadInfos = threadMxBean.dumpAllThreads(false, false);
+		for (ThreadInfo info : threadInfos)
+			threadCurrentCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()));
+		int nrCPUs = osMxBean.getAvailableProcessors();
+		long elapsedTime = upTime - initialUptime;
+		for (ThreadInfo info : threadInfos) {
+			Long initialCPU = threadInitialCPU.get(info.getThreadId());
+			if (initialCPU != null) {
+				long elapsedCpu = threadCurrentCPU.get(info.getThreadId()) - initialCPU;
+				float cpuUsage = elapsedCpu * 100 / (elapsedTime * 1000000F * nrCPUs);
+				threadCPUUsage.put(info.getThreadId(), cpuUsage);
+			}
+		}
 	}
 
 	private static final OperatingSystemMXBean getOSMXB() {

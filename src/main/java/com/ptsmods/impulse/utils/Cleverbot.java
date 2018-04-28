@@ -23,10 +23,10 @@ public class Cleverbot {
 	}
 
 	public static Cleverbot newBot() {
-		return newBot(Random.INSTANCE.genKey(128));
+		return getBot(Random.INSTANCE.genKey(128));
 	}
 
-	public static Cleverbot newBot(String key) {
+	public static Cleverbot getBot(String key) {
 		Cleverbot bot = bots.getOrDefault(key, new Cleverbot(key));
 		bots.put(key, bot);
 		return bot;

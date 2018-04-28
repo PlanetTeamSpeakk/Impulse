@@ -30,7 +30,7 @@ public class Lewd {
 		}
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Yandere.", name = "yandere")
+	@Command(category = "Lewd", help = "Shows you a random image from Yandere.", name = "yandere")
 	public static void yandere(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document yandere;
@@ -51,7 +51,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Konachan.", name = "konachan")
+	@Command(category = "Lewd", help = "Shows you a random image from Konachan.", name = "konachan")
 	public static void konachan(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document konachan;
@@ -72,7 +72,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from e621.", name = "e621")
+	@Command(category = "Lewd", help = "Shows you a random image from e621.", name = "e621")
 	public static void e621(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document e621;
@@ -93,7 +93,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image or one matching your tags from Rule34.", name = "rule34", arguments = "[tags]")
+	@Command(category = "Lewd", help = "Shows you a random image or one matching your tags from Rule34.", name = "rule34", arguments = "[tags]")
 	public static void rule34(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			List<String> urls = new ArrayList();
@@ -137,7 +137,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Danbooru.", name = "danbooru")
+	@Command(category = "Lewd", help = "Shows you a random image from Danbooru.", name = "danbooru")
 	public static void danbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document danbooru;
@@ -158,7 +158,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Gelbooru.", name = "gelbooru")
+	@Command(category = "Lewd", help = "Shows you a random image from Gelbooru.", name = "gelbooru")
 	public static void gelbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document gelbooru;
@@ -179,7 +179,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from TBib.", name = "tbib")
+	@Command(category = "Lewd", help = "Shows you a random image from TBib.", name = "tbib")
 	public static void tbib(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document tbib;
@@ -200,7 +200,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Xbooru.", name = "xbooru")
+	@Command(category = "Lewd", help = "Shows you a random image from Xbooru.", name = "xbooru")
 	public static void xbooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document xbooru;
@@ -221,7 +221,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Furrybooru.", name = "furrybooru")
+	@Command(category = "Lewd", help = "Shows you a random image from Furrybooru.", name = "furrybooru")
 	public static void furrybooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document furrybooru;
@@ -242,7 +242,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Drunkenpumken.", name = "drunkenpumken")
+	@Command(category = "Lewd", help = "Shows you a random image from Drunkenpumken.", name = "drunkenpumken")
 	public static void drunkenpumken(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document drunkenpumken;
@@ -263,7 +263,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Lolibooru.", name = "lolibooru")
+	@Command(category = "Lewd", help = "Shows you a random image from Lolibooru.", name = "lolibooru")
 	public static void lolibooru(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Document lolibooru;
@@ -284,7 +284,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Oboobs.", name = "boobs")
+	@Command(category = "Lewd", help = "Shows you a random image from Oboobs.", name = "boobs")
 	public static void boobs(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Map boobs;
@@ -297,7 +297,7 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a Random.INSTANCE image from Obutts.", name = "ass")
+	@Command(category = "Lewd", help = "Shows you a random image from Obutts.", name = "ass")
 	public static void ass(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
 			Map ass;

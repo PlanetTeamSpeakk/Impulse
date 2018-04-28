@@ -22,7 +22,7 @@ public class Random {
 	private Class									callerClass			= null;
 	private long									lastCalledMillis	= 0;
 
-	private Random() {
+	public Random() {
 	}
 
 	static {

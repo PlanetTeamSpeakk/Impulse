@@ -22,4 +22,9 @@ public class AtomicObject<T> {
 		return prev;
 	}
 
+	@Override
+	public String toString() {
+		return String.valueOf(value);
+	}
+
 }

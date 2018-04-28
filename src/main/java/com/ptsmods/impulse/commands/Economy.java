@@ -79,7 +79,7 @@ public class Economy {
 				if (arg0.startsWith("+"))
 					addBalance(member, Integer.parseInt(arg0.substring(1)));
 				else if (arg0.startsWith("-"))
-					removeBalance(member, Integer.parseInt(arg0.substring(1)));
+					subtractBalance(member, Integer.parseInt(arg0.substring(1)));
 				else setBalance(member, Integer.parseInt(arg0));
 				int newBalance = getBalance(member);
 				event.reply(member.getUser().getId().equals(event.getAuthor().getId()) ? String.format("Your balance has been set from **%s** to **%s**.", oldBalance, newBalance) : String.format("%s's balance has been set from **%s** to **%s**.", member.getAsMention(), oldBalance, newBalance));
@@ -255,7 +255,7 @@ public class Economy {
 		setBalance(member, getBalance(member) + balance);
 	}
 
-	public static void removeBalance(Member member, int balance) {
+	public static void subtractBalance(Member member, int balance) {
 		setBalance(member, getBalance(member) - balance);
 	}
 

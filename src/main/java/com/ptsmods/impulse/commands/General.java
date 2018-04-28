@@ -25,6 +25,7 @@ import com.ptsmods.impulse.miscellaneous.Command;
 import com.ptsmods.impulse.miscellaneous.CommandEvent;
 import com.ptsmods.impulse.miscellaneous.CommandException;
 import com.ptsmods.impulse.miscellaneous.Subcommand;
+import com.ptsmods.impulse.miscellaneous.SubscribeEvent;
 import com.ptsmods.impulse.utils.Cleverbot;
 import com.ptsmods.impulse.utils.Downloader;
 import com.ptsmods.impulse.utils.Downloader.DownloadResult;
@@ -43,6 +44,7 @@ import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.entities.VoiceChannel;
+import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
 import net.swisstech.bitly.BitlyClient;
 import net.swisstech.bitly.model.Response;
 import net.swisstech.bitly.model.v3.ShortenResponse;
@@ -177,13 +179,7 @@ public class General {
 
 	@Command(category = "General", help = "Some information about the bot.", name = "info")
 	public static void info(CommandEvent event) {
-		EmbedBuilder embed = new EmbedBuilder();
-		embed.setTitle(event.getJDA().getSelfUser().getName());
-		embed.setColor(new Color(Random.INSTANCE.randInt(256 * 256 * 256)));
-		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
-		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. " + "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") " + "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")" + ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), " + "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
-		embed.setFooter("PS, the color used is #" + Main.colourToHex(embed.build().getColor()) + ".", null);
-		event.reply(embed.build());
+		event.reply(Main.getInfoEmbed());
 	}
 
 	@Command(category = "General", help = "Gives you an invite link for this bot.", name = "invite")
@@ -827,6 +823,12 @@ public class General {
 			String response = Cleverbot.newBot().askQuestion(event.getArgs());
 			event.reply(response == null || response.isEmpty() ? "No response gotten, please try again." : response);
 		} else Main.sendCommandHelp(event);
+	}
+
+	@SubscribeEvent
+	public static void onGuildJoin(GuildJoinEvent event) {
+		TextChannel channel = Main.getSendChannel(event.getGuild());
+		if (channel != null) channel.sendMessage(new MessageBuilder().setEmbed(Main.getInfoEmbed()).append("Hello :wave:, my name is Impulse and thanks for inviting me to this awesome server!").build()).queue();
 	}
 
 }

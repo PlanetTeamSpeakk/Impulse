@@ -222,7 +222,7 @@ public class Dashboard {
 		});
 		server.setExecutor(executor);
 		server.start();
-		Main.print(LogType.INFO, "Successfully started the server on port", server.getAddress().getPort() + ", you can browse to it using http://localhost:" + server.getAddress().getPort() + ".");
+		Main.print(LogType.INFO, "Successfully started the server on port", server.getAddress().getPort() + ", you can browse to it by going to http://localhost:" + server.getAddress().getPort() + ".");
 	}
 
 	public static void writeString(HttpExchange he, String string, Object... args) throws IOException {

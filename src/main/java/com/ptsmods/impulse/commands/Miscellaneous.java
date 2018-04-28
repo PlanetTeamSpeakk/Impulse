@@ -1,6 +1,7 @@
 package com.ptsmods.impulse.commands;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -57,6 +58,7 @@ public class Miscellaneous {
 	private static Map<String, Map<String, String>>	patronEmails;
 	private static Map<String, String>				rifts;
 	private static List<Map<String, Object>>		reminders;
+	private static Random							random	= new Random();
 
 	static {
 		try {
@@ -158,7 +160,7 @@ public class Miscellaneous {
 	@Subcommand(help = "Tells you the options to log in on any email client.", name = "options", parent = "com.ptsmods.impulse.commands.Miscellaneous.email")
 	public static void emailOptions(CommandEvent event) {
 		if (MailServer.isEnabled())
-			event.reply(new EmbedBuilder().setColor(new Color(Random.INSTANCE.randInt(256 * 256 * 256))).addField("Type", Boolean.parseBoolean(Config.get("miabIMAP")) ? "IMAP" : "POP", true).addField("Server", Config.get("miabServer"), true).addField("Incoming port", Config.get("miabIncomingPort"), true).addField("Outgoing port", Config.get("miabOutgoingPort"), true).addField("Incoming security", Config.get("miabIncomingSecurity"), true).addField("Outgoing security", Config.get("miabOutgoingSecurity"), true).addField("SMTP always verify", Config.get("miabSmtpAlwaysVerify"), true).build());
+			event.reply(new EmbedBuilder().setColor(new Color(random.randInt(256 * 256 * 256))).addField("Type", Boolean.parseBoolean(Config.get("miabIMAP")) ? "IMAP" : "POP", true).addField("Server", Config.get("miabServer"), true).addField("Incoming port", Config.get("miabIncomingPort"), true).addField("Outgoing port", Config.get("miabOutgoingPort"), true).addField("Incoming security", Config.get("miabIncomingSecurity"), true).addField("Outgoing security", Config.get("miabOutgoingSecurity"), true).addField("SMTP always verify", Config.get("miabSmtpAlwaysVerify"), true).build());
 		else event.reply("This feature has not been enabled by the owner of this bot.");
 	}
 
@@ -380,7 +382,7 @@ public class Miscellaneous {
 				Image capture = Url2Png.captureToImage("https://fortnitetracker.com/profile/" + platform + "/" + username);
 				BufferedImage output = new BufferedImage(capture.getWidth(null) - 80, capture.getHeight(null) - 3290, BufferedImage.TYPE_INT_ARGB);
 				output.createGraphics().drawImage(capture, -40, -900, null);
-				File outputFile = new File("data/tmp/" + Random.INSTANCE.randInt() + ".png");
+				File outputFile = new File("data/tmp/" + random.randInt() + ".png");
 				ImageIO.write(output, "png", outputFile);
 				event.getChannel().sendFile(outputFile, "fortnite-stats_" + platform + "_" + username + ".png", null).queue(msg0 -> {
 					msg.delete().queue();
@@ -406,7 +408,7 @@ public class Miscellaneous {
 			Guess guess = null;
 			while (true) {
 				if (!akinator.getGuessesAboveProbability(probability).isEmpty()) {
-					event.reply("I am thinking of **%s** ranked **#%s**, is this correct? (yes/no)\n%s", (guess = Random.INSTANCE.choice(akinator.getGuessesAboveProbability(probability))).getName(), guess.getId(), guess.getImage());
+					event.reply("I am thinking of **%s** ranked **#%s**, is this correct? (yes/no)\n%s", (guess = random.choice(akinator.getGuessesAboveProbability(probability))).getName(), guess.getId(), guess.getImage());
 					response = Main.waitForInput(event.getAuthor(), event.getChannel(), 15000);
 					if (response == null) {
 						event.reply("No response gotten, let's just hope it's right. :disappointed:");
@@ -430,15 +432,20 @@ public class Miscellaneous {
 					return;
 				} else switch (response.getContent().toLowerCase()) {
 				case "y":
+				case "yes":
 					akinator.answerCurrentQuestion(Answer.YES);
 					break;
 				case "n":
+				case "no":
 					akinator.answerCurrentQuestion(Answer.NO);
 					break;
 				case "idk":
+				case "i dont know":
+				case "i don't know":
 					akinator.answerCurrentQuestion(Answer.DONT_KNOW);
 					break;
 				case "p":
+				case "probably":
 					akinator.answerCurrentQuestion(Answer.PROBABLY);
 					break;
 				default:
@@ -453,10 +460,65 @@ public class Miscellaneous {
 		}
 	}
 
+	@Command(category = "Miscellaneous", help = "Creates a 3840 × 2160 (4k) image of a certain colour so you can see what it looks like.\n\nThe size argument can either be xxs, xs, s, n, l, xl, with xxs being 40×40, xs being 480×360 (360p), s being 720×480 (480p), n being 1080×720 (720p), l being 1920×1080 (1080p), and xl being 3840×2160 (4k). Size defaults to n.", name = "colour", arguments = "<hex colour> [size]")
+	public static void colour(CommandEvent event) throws CommandException {
+		if (event.getArgs().split(" ")[0].startsWith("#") && event.getArgs().split(" ")[0].length() == 7 && Main.isHexInteger(event.getArgs().split(" ")[0].substring(1)) || event.getArgs().split(" ")[0].length() == 6 && Main.isHexInteger(event.getArgs().split(" ")[0])) {
+			int width = 1080;
+			int height = 720;
+			String size = "n";
+			if (event.getArgs().split(" ").length > 1) switch (event.getArgs().split(" ")[1]) {
+			case "xl":
+				width = 3840;
+				height = 2160;
+				size = "xl";
+				break;
+			case "l":
+				width = 1920;
+				height = 1080;
+				size = "l";
+				break;
+			case "s":
+				width = 720;
+				height = 480;
+				size = "s";
+				break;
+			case "xs":
+				width = 480;
+				height = 360;
+				size = "xs";
+				break;
+			case "xxs":
+				width = 40;
+				height = 40;
+				size = "xxs";
+			default:
+				break; // defaults to n.
+			}
+			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g = image.createGraphics();
+			g.setColor(new Color(Integer.parseInt(event.getArgs().split(" ")[0].startsWith("#") ? event.getArgs().split(" ")[0].substring(1) : event.getArgs().split(" ")[0], 16)));
+			g.fillRect(0, 0, image.getWidth(), image.getHeight());
+			try {
+				ImageIO.write(image, "png", new File("data/tmp/colour_" + Main.colourToHex(g.getColor()) + "_" + size + ".png"));
+			} catch (IOException e) {
+				throw new CommandException("An unknown error occurred while writing the image.", e);
+			}
+			event.getChannel().sendFile(new File("data/tmp/colour_" + Main.colourToHex(g.getColor()) + "_" + size + ".png"), null).complete();
+			new File("data/tmp/colour_" + Main.colourToHex(g.getColor()) + "_" + size + ".png").delete();
+		} else Main.sendCommandHelp(event);
+	}
+
+	@Command(category = "Miscellaneous", help = "It's spelled colour, smh.", name = "color", arguments = "<hex colour>")
+	public static void color(CommandEvent event) throws CommandException {
+		event.reply("It's spelled colour, smh.");
+		colour(event);
+	}
+
 	@SubscribeEvent
 	public static void onFullyBooted() {
 		new Thread(() -> {
 			while (true) {
+				Main.sleep(30, TimeUnit.SECONDS);
 				for (Map<String, Object> reminder : new ArrayList<>(reminders)) {
 					User user = null;
 					if (System.currentTimeMillis() >= Main.getLongFromPossibleDouble(reminder.get("at")) && (user = Main.getUserById(reminder.get("owner").toString())) != null) {
@@ -469,7 +531,6 @@ public class Miscellaneous {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-				Main.sleep(30, TimeUnit.SECONDS);
 			}
 		}, "Reminder thread").start();
 	}
@@ -508,7 +569,7 @@ public class Miscellaneous {
 			if (!event.getMessage().getRawContent().isEmpty()) client.get().send(event.getMessage().getRawContent()).whenComplete((r, t) -> {
 			});
 			for (Attachment attachment : event.getMessage().getAttachments()) {
-				File attachmentFile = new File("data/tmp/attachment_" + Random.INSTANCE.randInt() + "_" + attachment.getFileName());
+				File attachmentFile = new File("data/tmp/attachment_" + random.randInt() + "_" + attachment.getFileName());
 				attachment.download(attachmentFile);
 				try {
 					client.get().send(attachmentFile, attachment.getFileName()).get(); // synchronous execution so the file can be deleted, it'd be open otherwise
