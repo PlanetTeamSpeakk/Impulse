@@ -166,7 +166,7 @@ public class Owner {
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Subcommand(help = "Set the bot's game.", name = "game", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "<game>", ownerCommand = true)
+	@Subcommand(help = "Set the bot's game.", name = "game", parent = "com.ptsmods.impulse.commands.Owner.set", arguments = "[game]", ownerCommand = true)
 	public static void setGame(CommandEvent event) {
 		Main.setGame(event.getArgs());
 		event.reply(event.getArgs().isEmpty() ? "The game has been reset." : "Successfully set the game to " + event.getArgs() + ".");
@@ -383,8 +383,7 @@ public class Owner {
 		output += "\n\n**CPU**:" +
 				"\n\tCores: **" + UsageMonitorer.getProcessorCount() +
 				"**\n\tUsed by process: **" + UsageMonitorer.getProcessCpuLoad() +
-				"**\n\tUsed by system: **" + UsageMonitorer.getSystemCpuLoad() +
-				"**\n\tAverage used by system last minute: **" + UsageMonitorer.getAverageSystemCpuLoad() + "**";
+				"**\n\tUsed by system: **" + UsageMonitorer.getSystemCpuLoad() + "**";
 		event.reply(output);
 		// @formatter:on
 	}

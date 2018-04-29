@@ -1,10 +1,7 @@
 package com.ptsmods.impulse.utils;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Actually random, unlike ThreadLocalRandom, smh. Oracle, pls.
@@ -13,24 +10,18 @@ import java.util.Map;
  */
 public class Random {
 
-	public static final Random						INSTANCE			= new Random();
-	private final Character[]						characters			= {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-	private static Map<String, Map<String, Double>>	seeds;
-	private boolean									shouldSeed			= false;
-	private boolean									shouldMakeNewSeed	= false;
-	private String									seedKey				= "";
-	private Class									callerClass			= null;
-	private long									lastCalledMillis	= 0;
+	public static final Random			INSTANCE		= new Random();
+	private static final Character[]	characters		= {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+	private boolean						shouldResetSeed	= true;
+	private java.util.Random			random			= null;
 
 	public Random() {
+		random = new java.util.Random();
 	}
 
-	static {
-		try {
-			seeds = DataIO.loadJsonOrDefault("data/random/seeds.json", Map.class, new HashMap());
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+	public Random(long seed) {
+		random = new java.util.Random(seed);
+		shouldResetSeed = false;
 	}
 
 	public int randInt() {
@@ -78,32 +69,8 @@ public class Random {
 	}
 
 	public double randDouble(double min, double max) {
-		return randDouble(min, max, true);
-	}
-
-	public double randDouble(double min, double max, boolean useSeeding) {
-		double rng = (Math.random() * max + min) * (min < 0D ? (int) (Math.random() * 10) >= 5 ? 1 : -1 : 1);
-		if (shouldSeed && useSeeding && System.currentTimeMillis() - lastCalledMillis <= 100) if (shouldMakeNewSeed) {
-			Map callerClassSeeds = seeds.get(callerClass.getName());
-			callerClassSeeds = callerClassSeeds == null ? new HashMap<>() : callerClassSeeds;
-			callerClassSeeds.put(seedKey, rng);
-			seeds.put(callerClass.getName(), callerClassSeeds);
-			try {
-				DataIO.saveJson(seeds, "data/random/seeds.json");
-			} catch (IOException e) {
-				throw new RuntimeException("There was an error while saving the seeding file.", e);
-			}
-		} else rng = (Double) ((Map) seeds.get(callerClass.getName())).get(seedKey);
-		if (useSeeding) { // just making sure the values are always reset when seeding is turned on.
-			shouldSeed = false;
-			shouldMakeNewSeed = false;
-			seedKey = "";
-			callerClass = null;
-			lastCalledMillis = 0;
-		}
-		if (rng > max) rng = max;
-		if (rng < min) rng = min;
-		return rng;
+		if (shouldResetSeed()) random = new java.util.Random();
+		return (random.nextDouble() * max + min) * (min < 0D ? (int) (random.nextDouble() * 10) >= 5 ? 1 : -1 : 1);
 	}
 
 	public float randFloat() {
@@ -153,28 +120,20 @@ public class Random {
 	/**
 	 * Seeds a key so the next time a method is called it returns the same value as
 	 * previous time.
-	 * A method of this class which returns a random value should be called within
-	 * 100 milliseconds to return a seeded value, otherwise it'll return a random
-	 * value.
 	 *
 	 * @param key
 	 */
 	public void seed(String key) {
-		callerClass = Main.getCallerClass();
-		if (!seeds.getOrDefault(callerClass.getName(), new HashMap<>()).containsKey(key) || seeds.getOrDefault(callerClass.getName(), new HashMap<>()).get(key) == null) {
-			shouldMakeNewSeed = true;
-			Map callerClassSeeds = seeds.getOrDefault(callerClass.getName(), new HashMap<>());
-			callerClassSeeds.put(key, 0D);
-			seeds.put(callerClass.getName(), callerClassSeeds);
-			try {
-				DataIO.saveJson(seeds, "data/random/seeds.json");
-			} catch (IOException e) {
-				Main.throwCheckedExceptionWithoutDeclaration(new IOException("There was an error while saving the seeding file.", e));
-			}
-		}
-		shouldSeed = true;
-		seedKey = key;
-		lastCalledMillis = System.currentTimeMillis();
+		random = new java.util.Random(Main.isLong(key) ? Long.parseLong(key) : key.hashCode());
+		shouldResetSeed(false);
+	}
+
+	public boolean shouldResetSeed() {
+		return shouldResetSeed;
+	}
+
+	public void shouldResetSeed(boolean bool) {
+		shouldResetSeed = bool;
 	}
 
 }

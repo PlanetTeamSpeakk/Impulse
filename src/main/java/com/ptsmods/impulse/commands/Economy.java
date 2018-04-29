@@ -223,7 +223,12 @@ public class Economy {
 			if (!cooldowns.containsKey(event.getGuild().getId())) cooldowns.put(event.getGuild().getId(), new HashMap());
 			Long cooldown = (Long) ((Map) cooldowns.get(event.getGuild().getId())).get(event.getAuthor().getId());
 			if (cooldown == null || System.currentTimeMillis() - cooldown >= Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCooldown")) * 1000) {
-				int credits = Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCredits"));
+				int credits;
+				try {
+					credits = Main.getIntFromPossibleDouble(((Map) settings.get(event.getGuild().getId())).get("paydayCredits"));
+				} catch (Exception e) {
+					credits = 360;
+				}
 				if (credits == -1) credits = 360; // for some reason it returns -1 instead of 360 in some occasions.
 				addBalance(event.getMember(), credits);
 				event.reply("It's payday :smile:, you have been given %s credits.", credits);

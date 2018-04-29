@@ -22,8 +22,8 @@ public class UsageMonitorer {
 
 	static {
 		Main.runAsynchronously(() -> {
-			while (true)
-				updateThreadCPUUsages();
+			// while (true)
+			updateThreadCPUUsages();
 		});
 	}
 
@@ -140,13 +140,13 @@ public class UsageMonitorer {
 		for (ThreadInfo info : threadInfos)
 			threadInitialCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()));
 		Main.sleep(1000);
-		long upTime = runtimeMxBean.getUptime();
+		long uptime = runtimeMxBean.getUptime();
 		Map<Long, Long> threadCurrentCPU = new HashMap<>();
 		threadInfos = threadMxBean.dumpAllThreads(false, false);
 		for (ThreadInfo info : threadInfos)
 			threadCurrentCPU.put(info.getThreadId(), threadMxBean.getThreadCpuTime(info.getThreadId()));
 		int nrCPUs = osMxBean.getAvailableProcessors();
-		long elapsedTime = upTime - initialUptime;
+		long elapsedTime = uptime - initialUptime;
 		for (ThreadInfo info : threadInfos) {
 			Long initialCPU = threadInitialCPU.get(info.getThreadId());
 			if (initialCPU != null) {

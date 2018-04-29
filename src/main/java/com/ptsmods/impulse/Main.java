@@ -149,7 +149,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 11;
-	public static final int							revision				= 1;
+	public static final int							revision				= 2;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -375,6 +375,7 @@ public class Main {
 						if (Lists.newArrayList(method.getParameterTypes()).equals(Lists.newArrayList(CommandEvent.class))) {
 							commands.add(method);
 							if (!categories.contains(method.getAnnotation(Command.class).category())) categories.add(method.getAnnotation(Command.class).category());
+							categories.sort(null);
 							commandIndex.put(method.getAnnotation(Command.class).name(), commands.size() - 1);
 						} else print(LogType.DEBUG, "Found a command that requires more than only a CommandEvent.", method.toString());
 					} else if (method.isAnnotationPresent(Subcommand.class)) if (Lists.newArrayList(method.getParameterTypes()).equals(Lists.newArrayList(CommandEvent.class)))
@@ -2072,6 +2073,8 @@ public class Main {
 		try {
 			return Class.forName(new Exception().getStackTrace()[3].getClassName(), false, ClassLoader.getSystemClassLoader());
 		} catch (ClassNotFoundException ignored) { // should not be possible
+			ignored.printStackTrace();
+			sendPrivateMessage(getOwner(), generateStackTrace(ignored));
 			return null;
 		}
 	}

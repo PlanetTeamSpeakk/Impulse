@@ -127,7 +127,8 @@ public class Marriage {
 					event.reply("I cannot remove the marriage role as it is higher than my highest role.");
 					return;
 				}
-				event.reply("Successfully removed the role between you and %s.", event.getGuild().getMemberById(other).getAsMention());
+				event.reply("Successfully removed the role between you and <@%s>.", other); // I am too lazy to check wether the other user is still in the guild, so I'll
+																							// just use this.
 				if (marriageChannel != null) marriageChannel.sendMessageFormat("%s divorced %s.", event.getAuthor().getAsMention(), event.getGuild().getMemberById(other).getAsMention()).queue();
 			}
 		} else Main.sendCommandHelp(event);
@@ -373,6 +374,8 @@ public class Marriage {
 			User user = Main.getUserFromInput(event.getMessage());
 			if (user == null)
 				event.reply("The given user could not be found.");
+			else if (user == event.getAuthor())
+				event.reply("The argument maritus cannot be you.");
 			else {
 				Map<String, Map<String, Object>> role = null;
 				for (Entry<String, Map<String, Map<String, Object>>> entry : new ArrayList<Entry<String, Map<String, Map<String, Object>>>>(marriages.getOrDefault(event.getGuild().getId(), new HashMap()).entrySet()))
@@ -431,8 +434,6 @@ public class Marriage {
 		event.sendCommandHelp();
 	}
 
-	// TODO: add a family children status command, a family children feed command, a
-	// family children clean command, etc.
 	@Subcommand(help = "List all your children and their status.", name = "list", parent = "com.ptsmods.impulse.commands.Marriage.familyChildren", guildOnly = true, arguments = "<maritus>")
 	public static void familyChildrenList(CommandEvent event) {
 		if (!event.argsEmpty()) {
@@ -447,7 +448,7 @@ public class Marriage {
 								String stats = "";
 								for (Map<String, Object> baby : ((Map<String, Map<String, Object>>) entry.getValue().get("children")).values()) {
 									// @formatter:off
-									String age = (System.currentTimeMillis() - Main.getLongFromPossibleDouble(baby.get("created_at"))) / 1000 / 60 / 60/ 24 + " days";
+									String age = (System.currentTimeMillis() - Main.getLongFromPossibleDouble(baby.get("created_at"))) / 1000 / 60 / 60 / 24 + " days";
 									stats += baby.get("name") + Main.multiplyString(" ", 15 - baby.get("name").toString().length()) +
 											(baby.get("gender").equals("m") ? "Male  " : "Female") + " " +
 											age + Main.multiplyString(" ", 11 - age.length()) +
@@ -560,8 +561,8 @@ public class Marriage {
 			else {
 				int fatigue = Main.getIntFromPossibleDouble(child.get("fatigue"));
 				Random.INSTANCE.randInt(10, 20);
-				if (fatigue == 100)
-					event.reply("You cannot heal your child now as there's no need to.");
+				if (fatigue == 100 && !(boolean) child.get("sleeping"))
+					event.reply("You cannot take your child to bed atm as there's no need to.");
 				else if ((boolean) child.get("sleeping")) {
 					child.put("sleeping", false);
 					try {
@@ -635,23 +636,18 @@ public class Marriage {
 			if (child == null)
 				event.reply("The given child could not be found.");
 			else {
-				int satisfaction = Main.getIntFromPossibleDouble(child.get("satisfaction"));
+				int euphoria = Main.getIntFromPossibleDouble(child.get("euphoria"));
 				int i = Random.INSTANCE.randInt(5, 10);
-				if (satisfaction + i >= 100)
-					event.reply("You cannot feed your child now as there's no need to.");
-				else if (!Economy.hasAccount(event.getMember()))
-					event.reply("You cannot feed your child as you don't have a bank account.");
-				else if (!Economy.hasEnoughBalance(event.getMember(), 50))
-					event.reply("You cannot feed your child as you don't have enough money.");
+				if (euphoria + i >= 100)
+					event.reply("You cannot play with your child now as there's no need to.");
 				else {
-					Economy.subtractBalance(event.getMember(), 50);
-					child.put("satisfaction", satisfaction + i);
+					child.put("euphoria", euphoria + i);
 					try {
 						DataIO.saveJson(marriages, "data/marriage/marriages.json");
 					} catch (IOException e) {
 						throw new CommandException(e);
 					}
-					event.reply("Successfully fed your child!");
+					event.reply("Aww %s looks so happy!", child.get("gender").equals("m") ? "he" : "she");
 				}
 			}
 		} else Main.sendCommandHelp(event);

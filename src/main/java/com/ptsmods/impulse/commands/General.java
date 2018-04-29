@@ -106,12 +106,17 @@ public class General {
 		else event.reply(Main.flipString(event.getArgs()));
 	}
 
+	@Command(category = "General", help = "How does this work?", name = "help!", arguments = "[command or categoy]", sendTyping = false, hidden = true)
+	public static void helpExclamationMark(CommandEvent event) {
+		help(event);
+	}
+
 	@Command(category = "General", help = "How does this work?", name = "help", arguments = "[command or category]", sendTyping = false)
 	public static void help(CommandEvent event) {
 		if (event.getArgs().isEmpty()) {
 			List<String> msgs = new ArrayList<>();
 			String msg = "**" + event.getJDA().getSelfUser().getName() + "** commands:\n\n";
-			for (String category : Main.sort(Main.getCategories())) {
+			for (String category : Main.getCategories()) {
 				msg += "**" + category + "**\n\t";
 				for (String cmdName : Main.sort(Main.getCommandNames())) {
 					Command cmd = Main.getCommandByName(cmdName).getAnnotation(Command.class);
@@ -593,10 +598,10 @@ public class General {
 		else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "General", help = "Generates a name for the given gender.\nGender can either be male, female, or Random.INSTANCE.\nType can either be first, last, or both.", name = "genname", arguments = "[gender] [type]")
-	public static void genName(CommandEvent event) {
+	@Command(category = "General", help = "Generates a name for the given gender.\nGender can either be male, female, or random.\nType can either be first, last, or both.", name = "genname", arguments = "[gender] [type]")
+	public static void genname(CommandEvent event) {
 		int type = event.argsEmpty() || event.getArgs().split(" ").length < 2 || event.getArgs().split(" ")[1].equalsIgnoreCase("both") ? 0 : event.getArgs().split(" ")[1].equalsIgnoreCase("last") ? 2 : 1;
-		Gender gender = event.argsEmpty() || event.getArgs().split(" ")[0].equalsIgnoreCase("Random.INSTANCE") ? Random.INSTANCE.choice(Gender.values()) : event.getArgs().split(" ")[0].equalsIgnoreCase("female") ? Gender.FEMALE : Gender.MALE;
+		Gender gender = event.argsEmpty() || event.getArgs().split(" ")[0].equalsIgnoreCase("random") ? Random.INSTANCE.choice(Gender.values()) : event.getArgs().split(" ")[0].equalsIgnoreCase("female") ? Gender.FEMALE : Gender.MALE;
 		Name name = new NameGenerator().generateName(gender);
 		event.reply("Gender: **%s**\nName: **%s**", name.getGender().name(), type == 0 ? name.toString() : type == 1 ? name.getFirstName() : name.getLastName());
 	}
