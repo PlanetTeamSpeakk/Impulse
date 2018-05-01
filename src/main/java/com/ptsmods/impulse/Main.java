@@ -149,7 +149,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 11;
-	public static final int							revision				= 2;
+	public static final int							revision				= 3;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;

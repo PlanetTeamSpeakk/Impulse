@@ -1035,28 +1035,35 @@ public class Moderation {
 		}
 	}
 
-	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 99.\n\nKeep in mind that messages older than 2 weeks cannot be massdeleted.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
+	@Command(category = "Moderation", help = "Mass-delete messages.\nArg 'amount' can only be a maximum of 100.\n\nKeep in mind that messages older than 2 weeks cannot be massdeleted.", name = "purge", botPermissions = {Permission.MESSAGE_MANAGE, Permission.MESSAGE_HISTORY}, userPermissions = {Permission.MESSAGE_MANAGE}, guildOnly = true, arguments = "<amount>")
 	public static void purge(CommandEvent event) {
 		if (!event.argsEmpty() && Main.isInteger(event.getArgs()) && Integer.parseInt(event.getArgs()) < 100 && Integer.parseInt(event.getArgs()) > 0) {
+			event.getMessage().delete().queue();
 			long minEpoch = System.currentTimeMillis() / 1000 - 86400 * 14; // current time - 2 weeks
 			List<String> ids = new ArrayList();
-			event.getTextChannel().getHistory().retrievePast(Integer.parseInt(event.getArgs()) + 1).complete().forEach(m -> {
+			event.getTextChannel().getHistory().retrievePast(Integer.parseInt(event.getArgs())).complete().forEach(m -> {
 				if (m.getCreationTime().toEpochSecond() > minEpoch) ids.add(m.getId());
 			});
-			event.getTextChannel().deleteMessagesByIds(ids).queue();
-			event.reply("Successfully deleted %s messages.", ids.size() - 1);
+			if (ids.size() > 2) {
+				event.getTextChannel().deleteMessagesByIds(ids).queue();
+				event.reply("Successfully deleted %s messages.", ids.size() - 1);
+			} else event.reply("Could not find 2 or more messages of at most 2 weeks old.");
 		} else Main.sendCommandHelp(event);
 	}
 
-	@Command(category = "Moderation", help = "Moves all users connected to the 'from' channel to the 'to' channel.", name = "massmove", arguments = "<from> <to>", userPermissions = {Permission.VOICE_MOVE_OTHERS}, botPermissions = {Permission.VOICE_MOVE_OTHERS})
+	@Command(category = "Moderation", help = "Moves all users connected to the 'from' channel to the 'to' channel.\n\nSplit with a semi-colon. (;)", name = "massmove", arguments = "<from>;<to>", userPermissions = {Permission.VOICE_MOVE_OTHERS}, botPermissions = {Permission.VOICE_MOVE_OTHERS})
 	public static void massmove(CommandEvent event) {
-		if (!event.argsEmpty() && event.getArgs().split(" ").length >= 2) {
-			VoiceChannel from = Main.getVoiceChannelByName(event.getGuild(), event.getArgs().split(" ")[0], true);
-			VoiceChannel to = Main.getVoiceChannelByName(event.getGuild(), event.getArgs().split(" ")[1], true);
-			int users = from.getMembers().size();
-			for (Member member : from.getMembers())
-				event.getGuild().getController().moveVoiceMember(member, to).queue();
-			event.reply("Successfully moved %s user%s.", users, users == 1 ? "" : "s");
+		if (!event.argsEmpty() && event.getArgs().split(";").length >= 2) {
+			VoiceChannel from = Main.getVoiceChannelByName(event.getGuild(), event.getArgs().split(";")[0], true);
+			VoiceChannel to = Main.getVoiceChannelByName(event.getGuild(), event.getArgs().split(";")[1], true);
+			if (from == null || to == null)
+				event.reply("Could not find a voice channel with the name '%s'.", event.getArgs().split(";")[from == null ? 0 : 1]);
+			else {
+				int users = from.getMembers().size();
+				for (Member member : from.getMembers())
+					event.getGuild().getController().moveVoiceMember(member, to).queue();
+				event.reply("Successfully moved %s user%s.", users, users == 1 ? "" : "s");
+			}
 		} else Main.sendCommandHelp(event);
 	}
 

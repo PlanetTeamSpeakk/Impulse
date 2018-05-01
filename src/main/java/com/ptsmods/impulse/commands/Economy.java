@@ -238,9 +238,7 @@ public class Economy {
 	}
 
 	public static boolean hasAccount(Member member) {
-		if (!bank.containsKey(member.getGuild().getId()) || !((Map) bank.get(member.getGuild().getId())).containsKey(member.getUser().getId()))
-			return false;
-		else return true;
+		return bank.containsKey(member.getGuild().getId()) && ((Map) bank.get(member.getGuild().getId())).containsKey(member.getUser().getId());
 	}
 
 	public static int getBalance(Member member) throws UserHasNoBankAccountException {

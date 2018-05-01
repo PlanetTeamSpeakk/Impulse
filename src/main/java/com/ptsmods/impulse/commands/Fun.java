@@ -705,6 +705,9 @@ public class Fun {
 				if (e.getMessage() != null && e.getMessage().startsWith("Server returned HTTP response code:")) {
 					event.reply("The given image could not be downloaded because it returned a **%s** error, you could try downloading it and uploading it to <https://cdn.impulsebot.com> and use that URL instead.", e.getMessage().substring(36, 39));
 					return;
+				} else if (e.getMessage() != null && e.getMessage().toLowerCase().startsWith("no protocol")) {
+					event.reply("Could not find a protocol in the given URL, make sure it starts with http://, https://, ftp://, etc...");
+					return;
 				}
 				throw new CommandException("An unknown error occurred while drawing the top- and bottomtext.", e);
 			} catch (NullPointerException e) {

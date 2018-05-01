@@ -26,7 +26,6 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
@@ -108,7 +107,7 @@ public class Marriage {
 			else {
 				Role marriageRole = event.getGuild().getRoleById(event.getArgs().split(" ")[0]);
 				TextChannel marriageChannel = getMarriageChannel(event.getGuild());
-				if (!event.getGuild().getSelfMember().getRoles().get(0).canInteract(event.getGuild().getRoleById(event.getArgs().split(" ")[0]))) {
+				if (marriageRole != null && !event.getGuild().getSelfMember().getRoles().get(0).canInteract(event.getGuild().getRoleById(event.getArgs().split(" ")[0]))) {
 					event.reply("I cannot delete their role as it's higher than my highest role.");
 					return;
 				}
@@ -121,15 +120,15 @@ public class Marriage {
 				} catch (IOException e) {
 					throw new CommandException("An unknown error occurred while saving the data file.", e);
 				}
-				try {
+				if (marriageRole != null) try {
 					marriageRole.delete().queue();
 				} catch (HierarchyException e) {
 					event.reply("I cannot remove the marriage role as it is higher than my highest role.");
 					return;
 				}
-				event.reply("Successfully removed the role between you and <@%s>.", other); // I am too lazy to check wether the other user is still in the guild, so I'll
-																							// just use this.
-				if (marriageChannel != null) marriageChannel.sendMessageFormat("%s divorced %s.", event.getAuthor().getAsMention(), event.getGuild().getMemberById(other).getAsMention()).queue();
+				event.reply("Successfully divorced you and <@%s>.", other); // I am too lazy to check whether the other user is still in the guild, so I'll
+																			// just do this instead.
+				if (marriageChannel != null && marriageChannel.canTalk()) marriageChannel.sendMessageFormat("%s divorced <@%s>.", event.getAuthor().getAsMention(), other).queue();
 			}
 		} else Main.sendCommandHelp(event);
 	}
@@ -174,7 +173,7 @@ public class Marriage {
 						}
 						event.getGuild().getRoleById(role.getKey()).delete().queue();
 						TextChannel marriageChannel = getMarriageChannel(event.getGuild());
-						if (marriageChannel != null) marriageChannel.sendMessageFormat("%s forcibly divorced %s and %s.").queue();
+						if (marriageChannel != null && marriageChannel.canTalk()) marriageChannel.sendMessageFormat("%s forcibly divorced %s and %s.").queue();
 						event.reply("The marriage role between **%s** and **%s** has been removed.", Main.str(members.get(0)), Main.str(members.get(1)));
 						return;
 					}
@@ -189,7 +188,7 @@ public class Marriage {
 			Member mem1 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(0));
 			Member mem2 = event.getGuild().getMember(event.getMessage().getMentionedUsers().get(1));
 			if (!settings.containsKey(event.getGuild().getId())) settings.put(event.getGuild().getId(), Main.newHashMap(new String[] {"marryLimit", "disabled"}, new Object[] {-1, false}));
-			MessageChannel marriageChannel = getMarriageChannel(event.getGuild());
+			TextChannel marriageChannel = getMarriageChannel(event.getGuild());
 			boolean isMarriedToMember = false;
 			if (mem1.equals(mem2))
 				event.reply("People can't marry themselves, that would be weird wouldn't it?");
@@ -212,7 +211,7 @@ public class Marriage {
 					role.delete().queue();
 					throw new CommandException("The data file could not be saved, no one was actually married.");
 				}
-				if (marriageChannel != null) marriageChannel.sendMessageFormat("%s was forced to marry %s.", mem2.getAsMention(), mem1.getAsMention()).queue();
+				if (marriageChannel != null && marriageChannel.canTalk() && marriageChannel.canTalk()) marriageChannel.sendMessageFormat("%s was forced to marry %s.", mem2.getAsMention(), mem1.getAsMention()).queue();
 				try {
 					Main.sendPrivateMessage(mem1.getUser(), String.format("**%s#%s** forced you to marry **%s#%s** in **%s**.\nYour divorce id is `%s`.\nTo divorce type `%sdivorce %s` in %s.", event.getAuthor().getName(), event.getAuthor().getDiscriminator(), mem2.getUser().getName(), mem2.getUser().getDiscriminator(), event.getGuild().getName(), role.getId(), Main.getPrefix(event.getGuild()), role.getId(), event.getGuild().getName()));
 				} catch (Throwable e) {
@@ -244,7 +243,7 @@ public class Marriage {
 					if (role.getName().contains(heart) && role.getColor() != null && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRolesOfAuthor.add(role);
 				for (Role role : member.getRoles())
 					if (role.getName().contains(heart) && role.getColor() != null && role.getColor().equals(new Color(Integer.parseInt("FF00EE", 16)))) marriageRolesOfCrush.add(role);
-				MessageChannel marriageChannel = getMarriageChannel(event.getGuild());
+				TextChannel marriageChannel = getMarriageChannel(event.getGuild());
 				boolean isMarriedToMember = false;
 				for (Role role : marriageRolesOfAuthor)
 					if (role.getName().contains(member.getUser().getName())) isMarriedToMember = true;
@@ -285,7 +284,7 @@ public class Marriage {
 							role.delete().queue();
 							throw new CommandException("The data file could not be saved, no one was actually married.");
 						}
-						if (marriageChannel != null) marriageChannel.sendMessageFormat("%s married %s, congratulations!", event.getAuthor().getAsMention(), member.getAsMention()).queue();
+						if (marriageChannel != null && marriageChannel.canTalk()) marriageChannel.sendMessageFormat("%s married %s, congratulations!", event.getAuthor().getAsMention(), member.getAsMention()).queue();
 						try {
 							Main.sendPrivateMessage(event.getAuthor(), String.format("You married **%s#%s** in **%s**.\nYour divorce id is `%s`.\nTo divorce type `%sdivorce %s` in %s.", member.getUser().getName(), member.getUser().getDiscriminator(), event.getGuild().getName(), role.getId(), Main.getPrefix(event.getGuild()), role.getId(), event.getGuild().getName()));
 						} catch (Throwable e) {
@@ -628,9 +627,11 @@ public class Marriage {
 			try {
 				child = getChild(event);
 			} catch (Exception e) {
-				if (e.getMessage().equals("not married"))
-					event.reply("You're not married with that person.");
-				else if (e.getMessage().equals("same user")) event.reply("The argument maritus cannot be you.");
+				if (e.getMessage() != null) {
+					if (e.getMessage().equals("not married"))
+						event.reply("You're not married with that person.");
+					else if (e.getMessage().equals("same user")) event.reply("The argument maritus cannot be you.");
+				} else throw new CommandException("An unknown error occurred while getting the child connected to that name.", e);
 				return;
 			}
 			if (child == null)

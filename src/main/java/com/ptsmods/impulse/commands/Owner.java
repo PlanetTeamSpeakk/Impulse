@@ -319,19 +319,16 @@ public class Owner {
 
 	@Command(category = "Owner", help = "Shows you the top 10 biggest guilds this bot is in.", name = "toptenguilds")
 	public static void topTenGuilds(CommandEvent event) {
-		Guild current = null;
-		List<Guild> top = new ArrayList();
-		for (int i : Main.range(Main.getGuilds().size() > 10 ? 10 : Main.getGuilds().size())) {
-			for (Guild guild : Main.getGuilds())
-				if (!top.contains(guild) && (current == null || guild.getMembers().size() > current.getMembers().size())) current = guild;
-			top.add(current);
-			current = null;
-		}
+		List<Guild> guilds = Main.getGuilds();
+		guilds.sort((guild1, guild2) -> {
+			return guild1.getMembers().size() > guild2.getMembers().size() ? -1 : guild2.getMembers().size() > guild1.getMembers().size() ? 1 : 0;
+		});
+		guilds = guilds.subList(0, guilds.size() > 10 ? 10 : guilds.size());
 		int maxLength = 6;
-		for (Guild guild : top)
-			if (guild.getName().length() > maxLength) maxLength = guild.getName().length();
+		for (Guild guild : guilds)
+			if (guild.getName().length() > maxLength) maxLength = guild.getName().length() + 1;
 		String msg = "```\nGuild" + Main.multiplyString(" ", maxLength - 5) + "Members\n";
-		for (Guild guild : top)
+		for (Guild guild : guilds)
 			msg += "\n" + guild.getName() + Main.multiplyString(" ", maxLength - guild.getName().length()) + guild.getMembers().size();
 		event.reply(msg + "```");
 	}

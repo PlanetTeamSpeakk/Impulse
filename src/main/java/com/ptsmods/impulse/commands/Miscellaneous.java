@@ -453,7 +453,7 @@ public class Miscellaneous {
 					break;
 				}
 			}
-		} catch (StatusException e) {
+		} catch (StatusException | NumberFormatException e) { // NumberFormatExceptions are thrown because of a bug in the Akiwrapper library.
 			event.reply("You have beaten me. :pensive:");
 		} catch (Exception e) {
 			throw new CommandException("An unkown error occurred while playing with Akinator.", e);

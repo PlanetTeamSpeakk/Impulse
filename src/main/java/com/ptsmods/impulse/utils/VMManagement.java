@@ -5,11 +5,17 @@ import java.util.List;
 import sun.management.counter.Counter;
 
 /**
- * This class wraps an instance of {@link sun.management.VMManagement} to be
+ * This class wraps an instance of {@link sun.management.VMManagement
+ * VMManagement} to be
  * used by anyone without the use of Reflection.<br>
- * The {@link sun.management.VMManagementImpl} class isn't public so that cannot
- * be used.
- * 
+ * The {@link sun.management.VMManagementImpl VMManagementImpl} class isn't
+ * public so that cannot
+ * be used.<br>
+ * <br>
+ * The original {@link sun.management.VMManagement VMMmanagement class} is
+ * mainly used by MX beans, so to avoid the use of loads of different MX beans,
+ * you can just use this class instead.
+ *
  * @author PlanetTeamSpeak
  */
 public class VMManagement implements sun.management.VMManagement {
@@ -25,7 +31,8 @@ public class VMManagement implements sun.management.VMManagement {
 			actualVmm = (sun.management.VMManagement) Main.getInstanceWithoutConstructor(Class.forName("sun.management.VMManagementImpl"));
 		} catch (Exception e) {
 			Main.throwCheckedExceptionWithoutDeclaration(e);
-			throw new RuntimeException(e);
+			throw new RuntimeException(e); // won't be reached, but since the previously used method doesn't declare that
+											// it can throw an error, this has to be here.
 		}
 	}
 
