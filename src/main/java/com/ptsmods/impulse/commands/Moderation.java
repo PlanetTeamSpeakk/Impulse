@@ -144,7 +144,7 @@ public class Moderation {
 			throw new RuntimeException("An unknown error occurred while loading the loggedMessages.json file.", e);
 		}
 		for (String message : new ArrayList<>(loggedMessages.keySet()))
-			if (System.currentTimeMillis() - (double) loggedMessages.get(message).get("sent") > 1000 * 60 * 60 * 24 * 7 * 2) loggedMessages.remove(message); // removing messages older than 2 weeks.
+			if (System.currentTimeMillis() - ((Number) loggedMessages.get(message).get("sent")).longValue() > 1000 * 60 * 60 * 24 * 7 * 2) loggedMessages.remove(message); // removing messages older than 2 weeks.
 		try {
 			DataIO.saveJson(loggedMessages, "data/mod/loggedMessages.json");
 		} catch (IOException e) {

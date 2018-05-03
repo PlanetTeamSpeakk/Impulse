@@ -149,7 +149,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 11;
-	public static final int							revision				= 3;
+	public static final int							revision				= 4;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -243,7 +243,7 @@ public class Main {
 		useSwing = argsList.contains("-useSwing") || argsList.contains("-noJfx");
 		if (eclipse) {
 			int lines = 0;
-			for (File file : getFilesInDir(new File("src/main/java")))
+			for (File file : getFilesInDir(new File("src/main/java/com/ptsmods/impulse/")))
 				try {
 					lines += Files.readAllLines(file.toPath()).size();
 				} catch (IOException e) {
@@ -265,7 +265,7 @@ public class Main {
 			main0(args);
 		} catch (Throwable e) {
 			try {
-				print(LogType.ERROR, "An unknown error occured, please contact PlanetTeamSpeak#4157.", e);
+				print(LogType.ERROR, "An unknown error occurred, please contact PlanetTeamSpeak#4157.", e);
 			} catch (Throwable e1) {
 				System.err.println("An unknown error occurred, please contact PlanetTeamSpeak#4157 " + e1 + "\n" + e);
 			}
@@ -598,30 +598,29 @@ public class Main {
 	}
 
 	public static User getUserFromInput(Message input) {
-		try {
-			return !input.getMentionedUsers().isEmpty() ? input.getMentionedUsers().get(0) : input.getContent().startsWith(globalPrefix) ? input.getGuild().getMembersByName(getUsernameFirstArg(input), true).get(0).getUser() : null;
-		} catch (Throwable e) {
-			return null;
-		}
+		User user = null;
+		for (int i = 0; i < input.getContent().split(" ").length; i++)
+			try {
+				if ((user = !input.getMentionedUsers().isEmpty() ? input.getMentionedUsers().get(0) : getUsernameAtArg(input.getContent(), input.getGuild(), i) != null && !input.getGuild().getMembersByName(getUsernameAtArg(input.getContent(), input.getGuild(), i), true).isEmpty() ? input.getGuild().getMembersByName(getUsernameAtArg(input.getContent(), input.getGuild(), i), true).get(0).getUser() : null) != null) return user;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		return null;
 	}
 
 	public static Member getMemberFromInput(Message input) {
 		return getUserFromInput(input) == null ? null : input.getGuild().getMember(getUserFromInput(input));
 	}
 
-	public static String getUsernameFirstArg(Message input) {
-		return getUsernameFromArgs(removeArg(input.getContent().split(" "), 0), input);
+	public static String getUsernameAtArg(String string, Guild guild, int arg) {
+		return getUsernameFromArgs(removeArgs(string.split(" "), Arrays.stream(new int[arg]).boxed().toArray(Integer[]::new)), guild);
 	}
 
-	public static String getUsernameSecondArg(Message input) {
-		return getUsernameFromArgs(removeArgs(input.getContent().split(" "), 0, 1), input);
-	}
-
-	private static String getUsernameFromArgs(String[] args, Message input) {
+	private static String getUsernameFromArgs(String[] args, Guild guild) {
 		String username = "";
 		for (String arg : args) {
 			username += arg + " ";
-			if (!input.getGuild().getMembersByName(username.trim(), true).isEmpty()) return username.trim();
+			if (!guild.getMembersByName(username.trim(), true).isEmpty()) return username.trim();
 		}
 		return null;
 	}
@@ -738,7 +737,7 @@ public class Main {
 	/**
 	 * Equivalent to calling
 	 * {@link com.ptsmods.impulse.Main#sendCommandHelp(MessageChannel, CommandEvent, Method, String)
-	 * Main#sendCommandHelp(event.getChannel(), event, cmd, null)}
+	 * Main#sendCommandHelp(channel, event, event.getCommand(), extraMsg)}
 	 */
 	public static Message sendCommandHelp(MessageChannel channel, CommandEvent event, String extraMsg) {
 		return sendCommandHelp(channel, event, event.getCommand(), extraMsg);
@@ -2517,7 +2516,7 @@ public class Main {
 		embed.setTitle(shards.get(0).getSelfUser().getName());
 		embed.setColor(new Color(Random.INSTANCE.randInt(256 * 256 * 256)));
 		embed.setThumbnail("https://cdn.impulsebot.com/3mR7g3RC0O.png");
-		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. " + "If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") " + "and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\")" + ", check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), " + "and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
+		embed.setDescription("This bot is an instance of Impulse, a Discord Bot written in Java by PlanetTeamSpeak using JDA. If you want your own bot with all these commands, make sure to check out [the GitHub page](https://github.com/PlanetTeamSpeakk/Impulse \"Yes, it's open source.\") and don't forget to join [the Discord Server](https://discord.gg/tzsmCyk \"Yes, I like advertising.\"), check out [the website](https://impulsebot.com \"Pls, just do it. ;-;\"), and send me all your cash on [my Patreon page](https://patreon.com/PlanetTeamSpeak \"Pls just give me your money.\").");
 		embed.setFooter("PS, the color used is #" + Main.colourToHex(embed.build().getColor()) + ".", null);
 		return embed.build();
 	}
@@ -2534,6 +2533,26 @@ public class Main {
 				files.addAll(getFilesInDir(file));
 			else files.add(file);
 		return Collections.unmodifiableList(files);
+	}
+
+	public static Integer[] intArrayToIntegerArray(int... array) {
+		return Arrays.stream(array).boxed().toArray(Integer[]::new);
+	}
+
+	public static Long[] longArrayToLongArray(long... array) {
+		return Arrays.stream(array).boxed().toArray(Long[]::new);
+	}
+
+	public static Float[] floatArrayToFloatArray(long... array) {
+		return Arrays.stream(array).boxed().toArray(Float[]::new);
+	}
+
+	public static Double[] doubleArrayToDoubleArray(double... array) {
+		return Arrays.stream(array).boxed().toArray(Double[]::new);
+	}
+
+	public static boolean isWholeNumber(double d) {
+		return d - (long) d == 0;
 	}
 
 	public enum TimeType {

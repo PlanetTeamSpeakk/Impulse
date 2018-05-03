@@ -45,6 +45,7 @@ public class Marriage {
 			throw new RuntimeException("An unknown error occurred while loading the data file.", e);
 		}
 		Main.runAsynchronously(() -> {
+			Main.sleep(10000); // GSON is probably still loading the marriages map in the background.
 			while (true) {
 				for (Entry<String, Map<String, Map<String, Object>>> guild : new HashMap<>(marriages).entrySet())
 					for (Entry<String, Map<String, Object>> role : guild.getValue().entrySet())
@@ -56,14 +57,16 @@ public class Marriage {
 							int euphoria = Main.getIntFromPossibleDouble(child.get("euphoria"));
 							boolean sleeping = (boolean) child.get("sleeping");
 							Random Random = com.ptsmods.impulse.utils.Random.INSTANCE; // just so it looks like the methods are static.
-							int max = 2;
+							int max = 15;
 							if (!sleeping) {
 								if (Random.randInt(max) == 0 && satisfaction > 0) satisfaction -= 1;
 								if (Random.randInt(max) == 0 && (satisfaction < 40 || fatigue > 60 || defilement > 60) && health > 0) health -= 1;
 								if ((Random.randInt(max) == 0 || Random.randInt(max / 2) == 0 && euphoria < 40) && fatigue < 100) fatigue += 1;
 								if (Random.randInt(max) == 0 && defilement < 100) defilement += 1;
 								if (Random.randInt(max) == 0 && euphoria > 0) euphoria -= 1;
-							} else if (Random.randInt(max) == 0 && fatigue > 0) fatigue -= 1;
+							} else if (fatigue == 0)
+								sleeping = false;
+							else if (Random.randInt(max) == 0 && fatigue > 0) fatigue -= 1;
 							if (health == 0) {
 								for (String id : (List<String>) role.getValue().get("owners"))
 									if (Main.getUserById(id) != null) Main.sendPrivateMessage(Main.getUserById(id), "Your child **%s** has deceased as you did not care for %s. I'm very sorry.", child.get("name"), child.get("gender").equals("m") ? "him" : "her");
@@ -74,6 +77,7 @@ public class Marriage {
 							child.put("fatigue", fatigue);
 							child.put("defilement", defilement);
 							child.put("euphoria", euphoria);
+							child.put("sleeping", sleeping);
 						}
 				try {
 					DataIO.saveJson(marriages, "data/marriage/marriages.json");
@@ -476,9 +480,13 @@ public class Marriage {
 			try {
 				child = getChild(event);
 			} catch (Exception e) {
-				if (e.getMessage().equals("not married"))
-					event.reply("You're not married with that person.");
-				else if (e.getMessage().equals("same user")) event.reply("The argument maritus cannot be you.");
+				if (e.getMessage() != null) {
+					if (e.getMessage().equals("not married"))
+						event.reply("You're not married with that person.");
+					else if (e.getMessage().equals("same user"))
+						event.reply("The argument maritus cannot be you.");
+					else if (e.getMessage().equals("user not found")) event.reply("The given user could not be found.");
+				} else throw new CommandException("An unknown error occurred while getting the child connected to that name.", e);
 				return;
 			}
 			if (child == null)
@@ -513,9 +521,13 @@ public class Marriage {
 			try {
 				child = getChild(event);
 			} catch (Exception e) {
-				if (e.getMessage().equals("not married"))
-					event.reply("You're not married with that person.");
-				else if (e.getMessage().equals("same user")) event.reply("The argument maritus cannot be you.");
+				if (e.getMessage() != null) {
+					if (e.getMessage().equals("not married"))
+						event.reply("You're not married with that person.");
+					else if (e.getMessage().equals("same user"))
+						event.reply("The argument maritus cannot be you.");
+					else if (e.getMessage().equals("user not found")) event.reply("The given user could not be found.");
+				} else throw new CommandException("An unknown error occurred while getting the child connected to that name.", e);
 				return;
 			}
 			if (child == null)
@@ -550,9 +562,13 @@ public class Marriage {
 			try {
 				child = getChild(event);
 			} catch (Exception e) {
-				if (e.getMessage().equals("not married"))
-					event.reply("You're not married with that person.");
-				else if (e.getMessage().equals("same user")) event.reply("The argument maritus cannot be you.");
+				if (e.getMessage() != null) {
+					if (e.getMessage().equals("not married"))
+						event.reply("You're not married with that person.");
+					else if (e.getMessage().equals("same user"))
+						event.reply("The argument maritus cannot be you.");
+					else if (e.getMessage().equals("user not found")) event.reply("The given user could not be found.");
+				} else throw new CommandException("An unknown error occurred while getting the child connected to that name.", e);
 				return;
 			}
 			if (child == null)
@@ -590,9 +606,13 @@ public class Marriage {
 			try {
 				child = getChild(event);
 			} catch (Exception e) {
-				if (e.getMessage().equals("not married"))
-					event.reply("You're not married with that person.");
-				else if (e.getMessage().equals("same user")) event.reply("The argument maritus cannot be you.");
+				if (e.getMessage() != null) {
+					if (e.getMessage().equals("not married"))
+						event.reply("You're not married with that person.");
+					else if (e.getMessage().equals("same user"))
+						event.reply("The argument maritus cannot be you.");
+					else if (e.getMessage().equals("user not found")) event.reply("The given user could not be found.");
+				} else throw new CommandException("An unknown error occurred while getting the child connected to that name.", e);
 				return;
 			}
 			if (child == null)
@@ -630,7 +650,9 @@ public class Marriage {
 				if (e.getMessage() != null) {
 					if (e.getMessage().equals("not married"))
 						event.reply("You're not married with that person.");
-					else if (e.getMessage().equals("same user")) event.reply("The argument maritus cannot be you.");
+					else if (e.getMessage().equals("same user"))
+						event.reply("The argument maritus cannot be you.");
+					else if (e.getMessage().equals("user not found")) event.reply("The given user could not be found.");
 				} else throw new CommandException("An unknown error occurred while getting the child connected to that name.", e);
 				return;
 			}
@@ -661,9 +683,8 @@ public class Marriage {
 			maritus = event.getMessage().getMentionedUsers().get(0);
 			mentioned = true;
 		} else {
-			int i = 1;
-			String[] args = event.getMessage().getRawContent().split(" ");
-			while (i < args.length) {
+			String[] args = event.getArgs().split(" ");
+			for (int i = 1; i < args.length; i++) {
 				String name = "";
 				for (int x : Main.range(i))
 					name += args[x] + " ";
@@ -673,11 +694,12 @@ public class Marriage {
 				}
 			}
 		}
+		if (maritus == null) throw new Exception("user not found");
 		if (maritus == event.getAuthor()) throw new Exception("same user");
 		if (!isMarried(event.getAuthor(), maritus, event.getGuild())) throw new Exception("not married");
 		String name = "";
 		if (!mentioned)
-			name = Main.join(Main.removeArgs(event.getArgs().split(" "), Arrays.stream(new int[maritus.getName().split(" ").length - 1]).boxed().toArray(Integer[]::new)));
+			name = Main.join(Main.removeArgs(event.getArgs().split(" "), Arrays.stream(new int[maritus.getName().split(" ").length]).boxed().toArray(Integer[]::new)));
 		else name = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
 		for (Entry<String, Map<String, Map<String, Object>>> guild : marriages.entrySet())
 			for (Entry<String, Map<String, Object>> role : guild.getValue().entrySet())
@@ -687,6 +709,7 @@ public class Marriage {
 	}
 
 	private static final boolean isMarried(User user1, User user2, Guild guild) {
+		if (user1 == null || user2 == null || guild == null) return false;
 		for (Entry<String, Map<String, Map<String, Object>>> entry : new ArrayList<Entry<String, Map<String, Map<String, Object>>>>(marriages.getOrDefault(guild.getId(), new HashMap()).entrySet()))
 			if (((List<String>) entry.getValue().get("owners")).contains(user1.getId()) && ((List<String>) entry.getValue().get("owners")).contains(user2.getId())) return true;
 		return false;
