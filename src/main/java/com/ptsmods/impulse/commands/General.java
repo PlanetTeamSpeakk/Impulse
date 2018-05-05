@@ -281,9 +281,9 @@ public class General {
 				Map definitionsMap = (Map) definitions.get(0);
 				String definition = Main.getCleanString((String) definitionsMap.get("definition")).replaceAll("\\_", "\\\\_").replaceAll("\\*", "\\\\*").replaceAll("\\~", "\\\\~");
 				String example = Main.getCleanString((String) definitionsMap.get("example")).replaceAll("\\_", "\\\\_").replaceAll("\\*", "\\\\*").replaceAll("\\~", "\\\\~");
-				Long thumbsUp = ((Double) definitionsMap.get("thumbs_up")).longValue();
-				Long thumbsDown = ((Double) definitionsMap.get("thumbs_down")).longValue();
-				String result = "Definition for **" + searchTerm + "**:\n" + definition + (!example.equals("") ? "\n\nExample:\n" + example : "") + "\n\nThumbs up: **" + thumbsUp + "**\nThumbs down: **" + thumbsDown + "**";
+				int thumbsUp = (int) definitionsMap.get("thumbs_up");
+				int thumbsDown = (int) definitionsMap.get("thumbs_down");
+				String result = "Definition for **" + searchTerm + "**:\n" + definition + (!example.isEmpty() ? "\n\nExample:\n" + example : "") + "\n\nThumbs up: **" + thumbsUp + "**\nThumbs down: **" + thumbsDown + "**";
 				event.reply(result);
 			}
 		} else Main.sendCommandHelp(event);

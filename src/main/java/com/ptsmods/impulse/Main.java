@@ -149,7 +149,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 11;
-	public static final int							revision				= 4;
+	public static final int							revision				= 5;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -927,11 +927,13 @@ public class Main {
 		event.getChannel().sendMessageFormat("A `%s` exception was thrown at line %s in %s while parsing the command%s.%s", e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), e.getMessage() != null ? String.format(": `%s`", e.getMessage()) : "", Main.devMode() ? "" : String.format("\nMy owner, %s, has been informed.", Main.getOwner().getAsMention())).queue();
 		if (!Main.devMode()) {
 			String output = String.format("A `%s` exception was thrown at line %s in %s while parsing the message `%s`. Stacktrace:\n```java\n%s```", e.getClass().getName(), stElement.getLineNumber(), stElement.getFileName(), event.getMessage().getContent(), Main.generateStackTrace(e));
-			while (output.length() > 1997) {
-				Main.sendPrivateMessage(owner, output.substring(0, 1997) + "```");
-				output = output.substring(1997);
-			}
-			if (!output.isEmpty()) Main.sendPrivateMessage(owner, "```java\n" + output + "```");
+			if (output.length() > 1997) {
+				while (output.length() > 1997) {
+					Main.sendPrivateMessage(owner, output.substring(0, 1997) + "```");
+					output = output.substring(1997);
+				}
+				if (!output.isEmpty()) Main.sendPrivateMessage(owner, "```java\n" + output + (output.endsWith("```") ? "" : "```"));
+			} else Main.sendPrivateMessage(owner, output);
 		}
 	}
 

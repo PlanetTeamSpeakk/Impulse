@@ -47,41 +47,45 @@ import com.ptsmods.impulse.utils.MathHelper;
 import com.ptsmods.impulse.utils.UsageMonitorer;
 
 /**
- * @deprecated This class is no longer used, take a look at {@link com.ptsmods.impulse.MainJFXGUI MainJFXGUI} instead.
+ * @deprecated This class is no longer used, take a look at
+ *             {@link com.ptsmods.impulse.MainJFXGUI MainJFXGUI} instead.
  * @author PlanetTeamSpeak
  */
 @Deprecated
 public class MainGUI {
 
-	public static final Font sansSerif = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
-	private static boolean initialized = false;
-	private static JFrame mainFrame = new JFrame();
-	private static JTextArea LTA = new JTextArea(); // Log TextArea
-	private static Map<String, JTextField> configKeys = new HashMap();
-	private static final DecimalFormat df = new DecimalFormat("#", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-	private static final String impulsePngMD5 = "f71c6df8e8f8b70a366c54d2f88e4b2d";
-	private static boolean hasPngChanged = true;
-	private static final JRadioButton devModeRBtn = new JRadioButton("Devmode");
+	public static final Font				sansSerif		= new Font(Font.SANS_SERIF, Font.PLAIN, 14);
+	private static boolean					initialized		= false;
+	private static JFrame					mainFrame		= new JFrame();
+	private static JTextArea				LTA				= new JTextArea();															// Log TextArea
+	private static Map<String, JTextField>	configKeys		= new HashMap();
+	private static final DecimalFormat		df				= new DecimalFormat("#", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+	private static final String				impulsePngMD5	= "f71c6df8e8f8b70a366c54d2f88e4b2d";
+	private static boolean					hasPngChanged	= true;
+	private static final JRadioButton		devModeRBtn		= new JRadioButton("Devmode");
 
 	/**
 	 * Initialize the contents of the frame.
+	 * 
 	 * @throws IllegalAccessException
 	 */
 	public static void initialize() throws IllegalAccessException {
 		if (!initialized) {
-			// Just checking if the file has changed, if not, set the icon and start normally, if it has, don't and passive-aggressively ask the user to change it back.
+			// Just checking if the file has changed, if not, set the icon and start
+			// normally, if it has, don't and passive-aggressively ask the user to change it
+			// back.
 			// Because maybe they've changed the icon and are claiming they've made it.
 			String MD5 = null;
 			try {
 				MD5 = DigestUtils.md5Hex(Main.getResourceAsStream("impulse.png"));
-			} catch (IOException e2) {}
-			if (MD5 != null && impulsePngMD5.equals(MD5))
-				try {
-					hasPngChanged = false;
-					mainFrame.setIconImage(ImageIO.read(Main.getResourceAsStream("impulse.png")));
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+			} catch (IOException e2) {
+			}
+			if (MD5 != null && impulsePngMD5.equals(MD5)) try {
+				hasPngChanged = false;
+				mainFrame.setIconImage(ImageIO.read(Main.getResourceAsStream("impulse.png")));
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 			Main.print(LogType.DEBUG, "Original MD5:", impulsePngMD5, "Current MD5:", MD5);
 			mainFrame.setTitle("Impulse v" + Main.version + " - written by PlanetTeamSpeak");
 			mainFrame.setResizable(false);
@@ -89,12 +93,12 @@ public class MainGUI {
 			mainFrame.setAutoRequestFocus(true);
 			mainFrame.getContentPane().setLayout(null);
 			JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-			tabbedPane.setBounds(0, 0, (int) mainFrame.getBounds().getWidth()-6, (int) mainFrame.getBounds().getHeight()-29);
+			tabbedPane.setBounds(0, 0, (int) mainFrame.getBounds().getWidth() - 6, (int) mainFrame.getBounds().getHeight() - 29);
 			FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
 			if (!hasPngChanged) {
 				LTA.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
 				LTA.setEditable(false);
-				LTA.setBounds(0, 0, (int) mainFrame.getBounds().getWidth()-9, (int) mainFrame.getBounds().getHeight()-56);
+				LTA.setBounds(0, 0, (int) mainFrame.getBounds().getWidth() - 9, (int) mainFrame.getBounds().getHeight() - 56);
 				((DefaultCaret) LTA.getCaret()).setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
 				JPanel logPane = new JPanel();
@@ -126,9 +130,20 @@ public class MainGUI {
 					textField1.setFont(sansSerif);
 					textField1.setBounds(5, pos, width1 < 16 ? 16 : width1, height1);
 					textField1.addKeyListener(new KeyListener() {
-						@Override public void keyTyped(KeyEvent e) 		{update();}
-						@Override public void keyReleased(KeyEvent e) 	{update();}
-						@Override public void keyPressed(KeyEvent e) 	{update();}
+						@Override
+						public void keyTyped(KeyEvent e) {
+							update();
+						}
+
+						@Override
+						public void keyReleased(KeyEvent e) {
+							update();
+						}
+
+						@Override
+						public void keyPressed(KeyEvent e) {
+							update();
+						}
 
 						private void update() {
 							int newWidth = (int) sansSerif.getStringBounds(textField1.getText(), frc).getWidth() + 8;
@@ -155,9 +170,20 @@ public class MainGUI {
 				gameTF1.setFont(sansSerif);
 				gameTF1.setBounds(5, pos, width1 < 16 ? 16 : width1, height1);
 				gameTF1.addKeyListener(new KeyListener() {
-					@Override public void keyTyped(KeyEvent e) 		{update();}
-					@Override public void keyReleased(KeyEvent e) 	{update();}
-					@Override public void keyPressed(KeyEvent e) 	{update();}
+					@Override
+					public void keyTyped(KeyEvent e) {
+						update();
+					}
+
+					@Override
+					public void keyReleased(KeyEvent e) {
+						update();
+					}
+
+					@Override
+					public void keyPressed(KeyEvent e) {
+						update();
+					}
 
 					private void update() {
 						int newWidth = (int) sansSerif.getStringBounds(gameTF1.getText(), frc).getWidth() + 8;
@@ -177,7 +203,8 @@ public class MainGUI {
 							Config.put(key, configKeys.get(key).getText());
 						if (Main.done()) Main.setGame(gameTF1.getText());
 						Main.playSound(Main.getResourceAsStream("chimes.wav"));
-					}});
+					}
+				});
 				settings.add(saveBtn);
 				devModeRBtn.setFont(sansSerif);
 				devModeRBtn.setSelected(Main.devMode());
@@ -187,7 +214,8 @@ public class MainGUI {
 					public void actionPerformed(ActionEvent e) {
 						Main.devMode(devModeRBtn.isSelected());
 						Main.print(LogType.INFO, "Devmode has been", devModeRBtn.isSelected() ? "enabled." : "disabled.");
-					}});
+					}
+				});
 				settings.add(devModeRBtn);
 				pos += 32;
 				JButton refreshBtn = new JButton("Refresh");
@@ -203,7 +231,8 @@ public class MainGUI {
 							configKeys.get(key).setBounds(5, (int) configKeys.get(key).getBounds().getY(), newWidth < 16 ? 16 : newWidth, (int) configKeys.get(key).getBounds().getHeight());
 						}
 						Main.playSound(Main.getResourceAsStream("chimes.wav"));
-					}});
+					}
+				});
 				settings.add(refreshBtn);
 				pos += 32;
 				JButton clearLogBtn = new JButton("Clear log");
@@ -216,7 +245,8 @@ public class MainGUI {
 						LTA.setText("");
 						Main.print(LogType.INFO, "The log has been cleared!");
 						Main.playSound(Main.getResourceAsStream("chimes.wav"));
-					}});
+					}
+				});
 				settings.add(clearLogBtn);
 				JScrollPane settingsSP = new JScrollPane(settings);
 				settingsSP.setBounds(settings.getBounds());
@@ -229,8 +259,13 @@ public class MainGUI {
 				sum.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
 				sum.setBounds(0, 0, 1069, 64);
 				sum.addKeyListener(new KeyListener() {
-					@Override public void keyReleased(KeyEvent e) {}
-					@Override public void keyTyped(KeyEvent e) {}
+					@Override
+					public void keyReleased(KeyEvent e) {
+					}
+
+					@Override
+					public void keyTyped(KeyEvent e) {
+					}
 
 					@Override
 					public void keyPressed(KeyEvent e) {
@@ -247,7 +282,8 @@ public class MainGUI {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						calculate(sum);
-					}});
+					}
+				});
 				calculator.add(calcBtn);
 				JLabel desc = new JLabel("It does addition, subtraction, multiplication, division, exponentiation (using the ^ symbol), factorialization (! ");
 				desc.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
@@ -255,11 +291,11 @@ public class MainGUI {
 				calculator.add(desc);
 				JLabel desc1 = new JLabel("before");
 				desc1.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-				desc1.setBounds((int) desc.getFont().getStringBounds(desc.getText(), frc).getWidth()-22, 136, (int) desc1.getFont().getStringBounds(desc1.getText(), frc).getWidth() + 8, 20);
+				desc1.setBounds((int) desc.getFont().getStringBounds(desc.getText(), frc).getWidth() - 22, 136, (int) desc1.getFont().getStringBounds(desc1.getText(), frc).getWidth() + 8, 20);
 				calculator.add(desc1);
 				JLabel desc2 = new JLabel(" a number),");
 				desc2.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
-				desc2.setBounds((int) desc.getFont().getStringBounds(desc.getText(), frc).getWidth()+(int) desc1.getFont().getStringBounds(desc1.getText(), frc).getWidth()-22, 136, (int) desc2.getFont().getStringBounds(desc2.getText(), frc).getWidth(), 20);
+				desc2.setBounds((int) desc.getFont().getStringBounds(desc.getText(), frc).getWidth() + (int) desc1.getFont().getStringBounds(desc1.getText(), frc).getWidth() - 22, 136, (int) desc2.getFont().getStringBounds(desc2.getText(), frc).getWidth(), 20);
 				calculator.add(desc2);
 				JLabel desc3 = new JLabel("and a few basic functions like sqrt, cbrt, sin, cos, and tan. It supports grouping using (...), and it gets the operator precedence and associativity rules correct.");
 				desc3.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
@@ -272,7 +308,7 @@ public class MainGUI {
 				Main.runAsynchronously(() -> {
 					List<Double> scores = Lists.newArrayList(new Double[60]);
 					while (!Main.isShuttingDown()) {
-						scores.add(Main.formatFileSizeDoubleMb(UsageMonitorer.getRamUsage()));
+						scores.add(Main.formatFileSizeDoubleMb(UsageMonitorer.getProcessRamUsage()));
 						if (scores.size() > 60) scores.remove(0);
 						ram.setScores(scores);
 						Main.sleep(1, TimeUnit.SECONDS);
@@ -284,7 +320,7 @@ public class MainGUI {
 					List<Double> scores = Lists.newArrayList(new Double[60]);
 					while (!Main.isShuttingDown()) {
 						double cpuUsage = UsageMonitorer.getSystemCpuLoad().doubleValue();
-						if (cpuUsage > 95 && System.currentTimeMillis()-Main.started.getTime() > 1000*60*3) {
+						if (cpuUsage > 95 && System.currentTimeMillis() - Main.started.getTime() > 1000 * 60 * 3) {
 							Main.print(LogType.WARN, "System CPU load was above 95%, assuming bot crashed, shutting down.");
 							Main.shutdown(0);
 						}
@@ -306,7 +342,8 @@ public class MainGUI {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						Main.shutdown(0);
-					}});
+					}
+				});
 				shutdown.add(shutdownBtn);
 				tabbedPane.addTab("Shutdown", null, shutdown, "Shut the bot down.");
 			} else {
@@ -338,7 +375,8 @@ public class MainGUI {
 	}
 
 	public static boolean isThief() {
-		return Main.headless() ? false : hasPngChanged; // the variable hasPngChanged is always true while headless as the GUI is never initialized and the image's MD5 isn't checked.
+		return Main.headless() ? false : hasPngChanged; // the variable hasPngChanged is always true while headless as the GUI is never
+														// initialized and the image's MD5 isn't checked.
 	}
 
 	public static void logLine(String line) {

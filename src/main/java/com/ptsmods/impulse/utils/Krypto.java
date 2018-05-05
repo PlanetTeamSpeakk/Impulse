@@ -7,13 +7,16 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.net.util.Base64;
 
 /**
- * Encrypts and decrypts strings.
- * The name of this class comes from the ancient Greek word κρυπτω which means 'I hide' and is pronounced as either krypto or krupto.
+ * Encrypts and decrypts strings.<br>
+ * The name of this class comes from the ancient Greek word κρυπτω which means
+ * 'I hide' and is pronounced as either krypto or krupto.
+ * 
  * @author PlanetTeamSpeak
  */
 public class Krypto {
 
-	private Krypto() {}
+	private Krypto() {
+	}
 
 	public static String encrypt(String key, String value) throws KryptoException {
 		try {
@@ -49,7 +52,7 @@ public class Krypto {
 		}
 
 		public KryptoException(Throwable cause) {
-			super(cause /*cause comes from the Latin word causa, btw, which also means cause.*/);
+			super(cause /* cause comes from the Latin word causa, btw, which also means cause. */);
 		}
 
 		public KryptoException(String message, Throwable cause) {

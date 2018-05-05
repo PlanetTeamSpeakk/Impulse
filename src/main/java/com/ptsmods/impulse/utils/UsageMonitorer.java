@@ -55,11 +55,11 @@ public class UsageMonitorer {
 		}
 	}
 
-	public static long getRamUsage() {
+	public static long getProcessRamUsage() {
 		return Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
 	}
 
-	public static long getRamMax() {
+	public static long getProcessRamMax() {
 		return Runtime.getRuntime().maxMemory();
 	}
 

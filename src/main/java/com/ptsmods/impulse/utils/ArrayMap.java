@@ -3,6 +3,7 @@ package com.ptsmods.impulse.utils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,17 +11,26 @@ import java.util.Set;
 import com.google.common.collect.Lists;
 
 /**
- * Doesn't 'scramble' the keys and values as this type of Map keeps uses for loops instead of hashcodes to get the values belonging to the keys.
- * Also {@link #keySet()} uses {@link com.ptsmods.impulse.utils.ArraySet ArraySet} instead of {@link java.util.HashSet HashSet} as ArraySet doesn't 'scramble' its content while HashSet does.
+ * This Map uses an instance of {@link java.util.HashMap HashMap} to store its
+ * keys and values for efficient getting and putting, but when executing the
+ * keySet() method it returns an ArrayList which keys are in the same order as
+ * they have been added in, same goes for values().
+ * Also {@link #keySet()} uses {@link com.ptsmods.impulse.utils.ArraySet
+ * ArraySet} instead of {@link java.util.HashSet HashSet} as ArraySet doesn't
+ * 'scramble' its content while HashSet does.
+ *
  * @author PlanetTeamSpeak
- * @param <K> All of the keys in this Map have to a subclass of this type.
- * @param <V> All of the values in this Map have to a subclass of this type.
+ * @param <K>
+ *            All of the keys in this Map have to a subclass of this type.
+ * @param <V>
+ *            All of the values in this Map have to a subclass of this type.
  * @see com.ptsmods.impulse.utils.ArraySet ArraySet
  */
 public class ArrayMap<K, V> implements Map<K, V> {
 
-	private final ArraySet<K> keys;
-	private final ArraySet<V> values;
+	private final ArraySet<K>	keys;
+	private final ArraySet<V>	values;
+	private final HashMap<K, V>	map	= new HashMap();
 
 	public ArrayMap() {
 		this(0);
@@ -45,17 +55,16 @@ public class ArrayMap<K, V> implements Map<K, V> {
 	public ArrayMap(List<K> keys, List<V> values, int initialSize) {
 		this.keys = new ArraySet(initialSize >= 0 ? initialSize : 0);
 		this.values = new ArraySet(initialSize >= 0 ? initialSize : 0);
-		if (keys != null && values != null)
-			for (int i : Main.range(Math.min(keys.size(), values.size())))
-				put(keys.get(i), values.get(i));
+		if (keys != null && values != null) for (int i : Main.range(Math.min(keys.size(), values.size())))
+			put(keys.get(i), values.get(i));
 	}
 
 	@Override
 	public String toString() {
 		String output = "[";
 		for (int i : Main.range(size()))
-			output += keys.get(i)+"="+values.get(i)+", ";
-		return output.substring(0, output.length()-2)+"]";
+			output += keys.get(i) + "=" + values.get(i) + ", ";
+		return output.substring(0, output.length() - 2) + "]";
 	}
 
 	@Override
@@ -80,17 +89,18 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
 	@Override
 	public V get(Object key) {
-		for (int i : Main.range(size()))
-			if (keys.get(i).equals(key)) return values.get(i);
-		return null;
+		return map.get(key);
 	}
 
 	@Override
 	public V put(K key, V value) {
 		V prev = get(key);
-		int i = size();
-		keys.add(i, key);
-		values.add(i, value);
+		if (key != null) {
+			int i = size();
+			keys.add(i, key);
+			values.add(i, value);
+			map.put(key, value);
+		}
 		return prev;
 	}
 
@@ -101,6 +111,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
 			if (keys.get(i).equals(key)) {
 				keys.remove(i);
 				values.remove(i);
+				map.remove(key);
 				break;
 			}
 		return prev;
@@ -125,7 +136,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
 	@Override
 	public Collection<V> values() {
-		return values;
+		return new ArraySet(values);
 	}
 
 	@Override
@@ -143,8 +154,8 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
 	public class Entry<K, V> implements Map.Entry<K, V> {
 
-		private final K key;
-		private V value;
+		private final K	key;
+		private V		value;
 
 		private Entry(K key, V value) {
 			this.key = key;

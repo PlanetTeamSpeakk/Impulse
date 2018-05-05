@@ -78,17 +78,17 @@ public class MainJFXGUI extends Application {
 		spLTF.setFitToWidth(true);
 		spLTF.vvalueProperty().bind(LTF.heightProperty());
 		tPane.getTabs().add(createTab("Log", "Everything that has ever been printed to the console.", spLTF));
-		JGraphPanel ram = new JGraphPanel(new ArrayList(), "RAM usage in MB", "Seconds ago", true);
+		JGraphPanel ramSystem = new JGraphPanel(new ArrayList(), "RAM usage in MB", "Seconds ago", true);
 		Main.runAsynchronously(() -> {
 			List<Double> scores = Lists.newArrayList(new Double[60]);
 			while (!Main.isShuttingDown()) {
-				scores.add(Main.formatFileSizeDoubleMb(UsageMonitorer.getRamUsage()));
+				scores.add(Main.formatFileSizeDoubleMb(UsageMonitorer.getSystemRamUsage()));
 				if (scores.size() > 60) scores.remove(0);
-				ram.setScores(scores);
+				ramSystem.setScores(scores);
 				Main.sleep(1, TimeUnit.SECONDS);
 			}
 		});
-		JGraphPanel cpu = new JGraphPanel(new ArrayList(), "CPU usage in %", "Seconds ago", true);
+		JGraphPanel cpuSystem = new JGraphPanel(new ArrayList(), "CPU usage in %", "Seconds ago", true);
 		Main.runAsynchronously(() -> {
 			List<Double> scores = Lists.newArrayList(new Double[60]);
 			while (!Main.isShuttingDown())
@@ -100,14 +100,42 @@ public class MainJFXGUI extends Application {
 					}
 					scores.add(cpuUsage);
 					if (scores.size() > 60) scores.remove(0);
-					cpu.setScores(scores);
+					cpuSystem.setScores(scores);
+					Main.sleep(1, TimeUnit.SECONDS);
+				} catch (Exception ignored) {
+				}
+		});
+		JGraphPanel ramProcess = new JGraphPanel(new ArrayList(), "RAM usage in MB", "Seconds ago", true);
+		Main.runAsynchronously(() -> {
+			List<Double> scores = Lists.newArrayList(new Double[60]);
+			while (!Main.isShuttingDown()) {
+				scores.add(Main.formatFileSizeDoubleMb(UsageMonitorer.getProcessRamUsage()));
+				if (scores.size() > 60) scores.remove(0);
+				ramProcess.setScores(scores);
+				Main.sleep(1, TimeUnit.SECONDS);
+			}
+		});
+		JGraphPanel cpuProcess = new JGraphPanel(new ArrayList(), "CPU usage in %", "Seconds ago", true);
+		Main.runAsynchronously(() -> {
+			List<Double> scores = Lists.newArrayList(new Double[60]);
+			while (!Main.isShuttingDown())
+				try {
+					scores.add(UsageMonitorer.getProcessCpuLoad().doubleValue());
+					if (scores.size() > 60) scores.remove(0);
+					cpuProcess.setScores(scores);
 					Main.sleep(1, TimeUnit.SECONDS);
 				} catch (Exception ignored) {
 				}
 		});
 		TabPane usage = new TabPane();
-		usage.getTabs().add(createTab("RAM", "Shows you the RAM usage of the past 60 seconds.", swingToJFX(ram)));
-		usage.getTabs().add(createTab("CPU", "Shows you the CPU usage of the past 60 seconds.", swingToJFX(cpu)));
+		TabPane usageSystem = new TabPane();
+		TabPane usageProcess = new TabPane();
+		usageSystem.getTabs().add(createTab("RAM", "Shows you the RAM usage of the past 60 seconds.", swingToJFX(ramSystem)));
+		usageSystem.getTabs().add(createTab("CPU", "Shows you the CPU usage of the past 60 seconds.", swingToJFX(cpuSystem)));
+		usageProcess.getTabs().add(createTab("RAM", "Shows you the RAM usage of the past 60 seconds.", swingToJFX(ramProcess)));
+		usageProcess.getTabs().add(createTab("CPU", "Shows you the CPU usage of the past 60 seconds.", swingToJFX(cpuProcess)));
+		usage.getTabs().add(createTab("System", "Shows you the RAM and CPU usages of the system.", usageSystem));
+		usage.getTabs().add(createTab("Process", "Shows you the RAM and CPU usages of the process.", usageProcess));
 		tPane.getTabs().add(createTab("Usage", null, usage));
 		Pane console = new Pane();
 		TextFlow consoleOutput = new TextFlow();
