@@ -21,21 +21,27 @@ public class Downloader {
 
 	/**
 	 *
-	 * @param url The url of the file to be downloaded.
-	 * @param fileLocation A string of the location where the file should be downloaded to, this must include a file suffix.
-	 * @return Map<String, String> Contains keys fileLocation and success, fileLocation will contain the location where the file was downloaded to, success will be a boolean in a string which shows if the download was successful.
+	 * @param url
+	 *            The url of the file to be downloaded.
+	 * @param fileLocation
+	 *            A string of the location where the file should be downloaded to,
+	 *            this must include a file suffix.
+	 * @return A {@link com.ptsmods.impulse.utils.Downloader.DownloadResult
+	 *         DownloadResult} that'll contain the downloaded file's location, the
+	 *         file size and if it succeeded.
 	 * @throws IOException
 	 */
 	public static DownloadResult downloadFile(String url, String fileLocation) throws IOException {
 		String[] fileLocationParts = fileLocation.split("/");
 		String fileLocation2 = "";
 		for (int x = 0; x < fileLocationParts.length; x += 1)
-			if (x+1 != fileLocationParts.length) {
+			if (x + 1 != fileLocationParts.length) {
 				fileLocation2 += "/" + fileLocationParts[x];
 				new File(fileLocation2.substring(1)).mkdirs();
 			}
-		if (new File(fileLocation).exists()) fileLocation = fileLocation.split("\\.")[0] + "-1" + (fileLocation.split("\\.").length != 1 ? "." + fileLocation.split("\\.")[fileLocation.split("\\.").length-1] : "");
-		while (new File(fileLocation).exists()) fileLocation = addNextDigit(fileLocation);
+		if (new File(fileLocation).exists()) fileLocation = fileLocation.split("\\.")[0] + "-1" + (fileLocation.split("\\.").length != 1 ? "." + fileLocation.split("\\.")[fileLocation.split("\\.").length - 1] : "");
+		while (new File(fileLocation).exists())
+			fileLocation = addNextDigit(fileLocation);
 		URLConnection connection = new URL(url).openConnection();
 		connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
 		ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream());
@@ -47,9 +53,9 @@ public class Downloader {
 	}
 
 	private static String addNextDigit(String string) {
-		Long digit = Long.parseLong(string.split("-")[string.split("-").length-1].split("\\.")[0]);
+		Long digit = Long.parseLong(string.split("-")[string.split("-").length - 1].split("\\.")[0]);
 		digit += 1;
-		return string.split("\\.")[0].split("-")[0] + "-" + digit.toString() + "." + string.split("\\.")[string.split("\\.").length-1];
+		return string.split("\\.")[0].split("-")[0] + "-" + digit.toString() + "." + string.split("\\.")[string.split("\\.").length - 1];
 	}
 
 	public static DownloadResult downloadYoutubeVideo(String url, String fileLocation) throws IOException {
@@ -77,12 +83,11 @@ public class Downloader {
 								downloadUrl = (String) audio.get("url");
 								break;
 							}
-					} else
-						for (Map video1 : videos)
-							if (((String) video1.get("extension")).toLowerCase().equals("mp4")) {
-								downloadUrl = (String) video1.get("url");
-								break;
-							}
+					} else for (Map video1 : videos)
+						if (((String) video1.get("extension")).toLowerCase().equals("mp4")) {
+							downloadUrl = (String) video1.get("url");
+							break;
+						}
 					downloadUrl = downloadUrl.replaceAll(" ", "+");
 				}
 			}
@@ -111,7 +116,8 @@ public class Downloader {
 					}
 				quality = lowerQuality(quality);
 			}
-			if (!video.isEmpty()) return (String) video.get("url");
+			if (!video.isEmpty())
+				return (String) video.get("url");
 			else return "";
 		} else throw new IOException("The given URL was not a Vimeo URL.");
 	}
@@ -120,53 +126,73 @@ public class Downloader {
 		try {
 			return new URL(url).openConnection().getContentLengthLong();
 		} catch (Throwable e) {
-			if (!(e instanceof IOException)) throw new IOException(e);
+			if (!(e instanceof IOException))
+				throw new IOException(e);
 			else throw e;
 		}
 	}
 
 	public static String formatFileSize(double bytes) {
 		String output = "0 bytes";
-		if (bytes/1024F/1024F/1024F >= 1F) output = bytes/1024F/1024F/1024F + " gigabytes";
-		else if (bytes/1024F/1024F >= 1F) output = bytes/1024F/1024F + " megabytes";
-		else output = bytes/1024L + " kilobytes";
+		if (bytes / 1024F / 1024F / 1024F >= 1F)
+			output = bytes / 1024F / 1024F / 1024F + " gigabytes";
+		else if (bytes / 1024F / 1024F >= 1F)
+			output = bytes / 1024F / 1024F + " megabytes";
+		else output = bytes / 1024L + " kilobytes";
 		return output;
 	}
 
 	public static double formatFileSizeDoubleMb(double bytes) {
-		return bytes/1024F/1024F;
+		return bytes / 1024F / 1024F;
 	}
 
 	public static String lowerQuality(String quality) {
 		String output = "240p";
 		switch (quality) {
-		case "1080p": {output = "720p"; break;}
-		case "720p": {output = "540p"; break;}
-		case "540p": {output = "480p"; break;}
-		case "480p": {output = "360p"; break;}
-		default: break;
+		case "1080p": {
+			output = "720p";
+			break;
+		}
+		case "720p": {
+			output = "540p";
+			break;
+		}
+		case "540p": {
+			output = "480p";
+			break;
+		}
+		case "480p": {
+			output = "360p";
+			break;
+		}
+		default:
+			break;
 		}
 		return output;
 	}
 
 	public static DownloadResult downloadFileOrVideo(String url, String fileLocation) throws IOException {
-		if (url.contains("youtu")) return downloadYoutubeVideo(url, fileLocation);
-		else if (url.contains("vimeo.com/")) return downloadVimeoVideo(url, fileLocation);
+		if (url.contains("youtu"))
+			return downloadYoutubeVideo(url, fileLocation);
+		else if (url.contains("vimeo.com/"))
+			return downloadVimeoVideo(url, fileLocation);
 		else return downloadFile(url, fileLocation);
 	}
 
 	public static String convertUrl(String url) throws IOException {
-		if (url.contains("youtu")) return getVideoLinkFromYoutubeVid(url);
-		else if (url.contains("vimeo")) return getVideoLinkFromVimeoVid(url);
+		if (url.contains("youtu"))
+			return getVideoLinkFromYoutubeVid(url);
+		else if (url.contains("vimeo"))
+			return getVideoLinkFromVimeoVid(url);
 		else return url;
 	}
 
 	public static class DownloadResult {
 
-		private final File file;
-		private final String fileLocation;
-		private final long fileSize;
-		private final boolean success;
+		private final File		file;
+		private final String	fileLocation;
+		private final long		fileSize;
+		private final boolean	success;
 
 		private DownloadResult(String fileLocation, long fileSize, boolean success) {
 			file = new File(fileLocation);

@@ -26,6 +26,8 @@ import com.ptsmods.impulse.Main.LogType;
 import com.ptsmods.impulse.commands.Economy;
 import com.ptsmods.impulse.commands.Marriage;
 import com.ptsmods.impulse.commands.Moderation;
+import com.ptsmods.impulse.utils.upnp.UPnP;
+import com.ptsmods.impulse.utils.upnp.UPnPProtocol;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -223,6 +225,7 @@ public class Dashboard {
 		server.setExecutor(executor);
 		server.start();
 		Main.print(LogType.INFO, "Successfully started the server on port", server.getAddress().getPort() + ", you can browse to it by going to http://localhost:" + server.getAddress().getPort() + ".");
+		UPnP.portForward(UPnPProtocol.BOTH, port, "Discord Bot API");
 	}
 
 	public static void writeString(HttpExchange he, String string, Object... args) throws IOException {

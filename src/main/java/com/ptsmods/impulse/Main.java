@@ -48,6 +48,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
@@ -98,7 +102,6 @@ import com.ptsmods.impulse.utils.HookedPrintStream;
 import com.ptsmods.impulse.utils.HookedPrintStream.PrintHook;
 import com.ptsmods.impulse.utils.ImageManipulator;
 import com.ptsmods.impulse.utils.Random;
-import com.ptsmods.impulse.utils.UsageMonitorer;
 import com.ptsmods.impulse.utils.compiler.CompilationException;
 import com.ptsmods.impulse.utils.compiler.MemoryJavaCompiler;
 
@@ -149,7 +152,7 @@ public class Main {
 
 	public static final int							major					= 1;
 	public static final int							minor					= 11;
-	public static final int							revision				= 5;
+	public static final int							revision				= 6;
 	public static final String						type					= "stable";
 	public static final String						version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object						nil						= null;
@@ -234,7 +237,6 @@ public class Main {
 		else theUnsafe = null;
 	}
 
-	@SuppressWarnings("deprecation")
 	public static final void main(String[] args) {
 		List<String> argsList = Lists.newArrayList(args);
 		devMode = argsList.contains("-devMode");
@@ -245,22 +247,13 @@ public class Main {
 			int lines = 0;
 			for (File file : getFilesInDir(new File("src/main/java/com/ptsmods/impulse/")))
 				try {
-					lines += Files.readAllLines(file.toPath()).size();
+					for (String line : Files.readAllLines(file.toPath()))
+						if (!line.split("//")[0].trim().isEmpty() && !line.startsWith("import")) lines += 1;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			print(LogType.DEBUG, "Impulse is currently made up of", lines, "lines of code! Woah!");
 		}
-		runAsynchronously(() -> {
-			while (true) {
-				for (Thread thread : getThreads())
-					if (UsageMonitorer.getThreadCPUUsage(thread).floatValue() >= 25 && thread != mainThread) {
-						thread.stop();
-						print(LogType.WARN, "Thread '" + thread.getName() + "' with an ID of", thread.getId(), "was killed as its CPU usage,", UsageMonitorer.getThreadCPUUsage(thread).floatValue() + "%, was greater than or equal to 25%.");
-					}
-				sleep(1000); // the values get updated every second
-			}
-		});
 		try {
 			main0(args);
 		} catch (Throwable e) {
@@ -613,7 +606,7 @@ public class Main {
 	}
 
 	public static String getUsernameAtArg(String string, Guild guild, int arg) {
-		return getUsernameFromArgs(removeArgs(string.split(" "), Arrays.stream(new int[arg]).boxed().toArray(Integer[]::new)), guild);
+		return getUsernameFromArgs(removeArgs(string.split(" "), intArrayToIntegerArray(new int[arg])), guild);
 	}
 
 	private static String getUsernameFromArgs(String[] args, Guild guild) {
@@ -2538,19 +2531,30 @@ public class Main {
 	}
 
 	public static Integer[] intArrayToIntegerArray(int... array) {
-		return Arrays.stream(array).boxed().toArray(Integer[]::new);
+		IntStream stream = Arrays.stream(array);
+		Stream stream0 = stream.boxed();
+		Integer[] modernArray = (Integer[]) stream0.<Integer>toArray(Integer[]::new);
+		stream.close();
+		stream0.close();
+		return modernArray;
 	}
 
 	public static Long[] longArrayToLongArray(long... array) {
-		return Arrays.stream(array).boxed().toArray(Long[]::new);
-	}
-
-	public static Float[] floatArrayToFloatArray(long... array) {
-		return Arrays.stream(array).boxed().toArray(Float[]::new);
+		LongStream stream = Arrays.stream(array);
+		Stream stream0 = stream.boxed();
+		Long[] modernArray = (Long[]) stream0.<Long>toArray(Long[]::new);
+		stream.close();
+		stream0.close();
+		return modernArray;
 	}
 
 	public static Double[] doubleArrayToDoubleArray(double... array) {
-		return Arrays.stream(array).boxed().toArray(Double[]::new);
+		DoubleStream stream = Arrays.stream(array);
+		Stream stream0 = stream.boxed();
+		Double[] modernArray = (Double[]) stream0.<Double>toArray(Double[]::new);
+		stream.close();
+		stream0.close();
+		return modernArray;
 	}
 
 	public static boolean isWholeNumber(double d) {

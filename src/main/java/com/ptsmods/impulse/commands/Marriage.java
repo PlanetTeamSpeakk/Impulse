@@ -3,7 +3,6 @@ package com.ptsmods.impulse.commands;
 import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -699,7 +698,7 @@ public class Marriage {
 		if (!isMarried(event.getAuthor(), maritus, event.getGuild())) throw new Exception("not married");
 		String name = "";
 		if (!mentioned)
-			name = Main.join(Main.removeArgs(event.getArgs().split(" "), Arrays.stream(new int[maritus.getName().split(" ").length]).boxed().toArray(Integer[]::new)));
+			name = Main.join(Main.removeArgs(event.getArgs().split(" "), Main.intArrayToIntegerArray(new int[maritus.getName().split(" ").length])));
 		else name = Main.join(Main.removeArg(event.getArgs().split(" "), 0));
 		for (Entry<String, Map<String, Map<String, Object>>> guild : marriages.entrySet())
 			for (Entry<String, Map<String, Object>> role : guild.getValue().entrySet())
