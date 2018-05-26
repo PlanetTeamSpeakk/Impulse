@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/PlanetTeamSpeakk/Impulse.svg?branch=master)](https://travis-ci.org/PlanetTeamSpeakk/Impulse)
+
 # Impulse
 Source code of the Impulse Discord bot.
 
