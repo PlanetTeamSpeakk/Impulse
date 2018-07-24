@@ -28,7 +28,8 @@ Now I hear you ask, how do I start the server and the shards? Well, simple:
 java -jar <jar file>.jar -shard <shardId>
 ```
   Just make sure that the Impulse jar file, which is indeed the same as the server, contains with the -shard <shardId> parameters and make sure to change <jar file> and <shardId> to the corresponding variables. **Note:** shard ids are index-based meaning they start at 0 and end at shardcount-1.
-2. Now do repeat that for each shard.
+
+2. Now repeat that for each shard.
 3. As soon as every shard is online, the server should start sending packets to each of them to tell them to log in, once they're all logged in, they will start listening to commands.
 4. That's it, you're done!
   
