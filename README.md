@@ -5,7 +5,7 @@ Source code of the Impulse Discord bot.
 
 ## Dependencies
 ### Windows/Mac
-Install the latest version of Java 8 which can be found [here](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
+Install the latest version of Java Development Kit (JDK) 8 which can be found [here](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
 ### Linux
 On Linux you gotta open a terminal (ctrl+alt+t) and type the following command: `sudo apt-get install openjdk-8-jdk`, once you've installed that make sure to also install JavaFX by running `sudo apt-get install openjfx`.
 
@@ -35,5 +35,5 @@ java -jar <jar file>.jar -shard <shardId>
   
 ### Starting the server and clients on different hosts
 If you're planning on starting the server on let's say VPS 1 and you want to start the clients on a different one, or want the clients distributed over multiple hosts (read computers) then you're gonna have to follow these steps:
-1. Make sure port 62192 on the host of the server is port forwarded, you can find how to do so online, but if it does not help, search on how to do it with UPnP if your router supports that.
-2. In the starting file of each of the clients, you're gonna have to add -hostname <ip of server host> to the end of the line that starts with java -jar. You can use a custom domain and its DNS to change the ip to a domain name instead of an ip but that's unnecessary, as long as port 62192 is forwarded on the host.
+1. Make sure port 62192 on the host of the server is forwarded, you can find how to do so online, but if that does not help, search on how to do it with UPnP if your router supports that.
+2. In the start file of each of the clients, you're gonna have to add -hostname <ip of the server's host> to the end of the line that starts with java -jar. You can use a custom domain and its DNS to change the ip to a domain name instead of an ip but that's unnecessary, as long as port 62192 is forwarded on the host.
