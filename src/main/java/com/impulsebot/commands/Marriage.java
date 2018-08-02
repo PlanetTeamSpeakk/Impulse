@@ -176,7 +176,7 @@ public class Marriage {
 						}
 						event.getGuild().getRoleById(role.getKey()).delete().queue();
 						TextChannel marriageChannel = getMarriageChannel(event.getGuild());
-						if (marriageChannel != null && marriageChannel.canTalk()) marriageChannel.sendMessageFormat("%s forcibly divorced %s and %s.").queue();
+						if (marriageChannel != null && marriageChannel.canTalk()) marriageChannel.sendMessageFormat("%s forcibly divorced %s and %s.", event.getAuthor().getAsMention(), members.get(0).getAsMention(), members.get(1).getAsMention()).queue();
 						event.reply("The marriage role between **%s** and **%s** has been removed.", Main.str(members.get(0)), Main.str(members.get(1)));
 						return;
 					}

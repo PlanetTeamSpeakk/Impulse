@@ -1,25 +1,31 @@
 package com.impulsebot.utils;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
+import com.google.code.chatterbotapi.ChatterBot;
+import com.google.code.chatterbotapi.ChatterBotFactory;
+import com.google.code.chatterbotapi.ChatterBotSession;
+import com.google.code.chatterbotapi.ChatterBotType;
 import com.impulsebot.utils.commands.CommandException;
-
-import ai.api.AIConfiguration;
-import ai.api.AIDataService;
-import ai.api.AIServiceException;
-import ai.api.model.AIRequest;
-import ai.api.model.AIResponse;
 
 public class Cleverbot {
 
-	private static final AIConfiguration	configuration	= new AIConfiguration("709b133deafa4a9d9a1c7ce2a25651fe");
-	private static final AIDataService		ai				= new AIDataService(configuration);
-	private static Map<String, Cleverbot>	bots			= new HashMap();
+	private static Map<String, Cleverbot>	bots	= new HashMap();
 	private final String					key;
+	private final ChatterBot				bot;
+	private final ChatterBotSession			session;
 
 	private Cleverbot(String key) {
 		this.key = key;
+		try {
+			bot = new ChatterBotFactory().create(ChatterBotType.PANDORABOTS, "c6d6ba49eaadc69d0b0c116f33dfe07c");
+			session = bot.createSession(Locale.ENGLISH);
+		} catch (Exception e) {
+			Main.throwCheckedExceptionWithoutDeclaration(e);
+			throw new RuntimeException(e);
+		}
 	}
 
 	public static Cleverbot newBot() {
@@ -33,54 +39,11 @@ public class Cleverbot {
 	}
 
 	public String askQuestion(String question) throws CommandException {
-		AIResponse response;
 		try {
-			response = ai.request(new AIRequest(question));
-		} catch (AIServiceException e) {
+			return session.think(question);
+		} catch (Exception e) {
 			throw new CommandException(e);
 		}
-		String resp = response.getResult().getFulfillment().getSpeech().replaceAll("\\\\n ", "\n").replaceAll("\\\\n", "\n");
-		// if (resp.isEmpty()) {
-		// JSONObject body = new JSONObject()
-		// .put("user", "Ozy7HCw70XV8Oq8s")
-		// .put("key", "7u1jhrKerMIucToGfEgrN7ixMt61hWC6");
-		// Request.Builder builder = new
-		// Request.Builder().post(RequestBody.create(Requester.MEDIA_TYPE_JSON,
-		// body.toString()));
-		// final Map data = Main.newHashMap(new String[] {"success", "exception"}, new
-		// Object[] {true, null});
-		// ((JDAImpl)
-		// Main.getShards().get(0)).getHttpClientBuilder().build().newCall(builder.build()).enqueue(new
-		// Callback() {
-		//
-		// @Override
-		// public void onFailure(Call arg0, IOException arg1) {
-		// data.put("success", false);
-		// data.put("exception", arg1);
-		// }
-		//
-		// @Override
-		// public void onResponse(Call arg0, Response arg1) throws IOException {}
-		//
-		// });
-		// final Map data1 = Main.newHashMap(new String[] {"success", "exception"}, new
-		// Object[] {true, null});
-		// ((JDAImpl)
-		// Main.getShards().get(0)).getHttpClientBuilder().build().newCall(builder.build()).enqueue(new
-		// Callback() {
-		//
-		// @Override
-		// public void onFailure(Call arg0, IOException arg1) {
-		// data1.put("success", false);
-		// data1.put("exception", arg1);
-		// }
-		//
-		// @Override
-		// public void onResponse(Call arg0, Response arg1) throws IOException {}
-		//
-		// });
-		// } Maybe someday, I am too lazy now.
-		return resp;
 	}
 
 	public String getKey() {

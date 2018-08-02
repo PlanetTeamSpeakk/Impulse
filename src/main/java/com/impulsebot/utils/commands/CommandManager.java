@@ -145,7 +145,7 @@ public class CommandManager {
 			else((List) linkedSubcommands.get(parentCommand.toString())).add(subcommand);
 		}
 		for (CommandContainer command : commands)
-			if (!linkedSubcommands.containsKey(command.toString())) linkedSubcommands.put(command.toMethod().toString(), new ArrayList());
+			if (!linkedSubcommands.containsKey(command.toMethod().toString())) linkedSubcommands.put(command.toMethod().toString(), new ArrayList());
 	}
 
 	public static List<CommandContainer> getCommands() {

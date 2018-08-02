@@ -263,27 +263,6 @@ public class Lewd {
 		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
 	}
 
-	@Command(category = "Lewd", help = "Shows you a random image from Lolibooru.", name = "lolibooru")
-	public static void lolibooru(CommandEvent event) throws CommandException {
-		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {
-			Document lolibooru;
-			int attempts = 0;
-			try {
-				lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
-				while (lolibooru.getElementById("image") == null && attempts < 5) {
-					lolibooru = Jsoup.connect("https://lolibooru.moe/post/random/").get();
-					attempts += 1;
-				}
-				if (lolibooru.getElementById("image") == null) throw new CommandException("No lewds found.");
-			} catch (Exception e) {
-				event.reply("An unknown error occurred, I'm sorry, no lewds for you.");
-				if (!(e instanceof CommandException)) e.printStackTrace();
-				return;
-			}
-			event.reply(lolibooru.getElementById("image").attr("src").replaceAll(" ", "%20"));
-		} else event.reply("You can only see lewd pics if you turn on NSFW for this channel in its settings.");
-	}
-
 	@Command(category = "Lewd", help = "Shows you a random image from Oboobs.", name = "boobs")
 	public static void boobs(CommandEvent event) throws CommandException {
 		if (event.getGuild() == null || event.getTextChannel().isNSFW()) {

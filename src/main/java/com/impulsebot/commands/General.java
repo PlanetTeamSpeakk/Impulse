@@ -279,13 +279,17 @@ public class General {
 				Gson gson = new Gson();
 				Map dataMap = gson.fromJson(data, Map.class);
 				List definitions = (List) dataMap.get("list");
-				Map definitionsMap = (Map) definitions.get(0);
-				String definition = Main.getCleanString((String) definitionsMap.get("definition")).replaceAll("\\_", "\\\\_").replaceAll("\\*", "\\\\*").replaceAll("\\~", "\\\\~");
-				String example = Main.getCleanString((String) definitionsMap.get("example")).replaceAll("\\_", "\\\\_").replaceAll("\\*", "\\\\*").replaceAll("\\~", "\\\\~");
-				int thumbsUp = (int) definitionsMap.get("thumbs_up");
-				int thumbsDown = (int) definitionsMap.get("thumbs_down");
-				String result = "Definition for **" + searchTerm + "**:\n" + definition + (!example.isEmpty() ? "\n\nExample:\n" + example : "") + "\n\nThumbs up: **" + thumbsUp + "**\nThumbs down: **" + thumbsDown + "**";
-				event.reply(result);;
+				if (definitions.isEmpty())
+					event.reply("No definitions found for the given query '%s'.", event.getArgs());
+				else {
+					Map definitionsMap = (Map) definitions.get(0);
+					String definition = Main.getCleanString((String) definitionsMap.get("definition")).replaceAll("\\_", "\\\\_").replaceAll("\\*", "\\\\*").replaceAll("\\~", "\\\\~");
+					String example = Main.getCleanString((String) definitionsMap.get("example")).replaceAll("\\_", "\\\\_").replaceAll("\\*", "\\\\*").replaceAll("\\~", "\\\\~");
+					int thumbsUp = (int) definitionsMap.get("thumbs_up");
+					int thumbsDown = (int) definitionsMap.get("thumbs_down");
+					String result = "Definition for **" + searchTerm + "**:\n" + definition + (!example.isEmpty() ? "\n\nExample:\n" + example : "") + "\n\nThumbs up: **" + thumbsUp + "**\nThumbs down: **" + thumbsDown + "**";
+					event.reply(result);;
+				}
 			}
 		} else Main.sendCommandHelp(event);
 	}
@@ -613,8 +617,8 @@ public class General {
 			if (data.get("status").toString().equals("ZERO_RESULTS"))
 				event.reply("No results found for **%s**.", event.getArgs());
 			else if (data.get("status").toString().equals("OK")) {
-				double lng = (double) ((Map) ((Map) ((Map) ((List) data.get("results")).get(0)).get("geometry")).get("location")).get("lng");
-				double lat = (double) ((Map) ((Map) ((Map) ((List) data.get("results")).get(0)).get("geometry")).get("location")).get("lat");
+				float lng = (float) ((Map) ((Map) ((Map) ((List) data.get("results")).get(0)).get("geometry")).get("location")).get("lng");
+				float lat = (float) ((Map) ((Map) ((Map) ((List) data.get("results")).get(0)).get("geometry")).get("location")).get("lat");
 				String address = ((Map) ((List) data.get("results")).get(0)).get("formatted_address").toString();
 				Map data1;
 				try {

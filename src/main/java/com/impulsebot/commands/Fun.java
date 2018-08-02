@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import com.google.common.collect.Lists;
-import com.impulsebot.Main.LogType;
 import com.impulsebot.miscellaneous.Main;
 import com.impulsebot.miscellaneous.SubscribeEvent;
 import com.impulsebot.miscellaneous.Trivia;
@@ -872,7 +871,6 @@ public class Fun {
 
 			}
 			FourRowHelper helper = new FourRowHelper();
-			Main.print(LogType.DEBUG, helper.canWin(1, 5, 3));
 			Message status = null;
 			helper.generateBoardString();
 			if (Random.INSTANCE.choice(true, false)) {

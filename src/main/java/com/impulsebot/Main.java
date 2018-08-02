@@ -193,7 +193,7 @@ public class Main implements Extension {
 
 	public static final int												major					= 2;
 	public static final int												minor					= 0;
-	public static final int												revision				= 0;
+	public static final int												revision				= 1;
 	public static final String											type					= "beta";
 	public static final String											version					= String.format("%s.%s.%s-%s", major, minor, revision, type);
 	public static final Object											nil						= null;
@@ -756,6 +756,7 @@ public class Main implements Extension {
 			String cmdName = command.name() + (command.arguments() == null || command.arguments().isEmpty() ? "" : " " + command.arguments());
 			String cmdHelp = command.help() == null || command.help().isEmpty() ? "" : command.help().replaceAll("\\[p\\]", getPrefix(event.getGuild()).startsWith("\\") ? "\\\\" : getPrefix(event.getGuild()));
 			String cmdSubcommands = "";
+			print(LogType.DEBUG, cmd, CommandManager.getSubcommands(cmd));
 			if (!CommandManager.getSubcommands(cmd).isEmpty()) {
 				cmdSubcommands = "**Subcommands**\n\t";
 				List<String> subcommandNames = new ArrayList();
@@ -875,7 +876,7 @@ public class Main implements Extension {
 			// this should make com.impulsebot.commands.Economy from
 			// com.impulsebot.commands.Economy.bank
 			Class clazz = Class.forName(joinCustomChar(".", removeArg(parent.split("\\."), parent.split("\\.").length - 1)), false, ClassLoader.getSystemClassLoader());
-			return clazz.getMethod(methodName, CommandEvent.class);
+			return getMethod(clazz, methodName, CommandEvent.class);
 		} catch (Exception e) { // should not be possible as it's already checked in Main#main(String[] args).
 			return null;
 		}
@@ -907,8 +908,7 @@ public class Main implements Extension {
 			try {
 				if (!userCommandUsages.containsKey(event.getAuthor().getId())) userCommandUsages.put(event.getAuthor().getId(), newHashMap(new String[] {"lastUsedMillis", "used"}, new Long[] {System.currentTimeMillis(), 0L}));
 				if (System.currentTimeMillis() - userCommandUsages.get(event.getAuthor().getId()).get("lastUsedMillis") < 10000) {
-					if (userCommandUsages.get(event.getAuthor().getId()).get("used") <= 5) { // this is in a different if-statement so I can set used to 0 in an
-																								// else-statement instead of an else-if-statement.
+					if (userCommandUsages.get(event.getAuthor().getId()).get("used") <= 5) {
 						userCommandUsages.get(event.getAuthor().getId()).put("used", userCommandUsages.get(event.getAuthor().getId()).get("used") + 1);
 						userCommandUsages.get(event.getAuthor().getId()).put("lastUsedMillis", System.currentTimeMillis());
 					}
