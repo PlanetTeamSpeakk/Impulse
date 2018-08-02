@@ -34,6 +34,15 @@ dependencies {
 	compile group: 'com.thoughtworks.xstream',		name: 'xstream', 					version: '1.4.10'
 	compile group: 'xpp3', 							name: 'xpp3_min', 					version: '1.1.4c'
 	compile group: 'xmlpull', 						name: 'xmlpull', 					version: '1.1.3.1'
+	compile group: 'com.esotericsoftware', 			name: 'kryo', 						version: '4.0.2'
+	compile group: 'org.objenesis', 				name: 'objenesis', 					version: '2.6'
+	compile group: 'com.esotericsoftware', 			name: 'minlog', 					version: '1.3.0'
+	compile group: 'com.esotericsoftware', 			name: 'reflectasm', 				version: '1.11.7'
+	compile group: 'ca.pjer', 						name: 'chatter-bot-api', 			version: '2.0.1'
+	compile group: 'com.fasterxml.jackson.core',	name: 'jackson-databind', 			version: '2.8.6'
+	compile group: 'com.fasterxml.jackson.core', 	name: 'jackson-annotations', 		version: '2.8.0'
+	compile group: 'com.fasterxml.jackson.core', 	name: 'jackson-core', 				version: '2.8.6'
+	compile group: 'xml-apis', 						name: 'xml-apis', 					version: '1.4.01'
 	// start of htmlunit dependencies
 	compile group: 'commons-net', 					name: 'commons-net', 				version: '3.6'
 	compile group: 'net.sourceforge.htmlunit', 		name: 'htmlunit', 					version: '2.28'
@@ -45,7 +54,6 @@ dependencies {
 	compile group: 'org.eclipse.jetty.websocket', 	name: 'websocket-client', 			version: '9.4.7.v20170914'
 	compile group: 'xalan', 						name: 'xalan', 						version: '2.7.2'
 	compile group: 'xalan', 						name: 'serializer', 				version: '2.7.2'
-	compile group: 'xml-apis', 						name: 'xml-apis', 					version: '1.3.04'
 	compile group: 'xerces', 						name: 'xercesImpl', 				version: '2.11.0'
 	compile group: 'org.apache.httpcomponents', 	name: 'httpclient', 				version: '4.5.3'
 	compile group: 'commons-codec', 				name: 'commons-codec', 				version: '1.9'
@@ -61,7 +69,7 @@ dependencies {
 	// end of htmlunit dependencies
 }
 
-version '2.0.0-beta'
+version '2.0.1-beta'
 mainClassName = 'com.impulsebot.Main'
 compileJava.options.encoding = 'UTF-8'
 
