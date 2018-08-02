@@ -37,3 +37,10 @@ java -jar <jar file>.jar -shard <shardId>
 If you're planning on starting the server on let's say VPS 1 and you want to start the clients on a different one, or want the clients distributed over multiple hosts (read computers) then you're gonna have to follow these steps:
 1. Make sure port 62192 on the host of the server is forwarded, you can find how to do so online, but if that does not help, search on how to do it with UPnP if your router supports that.
 2. In the start file of each of the clients, you're gonna have to add -hostname <ip of the server's host> to the end of the line that starts with java -jar. You can use a custom domain and its DNS to change the ip to a domain name instead of an ip but that's unnecessary, as long as port 62192 is forwarded on the host.
+
+## Extensions
+Since Impulse 2.0 you can now make your own extensions! All you need to do is the following:
+1. Create a new project in your favourite IDE.
+2. Add the latest version of Impulse to the build path.
+3. Make a class that implements com.impulsebot.utils.commands.Extension.
+4. Make sure to add the main class to the manifest in order for the extension to be able to load.
